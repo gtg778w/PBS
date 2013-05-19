@@ -19,18 +19,21 @@ void main(int argc, char* argv[]) {
     char errstring[PAPI_MAX_STR_LEN];
 
     long long values[NUM_EVENTS];
-
+    
+    /* Init must be run first */
     if ((retval = PAPI_library_init(PAPI_VER_CURRENT)) != PAPI_VER_CURRENT) {
 	fprintf(stderr, "Error: %d %s\n", retval, errstring);
 	exit(1);
     }
-
+    /* the number of hardware counters available */
     if ((num_hwcntrs = PAPI_num_counters()) < PAPI_OK) {
 	printf("There are no counters available.\n");
         exit(1);
     }
 
     printf("There are %d counters in the system\n", num_hwcntrs);
+
+    /* start counting */
 
     if ((retval = PAPI_start_counters(Events, NUM_EVENTS)) != PAPI_OK) {
         ERROR_RETURN(retval);
@@ -40,7 +43,8 @@ void main(int argc, char* argv[]) {
 
     sum = add_test(i);
     printf("sum = %d\n", sum);
-	
+    
+    /* get counter values */
     if ((retval = PAPI_read_counters(values, NUM_EVENTS)) != PAPI_OK) {
         ERROR_RETURN(retval);
     }
@@ -49,7 +53,6 @@ void main(int argc, char* argv[]) {
     printf("Total instructions executed for addition: %lld \n", values[0]);
     printf("TOtal cycles used %lld\n", values[1]);
     
-
     if ((retval = PAPI_stop_counters(values, NUM_EVENTS)) != PAPI_OK) {
 	ERROR_RETURN(retval);
     }
