@@ -15,6 +15,12 @@ ioctl
 #include <stdlib.h>
 
 #include <sys/types.h>
+
+#include <sys/mman.h>
+/*
+mlock
+*/
+
 #include <unistd.h>
 /*
 read
@@ -38,6 +44,8 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 
 	int procfile;
 
+    job_mgt_cmd_t cmd;
+
 	int ret_val;
 
 	mypid =  getpid();
@@ -55,7 +63,8 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	my_sched_params.sched_priority = min_priority;
 
 	/*Try to change the scheduling policy and priority*/
-	if(ret_val = sched_setscheduler(mypid, SCHED_FIFO, &my_sched_params))
+	ret_val = sched_setscheduler(mypid, SCHED_FIFO, &my_sched_params);
+	if(0 != ret_val)
 	{
 		perror("ERROR: ");
 		fprintf(stderr, "Failed to set scheduling policy!\n");		
@@ -109,7 +118,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 //regster with the pbs module and setup the pbs scheduling parameters
 
 	//setup PBS scheduling parameters
-	ret_val = open("/proc/sched_rt_jb_mgt", O_RDONLY);
+	ret_val = open("/proc/sched_rt_jb_mgt",  O_RDWR);
 	if(ret_val == -1)
 	{
 		perror("Failed to open \"/proc/sched_rt_jb_mgt\":\n");
@@ -125,6 +134,16 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	}
 	handle->period = period;
 
+    cmd.cmd = PBS_JBMGT_CMD_SETUP;
+    cmd.args[0] = period;
+    cmd.args[1] = (unsigned long)(2.0 * (double)(1 << 16));
+    ret_val = write(procfile, &cmd, sizeof(cmd));
+    if(ret_val != sizeof(cmd))
+    {
+        perror("write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
+        goto close_exit;
+    }
+    
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_RUNTIME, start_bandwidth);
 	if(ret_val) 
 	{
@@ -141,6 +160,18 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	}
 	handle->history_length = history_length;
 
+    cmd.cmd = PBS_JBMGT_CMD_PREDUPDATE;
+    cmd.args[0] = start_bandwidth;
+    cmd.args[1] = 0;
+    cmd.args[2] = start_bandwidth;
+    cmd.args[3] = 0;
+    ret_val = write(procfile, &cmd, sizeof(cmd));
+    if(ret_val != sizeof(cmd))
+    {
+        perror("write of a PBS_JBMGT_CMD_PREDUPDATE cmd failed!\n");
+        goto close_exit;
+    }
+
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_START, 0);
 	if(ret_val)
 	{
@@ -148,6 +179,16 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 		goto close_exit;
 	}
 
+    cmd.cmd = PBS_JBMGT_CMD_START;
+    ret_val = write(procfile, &cmd, sizeof(cmd));
+    if(ret_val != sizeof(cmd))
+    {
+        perror("write of a PBS_JBMGT_CMD_START cmd failed!\n");
+        goto close_exit;
+    }
+
+    ret_val = 0;
+    
 	handle->procfile = procfile;
 	return ret_val;
 

@@ -73,6 +73,10 @@ Global variables and functions associated with the sched_rt_jb_mgt file
 int jb_mgt_open(struct inode *inode, struct file *filp);
 long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *offset);
+ssize_t jb_mgt_write(   struct file *fileh, 
+                    const char __user *data, 
+                    size_t count, 
+                    loff_t *offset);
 int jb_mgt_release(struct inode *inode, struct file *filp);
 
 /*The procfs file that is accessed by the bandwidth allocation process*/
@@ -81,6 +85,7 @@ struct proc_dir_entry* p_jb_mgt_file;
 struct file_operations jb_mgt_fops = {
 	.owner		=	THIS_MODULE,
 	.read 		=	jb_mgt_read,
+	.write      =   jb_mgt_write,
 	.open 		=	jb_mgt_open,
 	.unlocked_ioctl	=	jb_mgt_ioctl,
 	.release	=	jb_mgt_release	
@@ -268,13 +273,13 @@ ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *o
 	return ret;
 }
 
-int jb_mgt_write(   struct file fileh, 
-                    const char __user *data, 
-                    size_t count, 
-                    loff_t *offset)
+ssize_t jb_mgt_write(   struct file *fileh, 
+                        const char __user *data, 
+                        size_t count, 
+                        loff_t *offset)
 {
     job_mgt_cmd_t cmd;
-    int ret = count;
+    ssize_t ret = count;
     
     if(sizeof(job_mgt_cmd_t) != count)
     {
@@ -284,6 +289,8 @@ int jb_mgt_write(   struct file fileh,
         goto exit0;
     }
 
+    printk(KERN_INFO    "Copying the command data structure from user space!");
+    
     if( copy_from_user( &cmd, data, sizeof(job_mgt_cmd_t)))
     {
         ret = -EFAULT;
@@ -306,6 +313,10 @@ int jb_mgt_write(   struct file fileh,
                                 cmd.args[1],
                                 cmd.args[2],
                                 cmd.args[3]);
+            break;
+        
+        case PBS_JBMGT_CMD_START:
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_START");
             break;
             
         default:

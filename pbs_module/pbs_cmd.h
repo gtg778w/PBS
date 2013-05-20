@@ -13,7 +13,11 @@
     3) std_cl
 */
 
-#define PBS_JBMGT_CMD_MAX       (2)
+#define PBS_JBMGT_CMD_START     (2)
+/*
+*/
+
+#define PBS_JBMGT_CMD_MAX       (3)
 #define PBS_JBMGT_CMD_MAXARGS   (4)
 typedef struct job_mgt_cmd_s
 {

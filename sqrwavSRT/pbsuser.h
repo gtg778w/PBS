@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
+#include "pbs_cmd.h"
 
 /*This is the user level header file for the PBS module for SRT tasks*/
 
