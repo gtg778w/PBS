@@ -1,6 +1,7 @@
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 #include "pbs_ioctl.h"
+#include "pbs_cmd.h"
 
 /**********************************************************************
 
@@ -265,6 +266,56 @@ ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *o
 	}
 
 	return ret;
+}
+
+int jb_mgt_write(   struct file fileh, 
+                    const char __user *data, 
+                    size_t count, 
+                    loff_t *offset)
+{
+    job_mgt_cmd_t cmd;
+    int ret = count;
+    
+    if(sizeof(job_mgt_cmd_t) != count)
+    {
+        printk(KERN_INFO    "The argument written through jb_mgt_write by process %d "
+                            "is not of valid size.", current->pid);
+        ret = -EINVAL;
+        goto exit0;
+    }
+
+    if( copy_from_user( &cmd, data, sizeof(job_mgt_cmd_t)))
+    {
+        ret = -EFAULT;
+        goto exit0;
+    }
+    
+    switch(cmd.cmd)
+    {
+        case PBS_JBMGT_CMD_SETUP:
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %li, %li.%li",
+                                cmd.args[0],
+                                (cmd.args[1] >> 16),
+                                (cmd.args[1] & 0xffff));
+            break;
+            
+        case PBS_JBMGT_CMD_PREDUPDATE:
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_PREDUPDATE, "
+                                "%li, %li, %li, %li",
+                                cmd.args[0],
+                                cmd.args[1],
+                                cmd.args[2],
+                                cmd.args[3]);
+            break;
+            
+        default:
+            printk(KERN_INFO    "Invalid cmd code in job_mgt_cmd_t structure passed to "
+                                "jb_mgt_write by process %d.", current->pid);
+            break;
+    }
+
+exit0:
+    return ret;
 }
 
 int jb_mgt_release(struct inode *inode, struct file *filp)
