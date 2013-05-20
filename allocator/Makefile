@@ -1,6 +1,6 @@
 #define the build commands
 CC=gcc
-CFLAGS=-c -Wall
+CFLAGS=-Wall
 LIBFLAGS=-lrt -lm
 
 BINDIR=../bin
