@@ -142,7 +142,7 @@ struct SRT_struct
 	char			init_mask;
 };
 
-enum {SRT_OPEN, SRT_STARTED, SRT_LOOP, SRT_CLOSED};
+enum {SRT_OPEN, SRT_CONFIGURED, SRT_STARTED, SRT_LOOP, SRT_CLOSED};
 
 void init2_jb_mgt(void);
 int init_jb_mgt(void);

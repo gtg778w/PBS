@@ -66,8 +66,8 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	ret_val = sched_setscheduler(mypid, SCHED_FIFO, &my_sched_params);
 	if(0 != ret_val)
 	{
-		perror("ERROR: ");
-		fprintf(stderr, "Failed to set scheduling policy!\n");		
+		perror("ERROR: pbs_SRT_setup");
+		fprintf(stderr, "pbs_SRT_setup: Failed to set scheduling policy!\n");		
 		goto streight_exit;
 	}
 
@@ -79,7 +79,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 		handle->log_file = fopen(logFileName, "w");
 		if(handle->log_file == NULL)
 		{
-			perror("Failed to open log file: ");
+			perror("pbs_SRT_setup: Failed to open log file: ");
 			ret_val = -1;
 			goto streight_exit;
 		}
@@ -88,7 +88,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 		if(handle->log == NULL)
 		{
 			perror("ERROR: ");
-			fprintf(stderr, "Failed to allocate memory for log!\n");		
+			fprintf(stderr, "pbs_SRT_setup: Failed to allocate memory for log!\n");		
 			ret_val = -1;
 			goto lclose_exit;
 		}
@@ -96,7 +96,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 		ret_val = mlock(handle->log, (logCount*sizeof(struct SRT_job_log)));
 		if(ret_val)
 		{
-			perror("mlock failed for the log array");
+			perror("pbs_SRT_setup: mlock failed for the log array");
 			ret_val = -1;
 			goto free_exit;
 		}
@@ -121,7 +121,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	ret_val = open("/proc/sched_rt_jb_mgt",  O_RDWR);
 	if(ret_val == -1)
 	{
-		perror("Failed to open \"/proc/sched_rt_jb_mgt\":\n");
+		perror("pbs_SRT_setup: Failed to open \"/proc/sched_rt_jb_mgt\":\n");
 		goto free_exit;
 	}
 	procfile = ret_val;
@@ -129,7 +129,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_PERIOD, period);
 	if(ret_val)
 	{
-		perror("ioctl with PBS_IOCTL_JBMGT_PERIOD failed!\n");
+		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_PERIOD failed!\n");
 		goto close_exit;
 	}
 	handle->period = period;
@@ -140,14 +140,14 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
-        perror("write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
+        perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
         goto close_exit;
     }
     
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_RUNTIME, start_bandwidth);
 	if(ret_val) 
 	{
-		perror("ioctl with PBS_IOCTL_JBMGT_SRT_RUNTIME failed!\n");
+		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_RUNTIME failed!\n");
 		goto close_exit;
 	}
 	handle->start_bandwidth = start_bandwidth;
@@ -155,35 +155,24 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_HISTLEN, history_length);
 	if(ret_val)
 	{
-		perror("ioctl with PBS_IOCTL_JBMGT_SRT_HISTLEN failed!\n");
+		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_HISTLEN failed!\n");
 		goto close_exit;
 	}
 	handle->history_length = history_length;
 
-    cmd.cmd = PBS_JBMGT_CMD_PREDUPDATE;
-    cmd.args[0] = start_bandwidth;
-    cmd.args[1] = 0;
-    cmd.args[2] = start_bandwidth;
-    cmd.args[3] = 0;
-    ret_val = write(procfile, &cmd, sizeof(cmd));
-    if(ret_val != sizeof(cmd))
-    {
-        perror("write of a PBS_JBMGT_CMD_PREDUPDATE cmd failed!\n");
-        goto close_exit;
-    }
-
-	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_START, 0);
+    /*FIXME should be able to remove this*/
+	/*ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_START, 0);
 	if(ret_val)
 	{
-		perror("ioctl with PBS_IOCTL_JBMGT_SRT_START failed!\n");
+		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_START failed!\n");
 		goto close_exit;
-	}
+	}*/
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
-        perror("write of a PBS_JBMGT_CMD_START cmd failed!\n");
+        perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_START cmd failed!\n");
         goto close_exit;
     }
 
@@ -207,10 +196,15 @@ streight_exit:
 
 //FIXME: Need to handle closes forced by the system,
 //like when the allocator task closes and the SRT task is forced to close
+//FIXME: The structure of this function should be improved. e.g. should not be
+//returning from 3 different places
 int pbs_begin_SRT_job(SRT_handle *handle)
 {
 	struct SRT_job_log dummy;
 	int ret;
+
+    job_mgt_cmd_t cmd;
+	int ret_val;
 
 	if((handle->logging_enabled == 1) && (handle->log_index < handle->log_size))
 	{
@@ -230,6 +224,18 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 		}
 	}
 
+    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
+    cmd.args[0] = handle->start_bandwidth;
+    cmd.args[1] = 0;
+    cmd.args[2] = handle->start_bandwidth;
+    cmd.args[3] = 0;
+    ret_val = write(handle->procfile, &cmd, sizeof(cmd));
+    if(ret_val != sizeof(cmd))
+    {
+        perror("pbs_begin_SRT_job: write of a PBS_JBMGT_CMD_NEXTJOB cmd failed!\n");
+        return -1;
+    }
+
 	return 0;
 }
 
@@ -238,6 +244,17 @@ void pbs_SRT_close(SRT_handle *handle)
 	int i;
 	struct SRT_job_log *log_entry;
 
+    job_mgt_cmd_t cmd;
+	int ret_val;
+
+    /*Stop adaptive budget allocation and enforcement for the task*/
+    cmd.cmd = PBS_JBMGT_CMD_STOP;
+    ret_val = write(handle->procfile, &cmd, sizeof(cmd));
+    if(ret_val != sizeof(cmd))
+    {
+        perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_STOP cmd failed!\n");
+    }
+    
 	close(handle->procfile);
 
 	if(handle->logging_enabled == 1)	

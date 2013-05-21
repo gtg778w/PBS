@@ -37,15 +37,6 @@ extern history_list_header_t	*history_list_header;
 /**********************************************************************/
 //high resolution timer callbacks
 
-//Even after being cancelled by the PBS module, an hrtimer associated with
-//an rt scheduling bandwidth structure maybe reactivated, when the container
-//associated with the bandwidth becomes non-empty(e.g. when the contained task wakeup up)
-//the hrtimer function is changed to the following, to keep it passive
-enum hrtimer_restart NULL_timer_func(struct hrtimer *fired_timer)
-{
-	return HRTIMER_NORESTART;
-}
-
 enum hrtimer_restart sp_timer_func(struct hrtimer *fired_timer)
 {
 	ktime_t now, temp;

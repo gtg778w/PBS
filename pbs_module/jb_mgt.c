@@ -116,6 +116,7 @@ int jb_mgt_open(struct inode *inode, struct file *filp)
 #define SRT_HISTLEN_INIT_MASK 4
 #define SRT_INITED(strct) (strct->init_mask == (SRT_PERIOD_INIT_MASK | SRT_RUNTIME_INIT_MASK | SRT_HISTLEN_INIT_MASK))
 
+/*FIXME: The entire ioctl command should eventually be removed*/
 long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int ret = 0;
@@ -127,7 +128,10 @@ long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	SRT_struct = (struct SRT_struct *)filp->private_data;
 
-	if(SRT_struct->state != SRT_OPEN) return -EBUSY;
+	if((SRT_struct->state != SRT_OPEN) && (SRT_struct->state != SRT_CONFIGURED)) 
+	{
+	    return -EBUSY;
+    }
 
 	switch(cmd)
 	{
@@ -223,63 +227,38 @@ long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *offset)
 {
 	struct SRT_struct *SRT_struct;
-	int ret;
+	int ret = count;
 
 	SRT_struct = (struct SRT_struct*)(filp->private_data);
 
-	switch(SRT_struct->state)
+    if(sizeof(struct SRT_job_log) == count)
+    {
+	    if(copy_to_user(dst, &(SRT_struct->log), sizeof(struct SRT_job_log)))
+		{
+			ret = -EFAULT;
+		}
+		/*else everything is going smoothely*/ 
+	}
+	else
 	{
-		case SRT_STARTED:
-			printk(KERN_INFO "jb_mgt_read called first time by process %d.\n", current->pid);
-			preempt_disable();
-			ret = first_sleep_till_next_period(&(SRT_struct->timing_struct));
-			preempt_enable();
-			if(ret==0)
-			{
-				SRT_struct->state = SRT_LOOP;
-				ret = count;
-			}
-			break;
-
-		case SRT_LOOP:
-			preempt_disable();
-			ret = sleep_till_next_period(&(SRT_struct->timing_struct));
-            preempt_enable();
-			if(dst != NULL)
-			{
-				if(count != sizeof(struct SRT_job_log))
-				{
-					ret = -EINVAL;
-				}
-				else
-				{
-					if(copy_to_user(dst, &(SRT_struct->log), sizeof(struct SRT_job_log)))
-					{
-						ret = -EFAULT;
-					}
-					else
-					{
-						ret = count;
-					}
-				}
-			}
-			break;
-
-		default:
-			printk(KERN_INFO "invalid call to jb_mgt_read by process %d.\n", current->pid);
-			ret = -EINVAL;			
+	    ret = -EINVAL;
 	}
 
 	return ret;
 }
 
-ssize_t jb_mgt_write(   struct file *fileh, 
+ssize_t jb_mgt_write(   struct file *filep, 
                         const char __user *data, 
                         size_t count, 
                         loff_t *offset)
 {
     job_mgt_cmd_t cmd;
     ssize_t ret = count;
+    
+	struct SRT_struct *SRT_struct = (struct SRT_struct*)(filep->private_data);
+	
+	u64 task_period;
+    u64 sp_per_tp; /*reservation periods in a task period*/
     
     if(sizeof(job_mgt_cmd_t) != count)
     {
@@ -289,8 +268,6 @@ ssize_t jb_mgt_write(   struct file *fileh,
         goto exit0;
     }
 
-    printk(KERN_INFO    "Copying the command data structure from user space!");
-    
     if( copy_from_user( &cmd, data, sizeof(job_mgt_cmd_t)))
     {
         ret = -EFAULT;
@@ -304,25 +281,155 @@ ssize_t jb_mgt_write(   struct file *fileh,
                                 cmd.args[0],
                                 (cmd.args[1] >> 16),
                                 (cmd.args[1] & 0xffff));
-            break;
             
-        case PBS_JBMGT_CMD_PREDUPDATE:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_PREDUPDATE, "
-                                "%li, %li, %li, %li",
-                                cmd.args[0],
-                                cmd.args[1],
-                                cmd.args[2],
-                                cmd.args[3]);
+            /*The PBS_JBMGT_CMD_SETUP command should only be 
+            issued in the SRT_OPEN state or SRT_CONFIGURED state*/
+            if((SRT_OPEN != SRT_struct->state) && (SRT_CONFIGURED != SRT_struct->state))
+            {
+                printk(KERN_INFO "Invalid attempt to issue PBS_JBMGT_CMD_SETUP command "
+                                 "while in a state other than \"SRT_OPEN\" or "
+                                 "\"SRT_CONFIGURED\" by process %d.\n", current->pid);
+                ret = -EBUSY;
+                goto exit0;
+            }
+
+            /*Check that the task period actually makes sense*/
+            task_period = (u64)cmd.args[0] * 1000;
+            sp_per_tp   = task_period / scheduling_period_ns.tv64;
+            
+            if( (task_period < 0) || ((task_period % scheduling_period_ns.tv64) != 0))
+            {
+                printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
+                                    "command for the task period by process %d. "
+                                    "The task period must be a strictly positive"
+                                    "multiple of the reservation period.", 
+                                    current->pid);
+                ret = -EINVAL;
+                goto exit0;
+            }
+                
+            /*Check that the task period is sufficiently small*/
+			if( (sp_per_tp & ((s64)(-1) << 32)) != 0)
+			{
+                printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
+                                    "command for the task period by process %d. "
+                                    "The passed value is too large.", 
+                                    current->pid);
+			    ret = -EINVAL;
+			    goto exit0;
+			}
+			
+			/*The conditoins and passed values are valid*/
+			SRT_struct->state = SRT_CONFIGURED;
             break;
         
         case PBS_JBMGT_CMD_START:
             printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_START");
+            
+            /*The PBS_JBMGT_CMD_START command should only be 
+            issued in the SRT_START state*/
+            if(SRT_CONFIGURED != SRT_struct->state)
+            {
+			    printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
+			                        "without setting up parameters by process %d.", 
+			                        current->pid);
+                ret = -EINVAL;
+                goto exit0;
+            }
+
+            /*FIXME: remove this*/
+		    if( SRT_INITED(SRT_struct) == 0)
+		    {
+			    printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
+			                        "without setting up parameters by process %d.", 
+			                        current->pid);
+			    ret = -EINVAL;
+			    goto exit0;
+		    }
+		    
+		    SRT_struct->state = SRT_STARTED;
             break;
             
+        case PBS_JBMGT_CMD_NEXTJOB:
+            if(SRT_STARTED == SRT_struct->state)
+            {
+                printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_NEXTJOB, "
+                                                "%li, %li, %li, %li",
+                                                cmd.args[0],
+                                                cmd.args[1],
+                                                cmd.args[2],
+                                                cmd.args[3]);
+                                                
+                printk(KERN_INFO    "The PBS_JBMGT_CMD_NEXTJOB command issued for the "
+                                    "first time by process %d.", current->pid);
+                preempt_disable();
+			    ret = first_sleep_till_next_period(&(SRT_struct->timing_struct));
+			    preempt_enable();
+			    if(ret==0)
+			    {
+				    SRT_struct->state = SRT_LOOP;
+				    ret = count;
+			    }
+			    else
+			    {
+			        printk(KERN_INFO    "\"first_sleep_till_next_period\" failed for "
+                                        "process %d.", current->pid);
+                    /*ret has already been set by the fialing function*/
+                    goto exit0;
+			    }
+            }
+            else
+            {
+                if(SRT_LOOP == SRT_struct->state)
+                {
+			        preempt_disable();
+			        ret = sleep_till_next_period(&(SRT_struct->timing_struct));
+                    preempt_enable();
+                    if(ret==0)
+			        {
+			            ret = count;
+			        }
+    			    else
+			        {
+			            printk(KERN_INFO    "\"sleep_till_next_period\" failed for "
+                                            "process %d.", current->pid);
+                        /*ret has already been set by the fialing function*/
+                        goto exit0;
+			        }
+                }
+                else
+                {
+                    printk(KERN_INFO "Invalid Attempt to issue PBS_JBMGT_CMD_NEXTJOB "
+                                     "command by process %d. PBS_JBMGT_CMD_NEXTJOB "
+                                     "command can only be issued from the "
+                                     "\"SRT_STARTED\" state or SRT_LOOP state.\n", 
+                                     current->pid);
+                    ret = -EINVAL;
+                    goto exit0;
+                }
+            }
+            break;
+        
+        case PBS_JBMGT_CMD_STOP:
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_STOP");
+	        if(SRT_LOOP == SRT_struct->state)
+	        {
+		        preempt_disable();
+		        //remove from the period timer list and stop budget enforcement
+		        remove_from_timing_queue(&(SRT_struct->timing_struct));
+		        SRT_struct->state = SRT_CLOSED;
+		        preempt_enable();
+            }
+            /*FIXME: Reset the SRT_struct to its state after the last valid call to 
+            PBS_JBMGT_CMD_SETUP*/
+            SRT_struct->state = SRT_CLOSED;
+            break;
+                
         default:
             printk(KERN_INFO    "Invalid cmd code in job_mgt_cmd_t structure passed to "
                                 "jb_mgt_write by process %d.", current->pid);
-            break;
+            ret = -EINVAL;
+            goto exit0;
     }
 
 exit0:
@@ -348,8 +455,9 @@ int jb_mgt_release(struct inode *inode, struct file *filp)
 			preempt_enable();
 
 		case SRT_STARTED:
-
+		case SRT_CONFIGURED:
 		case SRT_OPEN:
+		case SRT_CLOSED:
 			free_SRT_struct(freeable);
 	}
 

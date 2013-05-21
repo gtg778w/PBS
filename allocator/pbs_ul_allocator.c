@@ -300,6 +300,19 @@ int allocator_close(int proc_file)
     return 0;
 }
 
+/*
+FIXME: Hard to spot problem with initial conditions
+
+1) When the history is not filled compute_budget doesn't do anything to the budget.
+   However, the budget may be scaled back under a saturation condition. 
+   
+2) If a second task starts adapting and causing severe saturation, and the history of the
+   first job is not yet filled, the budget will continue to be scaled down, and never
+   scaled back up since the history isn't filled. Eventually, the allocated budget reaches
+   zero with the history not filled. This is an irrecoverable situation. Because the
+   budget is zero, the jobs will never finish to fill the history to allow the budget to
+   be modified.
+*/
 int compute_budget(SRT_history_t *history, uint64_t* budget)
 {
 	int64_t M2, delta, mean, variance, n;
