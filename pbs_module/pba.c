@@ -148,6 +148,7 @@ void pba_firstjob(struct SRT_struct *ss)
     (ss->history)->history[0] = 0;
 
     (ss->log).runtime = 0;
+    (ss->log).runtime2 = 0;
     (ss->log).last_sp_compt_allocated	= (pba_struct_p->sp_budget);
 	(ss->log).last_sp_compt_used_sofar	= 0;
     //FIXME
@@ -156,9 +157,15 @@ void pba_firstjob(struct SRT_struct *ss)
 
     //reset the total accumulated runtime to 0
 	pba_struct_p->total_jb_runtime = 0;
+	pba_struct_p->total_jb_runtime2 = 0;
+	
 	//set now as the beginning of the new job
 	pba_struct_p->jb_actv_time = now;
-
+	//also set now as the beginning of the new job based on the second 
+	//definition of job, although this is slightly incorrect, it will only
+	//be used for the first job
+	pba_struct_p->jb_actv_time2 = now;
+	
     //reset the budget used to 0
     pba_struct_p->total_sp_runtime = 0;
     //set now as the beginning of current activation
@@ -170,6 +177,7 @@ void pba_firstjob(struct SRT_struct *ss)
 
 }
 
+/*Job boundary according to the traditional definition of job*/
 void pba_nextjob(struct SRT_struct *ss)
 {
 	u64 now, current_jb_runtime, current_sp_runtime;
@@ -276,6 +284,37 @@ void pba_nextjob(struct SRT_struct *ss)
     pba_struct_p->switch_count = 0;
     pba_struct_p->throttle_count = 0;
 
+}
+
+/*Job boundary according to the second definition of job*/
+void pba_nextjob2(struct SRT_struct *ss)
+{
+	u64 now, current_jb_runtime2;
+
+	u64 total_runtime2;
+
+	struct pba_struct *pba_struct_p;
+
+	pba_struct_p = &(ss->pba_struct);
+
+	//obtain the current time
+	now = pbs_clock();
+
+	//compute the runtime in this activation
+	current_jb_runtime2 = now - (pba_struct_p->jb_actv_time2);
+    
+	//set the total runtime to the sum of the curent runtime 
+	//and accumulated previous runtime
+	total_runtime2 = current_jb_runtime2 + (pba_struct_p->total_jb_runtime2);
+
+    //write information regarding the completed job into the log
+    (ss->log).runtime2 = total_runtime2;
+    
+    //reset the total accumulated runtime to 0
+	pba_struct_p->total_jb_runtime2 = 0;
+	
+	//set now as the beginning of the new job
+	pba_struct_p->jb_actv_time2 = now;
 }
 
 ////this is called for the purpose of checking if budget has expired
@@ -494,6 +533,7 @@ void pba_schedin(   struct preempt_notifier *notifier,
         //set the start-time variable to the current time
 	    pba_struct_p->last_actv_time = now;
         pba_struct_p->jb_actv_time = now;
+        pba_struct_p->jb_actv_time2 = now;
 
         (pba_struct_p->switch_count)++;
 
@@ -514,7 +554,9 @@ void pba_schedout(  struct preempt_notifier *notifier,
     unsigned long irq_flags;
 
     u64 now;
-    s64 current_runtime, budget_used;
+    s64 current_runtime;
+    s64 current_runtime2;
+    s64 budget_used;
 
     pba_struct_p = container_of(notifier, struct pba_struct, pin_notifier);
     SRT_struct_p = container_of(pba_struct_p, struct SRT_struct, pba_struct);
@@ -543,6 +585,7 @@ void pba_schedout(  struct preempt_notifier *notifier,
 
     //load the scheduling period activation time and job activation time
 	current_runtime = -(pba_struct_p->jb_actv_time);
+	current_runtime2 = -(pba_struct_p->jb_actv_time2);
     budget_used = -(pba_struct_p->last_actv_time);
 
     //allow the next set of operations to be performed atomically
@@ -553,7 +596,8 @@ void pba_schedout(  struct preempt_notifier *notifier,
 
         //compute the runtime in this activation for the job
         current_runtime += now;
-        
+        current_runtime2 += now;
+                
         //compute the runtime in this activation (maybe less than job runtime, 
         //because of job transition)
         budget_used += now;
@@ -561,6 +605,7 @@ void pba_schedout(  struct preempt_notifier *notifier,
 	    //set the total job runtime to the sum of the curent job runtime 
 	    //and previous accumulated job runtime
 	    pba_struct_p->total_jb_runtime += current_runtime;
+	    pba_struct_p->total_jb_runtime2 += current_runtime2;
 
         //set the total sp runtime to the sum of the runtime in this activation
         //and previous accumulated sp runtimes

@@ -267,8 +267,9 @@ void pbs_SRT_close(SRT_handle *handle)
 		for(i = 0; i < handle->log_index; i++)
 		{
 			log_entry = &(handle->log[i]);
-			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %u %u\n", 	
+			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %lu, %u %u\n", 	
 												(unsigned long)log_entry->runtime,
+												(unsigned long)log_entry->runtime2,
                                                 (unsigned long)log_entry->miss,
                                                 (unsigned long)log_entry->abs_releaseTime,
                                                 (unsigned long)log_entry->abs_LFT,

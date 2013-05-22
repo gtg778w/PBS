@@ -5,6 +5,7 @@
 
 void pba_firstjob(struct SRT_struct *ss);
 void pba_nextjob(struct SRT_struct *ss);
+void pba_nextjob2(struct SRT_struct *ss);
 u64 pba_get_jbruntime(struct pba_struct *pba_struct_p);
 
 void pba_refresh_budget(struct SRT_struct *SRT_struct_p);

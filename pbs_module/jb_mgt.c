@@ -2,6 +2,10 @@
 #include "bw_mgt.h"
 #include "pbs_ioctl.h"
 #include "pbs_cmd.h"
+#include "pba.h"
+/*
+pba_nextjob2
+*/
 
 /**********************************************************************
 
@@ -230,6 +234,8 @@ ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *o
 	int ret = count;
 
 	SRT_struct = (struct SRT_struct*)(filp->private_data);
+
+    pba_nextjob2(SRT_struct);
 
     if(sizeof(struct SRT_job_log) == count)
     {

@@ -18,6 +18,7 @@ struct SRT_job_log
 	u64	abs_releaseTime;
 	u64	abs_LFT;
 	u32	runtime;
+	u32 runtime2;
 
     u32	last_sp_compt_allocated;
 	u32	last_sp_compt_used_sofar;

@@ -77,15 +77,15 @@ struct pba_struct
 	//keep track of the last task activation time
 	u64	last_actv_time;
 
-	//keep track of the last job activation time
-	u64	jb_actv_time;
-
 	//total runtime in the current scheduling period
 	u64	total_sp_runtime;
 	//reset at sp beginning
 	//update tsr on sched out
 	//update last_actv_time on sched_in and sp beginning
 	//tsr = tsr + (now - last_actv_time)
+
+	//keep track of the last job activation time
+	u64	jb_actv_time;
 
 	//total runtime of the current job
 	u64 total_jb_runtime; 
@@ -94,6 +94,19 @@ struct pba_struct
 	//update jb_actv_time on sched in and jb beginning
 	//tjr = tjr + (now - total_jb_runtime)
 
+    //for the second definition of job, jobs begin just before the prediction operation
+    //unlike the original definition of job, where jobs begin at task-period boundaries
+    
+    //keep track of the last job activation time for the second definition of job
+	u64	jb_actv_time2;
+
+	//total runtime of the current job for the second definition of job
+	u64	total_jb_runtime2;
+	//reset on read operation
+	//update tjr2 on sched_out
+	//update jb_actv_time2 on sched in and read operation
+	//tjr2 = tjr2 + (now - total_jb_runtime2)
+	
     //the budget allocated in a scheduling period
     u64 sp_budget;
 
@@ -114,6 +127,7 @@ struct SRT_job_log
 	u64	abs_releaseTime;
 	u64	abs_LFT;
 	u32	runtime;
+	u32 runtime2;
 
     u32	last_sp_compt_allocated;
 	u32	last_sp_compt_used_sofar;
