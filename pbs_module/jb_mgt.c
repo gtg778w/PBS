@@ -1,7 +1,6 @@
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 #include "pbs_ioctl.h"
-#include "pbs_cmd.h"
 #include "pba.h"
 /*
 pba_nextjob2

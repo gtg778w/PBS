@@ -67,6 +67,12 @@ SRT_timing_struct
 Everything related to the history structures
 */
 
+#include "pbs_cmd.h"
+/*
+Definitions that have to be shared with SRT tasks
+e.g. job_mgt_cmd_t
+*/
+
 struct pba_struct
 {
 	//bandwidth enforcement timer
@@ -122,21 +128,6 @@ struct pba_struct
 #define PBA_SLEEPING (0x1)
 #define PBA_THROTTLED (0x2)
 
-struct SRT_job_log
-{
-	u64	abs_releaseTime;
-	u64	abs_LFT;
-	u32	runtime;
-	u32 runtime2;
-
-    u32	last_sp_compt_allocated;
-	u32	last_sp_compt_used_sofar;
-
-    //FIXME
-    u32 throttle_count;
-    u32 switch_count;
-    unsigned char miss;
-};
 
 struct SRT_struct
 {
