@@ -16,6 +16,7 @@ long perf_event_open(struct perf_event_attr *hw_event,
 struct perf_event_attr pe_inst;
 struct perf_event *event_inst;
 u64 count_inst;
+u64 c=100000000;
 /*
 struct perf_event_attr pe_power;
 struct perf_event *event_power;
@@ -24,6 +25,9 @@ u64 count_power;
 
 static int __init start_count(void) {
     /*int fd;*/
+    long long i;
+    u64 enabled = 0;
+    u64 running = 0;
     printk(KERN_ALERT "perf_event_test loaded\n");
     /*
      get event_inst file descriptor 
@@ -42,14 +46,23 @@ static int __init start_count(void) {
     pe_inst.config = PERF_COUNT_HW_INSTRUCTIONS;
     /* should count be enabled when started? */
     pe_inst.disabled = 0;
-    pe_inst.exclude_kernel = 1; /* should it be? */
+    pe_inst.exclude_kernel = 0; /* should it be? */
     pe_inst.exclude_hv = 1;
     
-    event_inst = perf_event_create_kernel_counter(&pe_inst, 0, NULL, NULL, NULL);
+    event_inst = perf_event_create_kernel_counter(&pe_inst, 1, NULL, NULL, NULL);
 
+    for (i = 0; i < c; i++) {
+	c--;
+    }
     if (!event_inst) {
 	printk(KERN_ERR "Cannot allocate event_inst");
     }
+
+    count_inst = perf_event_read_value(event_inst,&enabled, &running);
+    
+    printk(KERN_ALERT "c= %lld inst= %lld\n", c, count_inst);
+
+
 /*
     memset(&pe_power, 0, sizeof(struct perf_event_attr));
     pe_power.type 
@@ -63,9 +76,9 @@ static void __exit end_count(void) {
     u64 enabled = 0;
     u64 running = 0;
     /*perf_event_disable(event_inst);*/
-    printk(KERN_ALERT "reporting instructions\n");
     count_inst = perf_event_read_value(event_inst,&enabled, &running);
-    printk(KERN_ALERT "Used %lld instructions\n", count);
+    printk(KERN_ALERT "reporting instructions\n");
+    printk(KERN_ALERT "Used %lld instructions\n", count_inst);
     printk(KERN_ALERT "perf_event_test removed\n");
 }
 
