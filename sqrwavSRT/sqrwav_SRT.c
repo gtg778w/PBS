@@ -104,7 +104,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the j option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
 				break;
 
@@ -114,7 +115,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the P option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
 
@@ -124,7 +126,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the D option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
 
@@ -134,7 +137,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the d option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
                 errno = 0;
@@ -146,7 +150,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the M option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
 
@@ -157,7 +162,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the m option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
 
@@ -167,7 +173,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the N option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
                 break;
 
@@ -181,14 +188,16 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the p option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
 
                 if(period < 10)
 		        {
 			        fprintf(stderr, "The period is too small! got %lu\n", 
                         period);
-			        return -EINVAL;
+		            ret = -EINVAL;
+		            goto exit0;
 		        }
 
                 break;
@@ -199,7 +208,8 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the b option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
 				bflag = 1;
                 break;
@@ -210,13 +220,15 @@ int main (int argc, char * const * argv)
 				if(errno)
 				{
 					perror("Failed to parse the p option");
-					exit(EXIT_FAILURE);
+		            ret = -EINVAL;
+		            goto exit0;
 				}
 
                 if(hlength > 120)
 	            {
 		            fprintf(stderr, "The history length can be at most 120! got %lu\n", hlength);
-		            return -EINVAL;
+		            ret = -EINVAL;
+		            goto exit0;
 	            }
                 break;
 
@@ -231,14 +243,16 @@ int main (int argc, char * const * argv)
 
 			default:
 				fprintf(stderr, "\nUsage: %s %s\n", argv[0], usage_string);
-				return -EINVAL;
+				ret = -EINVAL;
+    			goto exit0;
 		}
 	}
 
 	if(optind != argc)
 	{
 		fprintf(stderr, "Usage %s %s\n", argv[0], usage_string);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto exit0;	
 	}
 
 	if(bflag)
@@ -246,7 +260,8 @@ int main (int argc, char * const * argv)
 		if((bandwidth > period) || (bandwidth == 0))
 		{
 			fprintf(stderr, "The bandwidth must be strictly positive and less than the period! got %lu\n", bandwidth);
-			return -EINVAL;
+			ret = -EINVAL;
+			goto exit0;
 		}
 	}
 	else
@@ -283,7 +298,8 @@ int main (int argc, char * const * argv)
 		if(fgetc(stdin) == (int)'q')
 		{
 			printf("Exiting...\n");
-			return 0;
+			ret = 0;
+			goto exit0;
 		}
 	}
 
@@ -293,16 +309,18 @@ int main (int argc, char * const * argv)
     {
         fprintf(stderr, "pbsSRT_getPredictor with argument \"%s\" failed in main",
                         predictor_name);
-        return ret;
+        ret = -1;
+        goto exit0;
     }
 
 	//setup the scheduler
-	ret = pbs_SRT_setup(period, bandwidth, hlength, &predictor, &handle, 
-	                    Lflag, 10000, logfilename);
+	ret = pbsSRT_setup(period, bandwidth, hlength, &predictor, &handle, 
+	                   Lflag, 10000, logfilename);
 	if(ret)
 	{
 		fprintf(stderr, "Failed to setup scheduler!\n");
-		return ret;
+		ret = -1;
+		goto exit1;
 	}
 
 	//lock memory
@@ -310,31 +328,42 @@ int main (int argc, char * const * argv)
 	if(ret)
 	{
 		fprintf(stderr, "Failed to lock memory!\n");
-		return ret;
+		ret = -1;
+		goto exit1;
 	}
 
 	printf("Running ... ");
 
-
-	//the main job loop
+    //Sleep until the next scheduling-period boundary
+	ret = pbsSRT_sleepTillFirstJob(&handle);
+	if(ret)
+	{
+	    fprintf(stderr, "main: pbsSRT_sleepTillFirstJob failed!\n");
+		ret = -1;
+		goto exit1;
+	}
+	
+	//The main job loop	
 	for(j = 0; j < maxjobs; j++)
-	{        
-   		ret = pbs_begin_SRT_job(&handle);
+	{
+	    //The main workload for the job
+		dummy_state ^= (int)job(&sqrwav);
+		
+		//Sleep until the next task-period boundary
+   		ret = pbsSRT_sleepTillNextJob(&handle);
 		if(ret)
 		{
-			break;
+		    fprintf(stderr, "main: pbsSRT_sleepTillNextJob failed!\n");
+		    ret = -1;
+			goto exit1;
 		}
-
-		dummy_state ^= (int)job(&sqrwav);
 	}
-
-    if(ret == 0)
-    {
-        ret = pbs_begin_SRT_job(&handle);
-    }
-
-	pbs_SRT_close(&handle);
+	
+exit1:
+    //Notify the end of the SRT task
+	pbsSRT_close(&handle);
     printf("\rCompleted ... %i\n", dummy_state);
+exit0:
 	return 0;
 }
 

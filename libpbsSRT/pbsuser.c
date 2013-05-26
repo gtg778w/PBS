@@ -41,7 +41,7 @@ typedef int32_t  s32;
 
 #include "pbsuser.h"
 
-int pbs_SRT_setup(  uint64_t period, uint64_t start_bandwidth, 
+int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth, 
                     int history_length,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
@@ -236,27 +236,58 @@ streight_exit:
 	return ret_val;
 }
 
+int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
+{
+	int ret = 0;
+    job_mgt_cmd_t cmd;
+
+    /*The execution time of the first job is not yet known.
+    There is no valid data to read.
+    The predictor should not be invoked*/
+    
+    /*Setup the NEXTJOB command with the predicted execution time
+    specified in command-line arguments and 0 variance*/
+    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;    
+    cmd.args[0] = handle->start_bandwidth;
+    cmd.args[1] = 0;
+    cmd.args[2] = handle->start_bandwidth;
+    cmd.args[3] = 0;
+    
+    /*Issue the NEXTJOB command*/
+    ret = write(handle->procfile, &cmd, sizeof(cmd));
+    if(ret != sizeof(cmd))
+    {
+        perror("pbsSRT_waitTillFirstJob: write of a PBS_JBMGT_CMD_NEXTJOB cmd failed!\n");
+        ret = -1;
+    }
+    else
+    {
+        ret = 0;
+    }
+
+	return ret;
+}
+
 //FIXME: Need to handle closes forced by the system,
 //like when the allocator task closes and the SRT task is forced to close
-//FIXME: The structure of this function should be improved. e.g. should not be
-//returning from 3 different places
-//FIXME: Need to better handle initial conditions. Right now, the predictor is 
-//initially updated with garbage.
-int pbs_begin_SRT_job(SRT_handle *handle)
+int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 {
+	int ret = 0;
+
 	struct SRT_job_log dummy;
 	u64 runtime2;
-	int ret;
 
     job_mgt_cmd_t cmd;
-	int ret_val;
 
+    /*Get various data such as execution time for the job that just completed*/
 	if((handle->logging_enabled == 1) && (handle->log_index < handle->log_size))
 	{
+	    /*Store the data in the log if logging is enabled.*/
 		ret = read(handle->procfile, &(handle->log[handle->log_index]), sizeof(struct SRT_job_log));
 		if(ret != sizeof(struct SRT_job_log))
 		{
-			return -1;
+		    ret = -1; 
+			goto exit0;
 		}
 		
 		runtime2 = (handle->log[handle->log_index]).runtime2;
@@ -264,10 +295,12 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 	}
 	else
 	{
+	    /*Store the data in a local variable if logging is disabled.*/
 		ret = read(handle->procfile, &dummy, sizeof(struct SRT_job_log));
 		if(ret != sizeof(struct SRT_job_log))
 		{
-			return -1;
+			ret = -1;
+			goto exit0;
 		}
 		
 		runtime2 = dummy.runtime2;
@@ -275,12 +308,14 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 
     /*Update the predictor and predict the execution time of the next job*/
     cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
-    ret = handle->predictor->update(handle->predictor->state, 
+    ret = handle->predictor->update(handle->predictor->state,
                                     runtime2,
                                     &(cmd.args[0]), &(cmd.args[1]),
                                     &(cmd.args[2]), &(cmd.args[3]));
     if(ret == -1)
     {
+        /*If the predictor is not ready to produce valid output (still warming up)
+        use the budget values specified in the command-line arguments*/
         cmd.args[0] = handle->start_bandwidth;
         cmd.args[1] = 0;
         cmd.args[2] = handle->start_bandwidth;
@@ -289,6 +324,8 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 
     if((handle->logging_enabled == 1) && (handle->log_index <= handle->log_size))
     {
+        /*If logging is enabled, log the predicted execution time and the estimated
+        variance in the prediction error*/
         handle->pu_c0[handle->log_index-1] = cmd.args[0];
         handle->pstd_c0[handle->log_index-1] = cmd.args[1];
         handle->pu_cl[handle->log_index-1] = cmd.args[2];
@@ -296,17 +333,20 @@ int pbs_begin_SRT_job(SRT_handle *handle)
     }
     
     /*Issue the command with the updated prediction*/
-    ret_val = write(handle->procfile, &cmd, sizeof(cmd));
-    if(ret_val != sizeof(cmd))
+    ret = write(handle->procfile, &cmd, sizeof(cmd));
+    if(ret != sizeof(cmd))
     {
         perror("pbs_begin_SRT_job: write of a PBS_JBMGT_CMD_NEXTJOB cmd failed!\n");
         return -1;
     }
 
-	return 0;
+    ret = 0;
+
+exit0:
+	return ret;
 }
 
-void pbs_SRT_close(SRT_handle *handle)
+void pbsSRT_close(SRT_handle *handle)
 {
 	int i;
 	struct SRT_job_log *log_entry;

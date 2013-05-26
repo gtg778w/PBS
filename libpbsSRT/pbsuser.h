@@ -29,14 +29,15 @@ typedef struct SRT_handle_s
 
 } SRT_handle;
 
-int pbs_SRT_setup(  uint64_t period, uint64_t start_bandwidth, 
+int pbsSRT_setup(  uint64_t period, uint64_t start_bandwidth, 
                     int history_length,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
 			        char Lflag, int logCount, char *logFileName);
 
-int pbs_begin_SRT_job(SRT_handle *handle);
+int pbsSRT_sleepTillFirstJob(SRT_handle *handle);
+int pbsSRT_sleepTillNextJob(SRT_handle *handle);
 
-void pbs_SRT_close(SRT_handle *handle);
+void pbsSRT_close(SRT_handle *handle);
 
 #endif
