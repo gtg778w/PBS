@@ -34,13 +34,18 @@ getpid
 
 typedef uint64_t u64;
 typedef uint32_t u32;
+typedef int64_t  s64;
+typedef int32_t  s32;
 
 #include "pbs_cmd.h"
 
 #include "pbsuser.h"
 
-int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length, SRT_handle *handle, 
-			char Lflag, int logCount, char *logFileName)
+int pbs_SRT_setup(  uint64_t period, uint64_t start_bandwidth, 
+                    int history_length,
+                    pbsSRT_predictor_t *predictor,
+                    SRT_handle *handle, 
+			        char Lflag, int logCount, char *logFileName)
 {
 	pid_t mypid;
 	int	min_priority;
@@ -106,6 +111,28 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 			goto free_exit;
 		}
 
+        handle->pu_c0   = (int64_t*)calloc(logCount*4, sizeof(int64_t));
+        if(NULL == handle->pu_c0)
+        {
+            perror("pbs_SRT_setup: calloc failed for the predictor output arrays");
+			ret_val = -1;
+			goto free_exit;
+        }
+        else
+        {
+            handle->pstd_c0 = &(handle->pu_c0[logCount]);
+            handle->pu_cl   = &(handle->pstd_c0[logCount]);
+            handle->pstd_cl =  &(handle->pu_cl[logCount]);
+        }
+        
+        ret_val = mlock(handle->pu_c0, (logCount*4 * sizeof(int64_t)));
+		if(ret_val)
+		{
+			perror("pbs_SRT_setup: mlock failed for the predictor output arrays");
+			ret_val = -1;
+			goto free2_exit;
+		}
+		
 		handle->log_index = 0;
 		handle->log_size = logCount;
 		handle->logging_enabled = 1;
@@ -127,7 +154,7 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 	if(ret_val == -1)
 	{
 		perror("pbs_SRT_setup: Failed to open \"/proc/sched_rt_jb_mgt\":\n");
-		goto free_exit;
+		goto free2_exit;
 	}
 	procfile = ret_val;
 
@@ -182,6 +209,10 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
     }
 
     ret_val = 0;
+
+/***************************************************************************/
+//The execution-time predictor should have been already setup when passed
+    handle->predictor = predictor;
     
 	handle->procfile = procfile;
 	return ret_val;
@@ -189,6 +220,12 @@ int pbs_SRT_setup(uint64_t period, uint64_t start_bandwidth, int history_length,
 close_exit:
 	close(procfile);
 	handle->procfile = 0;
+free2_exit:
+    free(handle->pu_c0);
+    handle->pu_c0   = NULL;
+    handle->pstd_c0 = NULL;
+    handle->pu_cl   = NULL;
+    handle->pstd_cl = NULL;
 free_exit:
 	free(handle->log);
 	handle->log = NULL;
@@ -203,9 +240,12 @@ streight_exit:
 //like when the allocator task closes and the SRT task is forced to close
 //FIXME: The structure of this function should be improved. e.g. should not be
 //returning from 3 different places
+//FIXME: Need to better handle initial conditions. Right now, the predictor is 
+//initially updated with garbage.
 int pbs_begin_SRT_job(SRT_handle *handle)
 {
 	struct SRT_job_log dummy;
+	u64 runtime2;
 	int ret;
 
     job_mgt_cmd_t cmd;
@@ -218,6 +258,8 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 		{
 			return -1;
 		}
+		
+		runtime2 = (handle->log[handle->log_index]).runtime2;
 		(handle->log_index)++;
 	}
 	else
@@ -227,13 +269,33 @@ int pbs_begin_SRT_job(SRT_handle *handle)
 		{
 			return -1;
 		}
+		
+		runtime2 = dummy.runtime2;
 	}
 
+    /*Update the predictor and predict the execution time of the next job*/
     cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
-    cmd.args[0] = handle->start_bandwidth;
-    cmd.args[1] = 0;
-    cmd.args[2] = handle->start_bandwidth;
-    cmd.args[3] = 0;
+    ret = handle->predictor->update(handle->predictor->state, 
+                                    runtime2,
+                                    &(cmd.args[0]), &(cmd.args[1]),
+                                    &(cmd.args[2]), &(cmd.args[3]));
+    if(ret == -1)
+    {
+        cmd.args[0] = handle->start_bandwidth;
+        cmd.args[1] = 0;
+        cmd.args[2] = handle->start_bandwidth;
+        cmd.args[3] = 0;
+    }
+
+    if((handle->logging_enabled == 1) && (handle->log_index <= handle->log_size))
+    {
+        handle->pu_c0[handle->log_index-1] = cmd.args[0];
+        handle->pstd_c0[handle->log_index-1] = cmd.args[1];
+        handle->pu_cl[handle->log_index-1] = cmd.args[2];
+        handle->pstd_cl[handle->log_index-1] = cmd.args[3];
+    }
+    
+    /*Issue the command with the updated prediction*/
     ret_val = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
@@ -272,14 +334,18 @@ void pbs_SRT_close(SRT_handle *handle)
 		for(i = 0; i < handle->log_index; i++)
 		{
 			log_entry = &(handle->log[i]);
-			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %lu, %u %u\n", 	
+			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
 												(unsigned long)log_entry->runtime,
 												(unsigned long)log_entry->runtime2,
                                                 (unsigned long)log_entry->miss,
                                                 (unsigned long)log_entry->abs_releaseTime,
                                                 (unsigned long)log_entry->abs_LFT,
                                                 log_entry->last_sp_compt_allocated,
-                                                log_entry->last_sp_compt_used_sofar);
+                                                log_entry->last_sp_compt_used_sofar,
+                                                (unsigned long)handle->pu_c0[i],
+                                                (unsigned long)handle->pstd_c0[i],
+                                                (unsigned long)handle->pu_cl[i],
+                                                (unsigned long)handle->pstd_cl[i]);
 		}
 
 		fclose(handle->log_file);

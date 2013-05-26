@@ -26,7 +26,7 @@
 typedef struct job_mgt_cmd_s
 {
     int             cmd;
-    unsigned long   args[4];
+    s64         args[4];
 } job_mgt_cmd_t;
 
 

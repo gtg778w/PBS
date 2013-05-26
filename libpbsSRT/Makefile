@@ -6,16 +6,30 @@ ARFLAGS= -rsv
 
 MODDIR=../pbs_module
 
-PREDICTORS=
+PREDICTORS=pbsSRT_predictor_template.o MABank.o
+
+LIBOBJS= pbsuser.o pbsSRT_predictor.o $(PREDICTORS)
 
 all: libpbsSRT.a
 
-libpbsSRT.a: pbsuser.o $(PREDICTORS)
-	$(AR) $(ARFLAGS) libpbsSRT.a pbsuser.o $(PREDICTORS)
+libpbsSRT.a: $(LIBOBJS)
+	$(AR) $(ARFLAGS) libpbsSRT.a $(LIBOBJS)
 
 pbsuser.o: pbsuser.c pbsuser.h
 	$(CC) $(CFLAGS) -I $(MODDIR) -o pbsuser.o pbsuser.c
 
+pbsSRT_predictor.o: pbsSRT_predictor.c pbsSRT_predictor.h
+	$(CC) $(CFLAGS) -o pbsSRT_predictor.o pbsSRT_predictor.c
+
+pbsSRT_predictor_template.o: pbsSRT_predictor_template.c
+	$(CC) $(CFLAGS) -o pbsSRT_predictor_template.o pbsSRT_predictor_template.c
+
+MABank.o: MABank.c MABank.h
+	$(CC) $(CFLAGS) -g -O3 -o MABank.o MABank.c
+
+predictor_test: libpbsSRT.a predictor_test.c
+	$(CC) -Wall -Wmissing-prototypes -L . -g -o predictor_test predictor_test.c -lpbsSRT
+
 clean:
-	rm -f libpbsSRT.a pbsuser.o $(PREDICTORS)
+	rm -f libpbsSRT.a $(LIBOBJS)
 

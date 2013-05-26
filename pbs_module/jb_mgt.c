@@ -282,10 +282,10 @@ ssize_t jb_mgt_write(   struct file *filep,
     switch(cmd.cmd)
     {
         case PBS_JBMGT_CMD_SETUP:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %li, %li.%li",
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %lli, %llu.%llu",
                                 cmd.args[0],
-                                (cmd.args[1] >> 16),
-                                (cmd.args[1] & 0xffff));
+                                ((u64)(cmd.args[1]) >> 16),
+                                ((u64)(cmd.args[1]) & 0xffff));
             
             /*The PBS_JBMGT_CMD_SETUP command should only be 
             issued in the SRT_OPEN state or SRT_CONFIGURED state*/
@@ -359,7 +359,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             if(SRT_STARTED == SRT_struct->state)
             {
                 printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_NEXTJOB, "
-                                                "%li, %li, %li, %li",
+                                                "%lli, %lli, %lli, %lli",
                                                 cmd.args[0],
                                                 cmd.args[1],
                                                 cmd.args[2],

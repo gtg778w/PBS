@@ -30,7 +30,6 @@ gcc -O3 -o sqrwavSRT  sqrwav_SRT.c pbsuser.c
 
 uint64_t job(struct sqrwav_struct *sqrwav_p)
 {
-    uint64_t i;
     uint64_t job_length;
     static uint64_t state = 0;
 
@@ -56,13 +55,14 @@ char *usage_string = "[options]\n"\
         "\n"\
         "-f: do not propmpt before proceeding\n"\
         "\n"\
+        "-A: prediction algorithm (\"mabank\" by default)"
         "-p: scheduling period\n"\
         "-b: starting scheduling bandwidth\n"\
         "-l: job history length\n"\
         "-L: name of log file\n\n";
 
 char* optstring
-    = "j:P:D:d:M:m:N:p:b:l:L:f";
+    = "j:P:D:d:M:m:N:A:p:b:l:L:f";
 
 int main (int argc, char * const * argv)
 {
@@ -72,18 +72,16 @@ int main (int argc, char * const * argv)
 	unsigned long maxjobs = 10000;
     unsigned long j;
 
-    //real-time attribute related variables
-	unsigned char rflag = 0;
-    pid_t my_pid;
-    int max_priority;
-    struct sched_param sched_param;
-
     //pbs related variables
 	SRT_handle handle;
 	unsigned long period = 40000, bandwidth, hlength = 0;
    	char* logfilename = NULL;
-	unsigned char pflag = 0, bflag = 0, lflag = 0, jflag = 0;
+	unsigned char bflag = 0;
     unsigned char fflag = 0, Lflag = 0;
+
+    //execution-time predictor related variables
+    pbsSRT_predictor_t predictor;
+    char *predictor_name = "template";
 
     //square-wave generator
     struct      sqrwav_struct sqrwav;
@@ -94,7 +92,6 @@ int main (int argc, char * const * argv)
     sqrwav.noise_ratio = 0.2;
     sqrwav.index = 0;
     sqrwav.rangen_state = 0;
-	uint64_t	ns_start, ns_end, ns_diff;
 
 	//process input arguments
 	while ((ret = getopt(argc, argv, optstring)) != -1)
@@ -110,10 +107,6 @@ int main (int argc, char * const * argv)
 					exit(EXIT_FAILURE);
 				}
 				break;
-
-            case 'r':
-                rflag = 1;
-                break;
 
             case 'P':
                 errno = 0;
@@ -178,6 +171,10 @@ int main (int argc, char * const * argv)
 				}
                 break;
 
+            case 'A':
+                predictor_name = optarg;
+                break;
+
             case 'p':
                 errno = 0;
 				period = strtoul(optarg, NULL, 10);
@@ -194,7 +191,6 @@ int main (int argc, char * const * argv)
 			        return -EINVAL;
 		        }
 
-				pflag = 1;
                 break;
                 
             case 'b':
@@ -222,7 +218,6 @@ int main (int argc, char * const * argv)
 		            fprintf(stderr, "The history length can be at most 120! got %lu\n", hlength);
 		            return -EINVAL;
 	            }
-				lflag = 1;
                 break;
 
             case 'L':
@@ -288,12 +283,22 @@ int main (int argc, char * const * argv)
 		if(fgetc(stdin) == (int)'q')
 		{
 			printf("Exiting...\n");
-			goto clean_close;
+			return 0;
 		}
 	}
 
+    //setup the predictor
+    ret = pbsSRT_getPredictor(&predictor, predictor_name);
+    if(-1 == ret)
+    {
+        fprintf(stderr, "pbsSRT_getPredictor with argument \"%s\" failed in main",
+                        predictor_name);
+        return ret;
+    }
+
 	//setup the scheduler
-	ret = pbs_SRT_setup(period, bandwidth, hlength, &handle, Lflag, 10000, logfilename);
+	ret = pbs_SRT_setup(period, bandwidth, hlength, &predictor, &handle, 
+	                    Lflag, 10000, logfilename);
 	if(ret)
 	{
 		fprintf(stderr, "Failed to setup scheduler!\n");
@@ -328,9 +333,6 @@ int main (int argc, char * const * argv)
         ret = pbs_begin_SRT_job(&handle);
     }
 
-
-clean_close:
-	//close cleanly
 	pbs_SRT_close(&handle);
     printf("\rCompleted ... %i\n", dummy_state);
 	return 0;
