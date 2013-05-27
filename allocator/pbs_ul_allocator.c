@@ -16,6 +16,14 @@ ioctl
 strtoul
 */
 
+#include <stdint.h>
+/*
+int32_t
+int64_t
+uint32_t
+uint64_t
+*/
+
 #include <sys/types.h>
 #include <unistd.h>
 /*
@@ -45,7 +53,12 @@ errno
 sqrt
 */
 
-#include "pbs.h"
+typedef uint32_t    u32;
+typedef uint64_t    u64;
+typedef int32_t     s32;
+typedef int64_t     s64;
+
+#include "pbsAllocator_cmd.h"
 
 
 struct SRT_record
@@ -208,6 +221,8 @@ int allocator_setup(uint64_t scheduling_period,
 	struct sched_param my_sched_params;
 	int min_priority;
 
+    bw_mgt_cmd_t cmd;
+
     /*Need to change the scheduling policy of the task to real-time 
       (SCHED_FIFO)*/
 
@@ -224,18 +239,19 @@ int allocator_setup(uint64_t scheduling_period,
     retval = sched_setscheduler(mypid, SCHED_FIFO, &my_sched_params);
 	if(retval)
 	{
-		perror("sched_setscheduler failed");
-		return -1;
+		perror("allocator_setup: sched_setscheduler failed");
+		retval = -1;
+		goto exit0;
 	}
 
     /*Perform setup operations needed to interact with the pbs_allocator
       module*/
-
 	proc_file = open("/proc/sched_rt_bw_mgt", O_RDWR);
 	if(proc_file == -1)
 	{
-		perror("Failed to open \"/proc/sched_rt_bw_mgt\"");
-		return proc_file;
+		perror("allocator_setup: Failed to open \"/proc/sched_rt_bw_mgt\"");
+		retval = proc_file;
+		goto exit0;
 	}
 
 	//setup the history mapping
@@ -244,8 +260,9 @@ int allocator_setup(uint64_t scheduling_period,
                          proc_file, 0);
 	if(history_array == MAP_FAILED)
 	{
-		perror("Failed to map history_array");
-		return -1;
+		perror("allocator_setup: Failed to map history_array");
+		retval = -1;
+		goto exit0;
 	}
 
 	history_list_header = (history_list_header_t*)history_array;
@@ -256,59 +273,63 @@ int allocator_setup(uint64_t scheduling_period,
                             proc_file, HISTLIST_SIZE);
 	if(allocation_array == MAP_FAILED)
 	{
-		perror("Failed to map allocation_array");
-		return -1;
+		perror("allocator_setup: Failed to map allocation_array");
+		retval = -1;
+		goto exit0;
 	}
 
-	retval = ioctl(proc_file, 0, scheduling_period);
-	if(retval) 
+    cmd.cmd = PBS_BWMGT_CMD_SETUP_START;
+    cmd.args[0] = scheduling_period;
+    cmd.args[1] = allocator_bandwidth;
+    retval = write(proc_file, &cmd, sizeof(cmd));
+    if(retval != sizeof(cmd))
     {
-        perror("ioctl failed");
-        fprintf(stderr, "Failed to set scheduling_period to %lu!\n", 
-            scheduling_period);
-        return retval;
+        perror("allocator_setup: Failed to write PBS_BWMGT_CMD_SETUP_START command.");
+        goto exit0;
     }
 
-	retval = ioctl(proc_file, 1, allocator_bandwidth);
-	if(retval)
-    {
-        perror("ioctl failed");
-        fprintf(stderr, "Failed to set allocator_bandwidth to %lu!\n",
-            allocator_bandwidth);
-        return retval;
-    }
-
-	retval = ioctl(proc_file, 3, 0);
-	if(retval)
-    {
-        perror("ioctl failed\n");
-        fprintf(stderr, "Failed to issue ioctl command 3!\n");
-        return retval;
-    }
-
-    return proc_file;
+    retval = proc_file;
+    
+exit0:
+    return retval;
 }
 
 int allocator_close(int proc_file)
 {
+    bw_mgt_cmd_t cmd;
+    int retval;
+
+    cmd.cmd = PBS_BWMGT_CMD_STOP;
+    retval = write(proc_file, &cmd, sizeof(cmd));
+    if(retval != sizeof(cmd))
+    {
+        perror("allocator_close: Failed to write PBS_BWMGT_CMD_STOP command.");
+        goto exit0;
+    }
+
 	if(munmap(history_array, HISTLIST_SIZE) != 0)
 	{
 		perror("Failed to unmap history pages!\n");
-		return -1;
+		retval = -1;
+        goto exit0;
 	}
 
 	if(munmap(allocation_array, ALLOC_SIZE) != 0)
 	{
 		perror("Failed to unmap history pages!\n");
-		return -1;
+		retval = -1;
+        goto exit0;
 	}
 
 	if(close(proc_file) != 0)
 	{
 		perror("Failed to close proc_file!\n");
-		return -1;
+		retval = -1;
+        goto exit0;
 	}
 
+    retval = 0;
+exit0:
     return 0;
 }
 
@@ -389,13 +410,12 @@ int compute_budget(SRT_history_t *history, uint64_t* budget)
 
 void allocator_loop_wlogging(int proc_file)
 {
-    //enter the main scheduling loop
+    bw_mgt_cmd_t cmd;
+    
     long long sp_count = 0;
 
     int retval;
     int t, task_count, task_index;
-
-    char buffer[10];
 
     SRT_history_t *next;
 
@@ -403,10 +423,13 @@ void allocator_loop_wlogging(int proc_file)
 
     while(sp_count < sp_limit)
     {
-        retval = read(proc_file, buffer, 1);
-        if(retval == -1)
+    
+        cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
+        retval = write(proc_file, &cmd, sizeof(cmd));
+        if(retval != sizeof(cmd))
         {
-            perror("read from pbs_bw_mgt failed:");
+            perror( "allocator_loop_wlogging: Failed to write PBS_BWMGT_CMD_NEXTJOB "
+                    "command.");
             break;
         }
 
@@ -437,14 +460,13 @@ void allocator_loop_wlogging(int proc_file)
 
 void allocator_loop(int proc_file)
 {
-    //enter the main scheduling loop
+    bw_mgt_cmd_t cmd;
+
     long long sp_count = 0;
     unsigned char loop_condition = 1;
 
     int retval;
     int t, task_count, task_index;
-
-    char buffer[10];
 
     SRT_history_t *next;
 
@@ -452,10 +474,12 @@ void allocator_loop(int proc_file)
 
     while(loop_condition)
     {
-        retval = read(proc_file, buffer, 1);
-        if(retval == -1)
+        cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
+        retval = write(proc_file, &cmd, sizeof(cmd));
+        if(retval != sizeof(cmd))
         {
-            perror("read from pbs_bw_mgt failed:");
+            perror( "allocator_loop: Failed to write PBS_BWMGT_CMD_NEXTJOB "
+                    "command.");
             break;
         }
 

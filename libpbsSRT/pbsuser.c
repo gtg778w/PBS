@@ -37,7 +37,7 @@ typedef uint32_t u32;
 typedef int64_t  s64;
 typedef int32_t  s32;
 
-#include "pbs_cmd.h"
+#include "pbsSRT_cmd.h"
 
 #include "pbsuser.h"
 

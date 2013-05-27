@@ -1,28 +1,40 @@
-#include <stdint.h>
+#ifndef PBSALLOCATOR_CMD_INCLUDE
+#define PBSALLOCATOR_CMD_INCLUDE
 
-/*This is the user level header file for the PBS module*/
 
-#define PBS_IOCTL_BWMGT_PERIOD 		    0
+#define PBS_BWMGT_CMD_SETUP_START (0)
+/*
+    0) scheduling period (us)
+    1) allocator runtime (us)
+*/
+
+#define PBS_BWMGT_CMD_NEXTJOB   (1)
+/*
+*/
+
+#define PBS_BWMGT_CMD_STOP      (2)
+/*
+*/
+
+#define PBS_BWMGT_CMD_MAX       (3)
+#define PBS_BWMGT_CMD_MAXARGS   (2)
+typedef struct bw_mgt_cmd_s
+{
+    int             cmd;
+    s64         args[2];
+} bw_mgt_cmd_t;
+
+/*FIXME: This should be removed along with the rest of the ioctl code*/
+#define PBS_IOCTL_BWMGT_PERIOD 		0
 #define PBS_IOCTL_BWMGT_ALLOC_RUNTIME	1
 #define PBS_IOCTL_BWMGT_START			3
-#define PBS_IOCTL_BWMGT_MAX			    4
+#define PBS_IOCTL_BWMGT_MAX			4
 
 #define HISTLIST_SIZE	(1<<20) //1MB
 #define HISTLIST_ORDER	(20-PAGE_SHIFT)
 
 #define ALLOC_SIZE	(1<<17)
 #define ALLOC_ORDER	(17-PAGE_SHIFT)
-
-
-//Each SRT_history structure is 64 bytes long (to fit in 1 cache line)
-//ideally the structure should be stored in an aligned address
-//the elements of the structure has been arranged for compactness
-//the actual history list should be aligned such that SIMD instructions can be applied to it
-
-typedef uint32_t    u32;
-typedef uint64_t    u64;
-typedef int32_t     s32;
-typedef int64_t     s64;
 
 typedef struct _SRT_history
 {
@@ -70,3 +82,4 @@ typedef struct _history_list_header
 } history_list_header_t;
 
 
+#endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/
