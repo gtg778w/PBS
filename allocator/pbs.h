@@ -2,16 +2,10 @@
 
 /*This is the user level header file for the PBS module*/
 
-#define PBS_IOCTL_BWMGT_PERIOD 		0
+#define PBS_IOCTL_BWMGT_PERIOD 		    0
 #define PBS_IOCTL_BWMGT_ALLOC_RUNTIME	1
 #define PBS_IOCTL_BWMGT_START			3
-#define PBS_IOCTL_BWMGT_MAX			4
-
-#define PBS_IOCTL_JBMGT_PERIOD 		0
-#define PBS_IOCTL_JBMGT_SRT_RUNTIME		1
-#define PBS_IOCTL_JBMGT_SRT_HISTLEN		3
-#define PBS_IOCTL_JBMGT_START			4
-#define PBS_IOCTL_JBMGT_MAX			5
+#define PBS_IOCTL_BWMGT_MAX			    4
 
 #define HISTLIST_SIZE	(1<<20) //1MB
 #define HISTLIST_ORDER	(20-PAGE_SHIFT)
@@ -25,12 +19,18 @@
 //the elements of the structure has been arranged for compactness
 //the actual history list should be aligned such that SIMD instructions can be applied to it
 
-typedef uint32_t u32;
-typedef uint64_t u64;
+typedef uint32_t    u32;
+typedef uint64_t    u64;
+typedef int32_t     s32;
+typedef int64_t     s64;
 
 typedef struct _SRT_history
 {
 	u64	job_release_time;	// 8 bytes
+	s64 u_c0;               // 8 bytes
+	s64 std_c0;             // 8 bytes
+	s64 u_cl;               // 8 bytes
+	s64 std_cl;             // 8 bytes
 	u32	pid;			    // 4 bytes
 	u32	current_runtime;	// 4 bytes
 	u32	sp_till_deadline;   // 4 bytes
@@ -48,11 +48,11 @@ typedef struct _SRT_history
 
 	char	        buffer_index;   //1 byte
 
-    // 8 + 4*4 + 3*2 + 2= 32 bytes
+    // 8 + 4*8 + 4*4 + 3*2 + 2*1 = 64 bytes
 
-	u32	history[120]; //120*4 bytes = 480 bytes
+	u32	history[112]; //112*4 bytes = 448 bytes
 
-    //480 + 32 = 512 bytes
+    //448 + 64 = 512 bytes
 } SRT_history_t;
 
 typedef struct _history_list_header

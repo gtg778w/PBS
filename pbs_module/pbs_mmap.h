@@ -41,6 +41,10 @@ mutex related code
 typedef struct _SRT_history
 {
 	u64	job_release_time;	// 8 bytes
+	s64 u_c0;               // 8 bytes
+	s64 std_c0;             // 8 bytes
+	s64 u_cl;               // 8 bytes
+	s64 std_cl;             // 8 bytes
 	u32	pid;			    // 4 bytes
 	u32	current_runtime;	// 4 bytes
 	u32	sp_till_deadline;   // 4 bytes
@@ -58,11 +62,11 @@ typedef struct _SRT_history
 
 	char	        buffer_index;   //1 byte
 
-    // 8 + 4*4 + 3*2 + 2= 32 bytes
+    // 8 + 4*8 + 4*4 + 3*2 + 2*1 = 64 bytes
 
-	u32	history[120]; //120*4 bytes = 480 bytes
+	u32	history[112]; //112*4 bytes = 448 bytes
 
-    //480 + 32 = 512 bytes
+    //448 + 64 = 512 bytes
 } SRT_history_t;
 
 extern SRT_history_t	*history_array;

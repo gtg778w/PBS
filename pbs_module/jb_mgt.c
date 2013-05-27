@@ -356,15 +356,16 @@ ssize_t jb_mgt_write(   struct file *filep,
             break;
             
         case PBS_JBMGT_CMD_NEXTJOB:
+            /*Insert the command arguments into the history data structure.
+            This is done to allow the allocator task access to the execution-time
+            prediction performed by the SRT task.*/
+            SRT_struct->history->u_c0   = cmd.args[0];
+            SRT_struct->history->std_c0 = cmd.args[1];
+            SRT_struct->history->u_cl   = cmd.args[2];
+            SRT_struct->history->std_cl = cmd.args[3];
+            
             if(SRT_STARTED == SRT_struct->state)
-            {
-                printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_NEXTJOB, "
-                                                "%lli, %lli, %lli, %lli",
-                                                cmd.args[0],
-                                                cmd.args[1],
-                                                cmd.args[2],
-                                                cmd.args[3]);
-                                                
+            {                                                
                 printk(KERN_INFO    "The PBS_JBMGT_CMD_NEXTJOB command issued for the "
                                     "first time by process %d.", current->pid);
                 preempt_disable();
