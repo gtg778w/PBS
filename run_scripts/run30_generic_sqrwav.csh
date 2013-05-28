@@ -41,7 +41,7 @@
 
     echo "Training run: ... "
     echo 0 > /proc/sched_pbs_actv
-    bin/allocator -f -a ${aa} -s 0 -S &
+    bin/pbsAllocator -f -a ${aa} -s 0 -S &
     sleep 1
     bin/sqrwavSRT -f -j 16 -P 1800 -D 0.44445 -d 1600 -M 21060000 -m 4212000 -N 0.2 -p 60000 -b 7000 -l 20 -L /dev/null
     echo 0 > /proc/sched_pbs_actv
@@ -58,7 +58,7 @@
         echo 
         echo "running "$i"of 30"
 
-        bin/allocator -f -a ${aa} -s ${sa} > ${logfilea} &
+        bin/pbsAllocator -f -a ${aa} -s ${sa} > ${logfilea} &
         sleep 1
         bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -p ${p1} -b ${b1} -l ${l1} -L ${logfile1} &
         bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -p ${p2} -b ${b2} -l ${l2} -L ${logfile2} &
