@@ -359,9 +359,9 @@ ssize_t jb_mgt_write(   struct file *filep,
             This is done to allow the allocator task access to the execution-time
             prediction performed by the SRT task.*/
             SRT_struct->history->u_c0   = cmd.args[0];
-            SRT_struct->history->std_c0 = cmd.args[1];
+            SRT_struct->history->var_c0 = cmd.args[1];
             SRT_struct->history->u_cl   = cmd.args[2];
-            SRT_struct->history->std_cl = cmd.args[3];
+            SRT_struct->history->var_cl = cmd.args[3];
             
             if(SRT_STARTED == SRT_struct->state)
             {                                                

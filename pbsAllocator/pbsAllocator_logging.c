@@ -31,11 +31,12 @@ mlock
 struct SRT_record
 {
 	uint64_t 		SRT_budget;
+	uint64_t 		SRT_budget2; 
     uint64_t        job_release_time;
 	int64_t         u_c0;
-	int64_t         std_c0;
+	int64_t         var_c0;
 	int64_t         u_cl;
-	int64_t         std_cl;
+	int64_t         var_cl;
 	uint32_t 		pid;
 	uint32_t 		SRT_runtime;
 	uint32_t		sp_till_deadline;
@@ -113,7 +114,8 @@ void log_allocator_dat(long long sp_count)
 
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
-                    SRT_history_t	*SRT_history_p)
+                    SRT_history_t	*SRT_history_p,
+                    uint64_t SRT_budget2)
 {
     struct SRT_record * SRT_record_p = &((SRT_record[task_index])[sp_count]);
 
@@ -123,10 +125,11 @@ void log_SRT_sp_dat(int task_index,
     SRT_record_p->pid			    = SRT_history_p->pid;
     SRT_record_p->job_release_time  = SRT_history_p->job_release_time;
     SRT_record_p->u_c0              = SRT_history_p->u_c0;
-	SRT_record_p->std_c0            = SRT_history_p->std_c0;
+	SRT_record_p->var_c0            = SRT_history_p->var_c0;
 	SRT_record_p->u_cl              = SRT_history_p->u_cl;
-	SRT_record_p->std_cl            = SRT_history_p->std_cl;
+	SRT_record_p->var_cl            = SRT_history_p->var_cl;
     SRT_record_p->SRT_budget        = allocation_array[task_index];
+    SRT_record_p->SRT_budget2       = SRT_budget2;
 }
 
 /************print and free memory for logging task computation times*********/
@@ -145,17 +148,18 @@ void free_log_memory(void)
         for(t = 1; t < 4; t++)
         {
             next_record = &((SRT_record[t])[sp_count]);
-            printf("| %lu, %llu, %lu, %lu, %u, %llu, %lli, %lli, %lli, %lli |",
+            printf("| %lu, %llu, %lu, %lu, %u, %llu, %lli, %lli, %lli, %lli %lli|",
                     (unsigned long)next_record->pid,
                     (unsigned long long)next_record->job_release_time,
                     (unsigned long)next_record->SRT_runtime,
                     (unsigned long)next_record->sp_till_deadline,
                     (unsigned)next_record->SRT_qlength,
-                    (unsigned long long)next_record->SRT_budget,
                     (unsigned long long)next_record->u_c0,
-                    (unsigned long long)next_record->std_c0,
+                    (unsigned long long)next_record->var_c0,
                     (unsigned long long)next_record->u_cl,
-                    (unsigned long long)next_record->std_cl);
+                    (unsigned long long)next_record->var_cl,
+                    (unsigned long long)next_record->SRT_budget,
+                    (unsigned long long)next_record->SRT_budget2);
         }
         printf("|\n");
     }

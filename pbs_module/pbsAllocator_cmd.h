@@ -40,9 +40,9 @@ typedef struct _SRT_history
 {
 	u64	job_release_time;	// 8 bytes
 	s64 u_c0;               // 8 bytes
-	s64 std_c0;             // 8 bytes
+	s64 var_c0;             // 8 bytes
 	s64 u_cl;               // 8 bytes
-	s64 std_cl;             // 8 bytes
+	s64 var_cl;             // 8 bytes
 	u32	pid;			    // 4 bytes
 	u32	current_runtime;	// 4 bytes
 	u32	sp_till_deadline;   // 4 bytes
