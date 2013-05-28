@@ -71,13 +71,14 @@ void allocator_loop_wlogging(int proc_file)
 		{
 			task_index = next - history_array;
 
-            retval = compute_budget(next, &budget);
-		    if(retval == 0)
-		    {
-			    allocation_array[task_index] = budget;
-		    }
-
             compute_budget2(next, &budget);
+		    allocation_array[task_index] = budget;
+		    
+            retval = compute_budget(next, &budget);
+            if(retval == 0)
+		    {
+			    budget = 0;
+		    }
 
             log_SRT_sp_dat(task_index, sp_count, next, budget);
 
@@ -120,11 +121,8 @@ void allocator_loop(int proc_file)
 		{
 			task_index = next - history_array;
 
-            retval = compute_budget(next, &budget);
-		    if(retval == 0)
-		    {
-			    allocation_array[task_index] = budget;
-		    }
+            compute_budget2(next, &budget);
+		    allocation_array[task_index] = budget;
 
             next = &(history_array[next->next]);
 		}
