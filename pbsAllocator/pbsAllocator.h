@@ -28,10 +28,6 @@ void log_SRT_sp_dat(int task_index,
                     uint64_t SRT_budget2);
 void free_log_memory(void);
 
-extern double alpha;
-
-int compute_budget(SRT_history_t *history, uint64_t* budget);
-void compute_budget2(SRT_history_t *history, uint64_t* budget);
-
+void compute_budget(SRT_history_t *history, uint64_t* budget);
 
 #endif

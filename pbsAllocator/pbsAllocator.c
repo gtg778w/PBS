@@ -71,15 +71,9 @@ void allocator_loop_wlogging(int proc_file)
 		{
 			task_index = next - history_array;
 
-            compute_budget2(next, &budget);
+            compute_budget(next, &budget);
 		    allocation_array[task_index] = budget;
 		    
-            retval = compute_budget(next, &budget);
-            if(retval == 0)
-		    {
-			    budget = 0;
-		    }
-
             log_SRT_sp_dat(task_index, sp_count, next, budget);
 
 			next = &(history_array[next->next]);
@@ -121,7 +115,7 @@ void allocator_loop(int proc_file)
 		{
 			task_index = next - history_array;
 
-            compute_budget2(next, &budget);
+            compute_budget(next, &budget);
 		    allocation_array[task_index] = budget;
 
             next = &(history_array[next->next]);
@@ -137,7 +131,6 @@ void allocator_loop(int proc_file)
 
 char *options_string = \
 "\n\t-f:\trun without prompting\n"\
-"\t-a:\tthe PBS alpha parameter (2.0)\n"\
 "\t-s:\tthe number of scheduling periods (1)\n"\
 "\t-S:\tdo not keep or output a log\n";
 
@@ -150,26 +143,14 @@ int main(int argc, char** argv)
 	/*variables for parsing input arguments*/
 	unsigned char   fflag=0, Sflag = 0;
 
-
-	alpha = 2.0;
 	sp_limit = 1;
 
-    while((retval = getopt(argc, argv, "fa:s:S")) != -1)
+    while((retval = getopt(argc, argv, "fs:S")) != -1)
     {
         switch(retval)
         {
             case 'f':
                 fflag = 1;
-                break;
-            case 'a':
-                alpha = strtod(optarg, NULL);
-                if(alpha < 0)
-                {
-                    fprintf(stderr, 
-                            "Bad alpha value (%f), should be positive!\n",
-                            alpha);
-                    return -EINVAL;
-                }
                 break;
             case 's':
                 sp_limit = strtoul(optarg, NULL, 10);
@@ -205,8 +186,6 @@ int main(int argc, char** argv)
             "Logging is automatically disabled!\n");
         Sflag = 1;
     }
-
-    fprintf(stderr, "Options: alpha = %f", alpha);
 
     if(sp_limit == 0)
         fprintf(stderr, ", count = infinity");

@@ -11,9 +11,8 @@
     # Format for the allocator task log file name:
     # <experiment number>_pbs_ul_allocator_<-a>_<-s>.log
 
-    set aa="2.0"
     set sa="12100"
-    set logfilesuffixa="_pbs_ul_allocator_"${aa}"_"${sa}".log"
+    set logfilesuffixa="_pbs_ul_allocator_"${sa}".log"
 
     set j1="1800"
     set P1="1800"
@@ -23,8 +22,8 @@
     set m1="4212000"
     set N1="0.2"
     set A1="mabank"
-    set p1="60000"
-    set b1="15000"
+    set p1="60000000"
+    set b1="24000000"
     set l1="20"
     set logfilesuffix1="_1_sqrwavSRT_"${j1}"_"${P1}"_"${D1}"_"${d1}"_"${M1}"_"${m1}"_"${N1}"_"${A1}"_"${p1}"_"${b1}"_"${l1}".log"
 
@@ -36,16 +35,16 @@
     set m2="2808000"
     set N2="0.2"
     set A2="mabank"
-    set p2="40000"
-    set b2="10000"
+    set p2="40000000"
+    set b2="16000000"
     set l2="20"
     set logfilesuffix2="_2_sqrwavSRT_"${j2}"_"${P2}"_"${D2}"_"${d2}"_"${M2}"_"${m2}"_"${N2}"_"${A2}"_"${p2}"_"${b2}"_"${l2}".log"
 
     echo "Training run: ... "
     echo 0 > /proc/sched_pbs_actv
-    bin/pbsAllocator -f -a ${aa} -s 0 -S &
+    bin/pbsAllocator -f -s 0 -S &
     sleep 1
-    bin/sqrwavSRT -f -j 16 -P 1800 -D 0.44445 -d 1600 -M 21060000 -m 4212000 -N 0.2 -p 60000 -b 7000 -l 20 -L /dev/null
+    bin/sqrwavSRT -f -j 16 -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -p $p1} -b ${b1} -l ${l1} -L /dev/null
     echo 0 > /proc/sched_pbs_actv
     echo "complete! "
 
@@ -60,7 +59,7 @@
         echo 
         echo "running "$i"of 30"
 
-        bin/pbsAllocator -f -a ${aa} -s ${sa} > ${logfilea} &
+        bin/pbsAllocator -f -s ${sa} > ${logfilea} &
         sleep 1
         bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -l ${l1} -L ${logfile1} &
         bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -A ${A2} -p ${p2} -b ${b2} -l ${l2} -L ${logfile2} &
