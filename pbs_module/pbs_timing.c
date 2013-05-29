@@ -32,7 +32,7 @@ struct task_struct	*allocator;
 
 int allocator_overrun_count;
 int allocator_boundaryrun_count;             
-extern history_list_header_t	*history_list_header;
+extern loaddata_list_header_t	*loaddata_list_header;
 
 /**********************************************************************/
 //high resolution timer callbacks
@@ -90,11 +90,11 @@ void allocator_schedout(    struct preempt_notifier *notifier,
 
     //log the run_time for the allocator
 	last_runtime= allocator_stop_time - allocator_actv_time;
-	max_runtime	= history_list_header->max_allocator_runtime;
+	max_runtime	= loaddata_list_header->max_allocator_runtime;
 	max_runtime	= (last_runtime > max_runtime)? last_runtime : max_runtime;
-	history_list_header->prev_sp_boundary	= expires_prev.tv64;
-	history_list_header->last_allocator_runtime	= last_runtime;
-	history_list_header->max_allocator_runtime	= max_runtime;
+	loaddata_list_header->prev_sp_boundary	= expires_prev.tv64;
+	loaddata_list_header->last_allocator_runtime	= last_runtime;
+	loaddata_list_header->max_allocator_runtime	= max_runtime;
 
 	if(last_runtime > allocator_runtime_ns)
 	{
@@ -158,7 +158,7 @@ void inline sched_period_tick()
 
 		//increment the task's queue length
 		(bwrefreshable->queue_length)++;
-		(bwrefreshable->history->queue_length) = 
+		(bwrefreshable->loaddata->queue_length) = 
             (unsigned short)(bwrefreshable->queue_length);
 
 		//wakeup the associated task					
@@ -176,11 +176,11 @@ void inline sched_period_tick()
 		bwrefreshable = (struct SRT_struct*)pos;
 
 		//decrement sp_till_deadline
-		sp_till_deadline = (bwrefreshable->history)->sp_till_deadline;
-		sp_per_tp = (bwrefreshable->history)->sp_per_tp;
+		sp_till_deadline = (bwrefreshable->loaddata)->sp_till_deadline;
+		sp_per_tp = (bwrefreshable->loaddata)->sp_per_tp;
 		sp_till_deadline = (sp_till_deadline == 1) ? 
                             sp_per_tp : (sp_till_deadline - 1);
-		(bwrefreshable->history)->sp_till_deadline = sp_till_deadline;
+		(bwrefreshable->loaddata)->sp_till_deadline = sp_till_deadline;
 
 		pba_refresh_budget(bwrefreshable);
 
@@ -384,11 +384,11 @@ int sleep_till_next_period(struct SRT_timing_struct *tq_entry)
     pba_nextjob(ss);
 
 	//update the log with information from the last completed job
-	(ss->log).abs_releaseTime 	=(ss->history)->job_release_time;
+	(ss->log).abs_releaseTime 	=(ss->loaddata)->job_release_time;
 	(ss->log).abs_LFT 			= expires_next.tv64; //the latest possible finishing time is the end of this scheduling period
 
-    //set the release-time in history to the release time of the next job.
-    (ss->history)->job_release_time +=(ss->timing_struct).task_period.tv64;
+    //set the release-time in loaddata to the release time of the next job.
+    (ss->loaddata)->job_release_time +=(ss->timing_struct).task_period.tv64;
 	
     //FIXME
 	if((ss->queue_length) == 0)
@@ -438,10 +438,10 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
 	prev = &timing_queue_head;
 	insert_asnd(&timing_queue_head, prev, tq_entry, next);
 
-	//correct sp_till_deadline and insert history entry into the history list
-	(SRT_struct->history)->sp_till_deadline=1;
-	insert_histentry(SRT_struct->history);
-	printk(KERN_INFO "New SRT hist entry inserted!\n");
+	//correct sp_till_deadline and insert loaddata entry into the loaddata list
+	(SRT_struct->loaddata)->sp_till_deadline=1;
+	insert_loaddata(SRT_struct->loaddata);
+	printk(KERN_INFO "New SRT load data inserted!\n");
 
 	//initialize some additional statistics
 	SRT_struct->overuse_count = 0;
@@ -450,8 +450,8 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
 	//update the statistics for counting job computation times
 	pba_firstjob(SRT_struct);
 
-    //set the release-time in history to the release time of the next job.
-    (SRT_struct->history)->job_release_time = expires_next.tv64;
+    //set the release-time in loaddata to the release time of the next job.
+    (SRT_struct->loaddata)->job_release_time = expires_next.tv64;
 
 	//this is the beginning of the job 0
 	//the log reflects information on the job before the one currently started (job# -1)
@@ -476,12 +476,12 @@ void remove_from_timing_queue(struct SRT_timing_struct *tq_entry)
 	__list_del( (tq_entry->timing_list_entry).prev, 
                 (tq_entry->timing_list_entry).next);
 	
-	//remove it from the history list
-	remove_histentry(SRT_struct->history);
+	//remove it from the loaddata list
+	remove_loaddata(SRT_struct->loaddata);
 
     pba_uninit(SRT_struct);
 
-	printk(KERN_INFO "Removed hist entry from list. Task %d.\n", current->pid);
+	printk(KERN_INFO "Removed load data from list. Task %d.\n", current->pid);
 													
 }
 

@@ -19,7 +19,7 @@ Functions for initializing various data structures
 
 static void free_SRT_struct(struct SRT_struct *freeable)
 {
-	free_histentry(freeable->history);
+	free_loaddata(freeable->loaddata);
 
 	kmem_cache_free(SRT_struct_slab_cache, freeable);
 
@@ -38,16 +38,16 @@ struct SRT_struct *allocate_SRT_struct(void)
 		return NULL;
 	}
 
-	initable->history = alloc_histentry();
-	if(initable->history == NULL)
+	initable->loaddata = alloc_loaddata();
+	if(initable->loaddata == NULL)
 	{
 		kmem_cache_free(SRT_struct_slab_cache, initable);
 		return NULL;
 	}
 
-	(initable->history)->pid = current->pid;
+	(initable->loaddata)->pid = current->pid;
 
-	initable->allocation_index = initable->history - history_array;
+	initable->allocation_index = initable->loaddata - loaddata_array;
 	allocation_array[initable->allocation_index] = 0;
 
 	ptiming_struct 	= &(initable->timing_struct);
@@ -207,7 +207,7 @@ ssize_t jb_mgt_write(   struct file *filep,
 			}
 			
 			SRT_struct->timing_struct.task_period.tv64 = task_period;
-			(SRT_struct->history)->sp_per_tp = sp_per_tp;
+			(SRT_struct->loaddata)->sp_per_tp = sp_per_tp;
 			/*The conditoins and passed values are valid*/
 			SRT_struct->state = SRT_CONFIGURED;
             break;
@@ -230,13 +230,13 @@ ssize_t jb_mgt_write(   struct file *filep,
             break;
             
         case PBS_JBMGT_CMD_NEXTJOB:
-            /*Insert the command arguments into the history data structure.
+            /*Insert the command arguments into the loaddata structure.
             This is done to allow the allocator task access to the execution-time
             prediction performed by the SRT task.*/
-            SRT_struct->history->u_c0   = cmd.args[0];
-            SRT_struct->history->var_c0 = cmd.args[1];
-            SRT_struct->history->u_cl   = cmd.args[2];
-            SRT_struct->history->var_cl = cmd.args[3];
+            SRT_struct->loaddata->u_c0   = cmd.args[0];
+            SRT_struct->loaddata->var_c0 = cmd.args[1];
+            SRT_struct->loaddata->u_cl   = cmd.args[2];
+            SRT_struct->loaddata->var_cl = cmd.args[3];
             
             if(SRT_STARTED == SRT_struct->state)
             {                                                

@@ -36,8 +36,8 @@ memory mapping stuff
 
 #include "pbsAllocator.h"
 
-SRT_history_t		    *history_array;
-history_list_header_t   *history_list_header;
+SRT_loaddata_t		    *loaddata_array;
+loaddata_list_header_t   *loaddata_list_header;
 uint64_t			    *allocation_array;
 
 int allocator_setup(uint64_t scheduling_period,
@@ -83,23 +83,23 @@ int allocator_setup(uint64_t scheduling_period,
 		goto exit0;
 	}
 
-	//setup the history mapping
-	history_array = mmap(NULL, HISTLIST_SIZE, 
+	//setup the loaddata mapping
+	loaddata_array = mmap(NULL, LOADDATALIST_SIZE, 
                          (PROT_READ), MAP_SHARED, 
                          proc_file, 0);
-	if(history_array == MAP_FAILED)
+	if(loaddata_array == MAP_FAILED)
 	{
-		perror("allocator_setup: Failed to map history_array");
+		perror("allocator_setup: Failed to map loaddata_array");
 		retval = -1;
 		goto exit0;
 	}
 
-	history_list_header = (history_list_header_t*)history_array;
+	loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
 
 	//setup the allocations mapping
 	allocation_array = mmap(NULL, ALLOC_SIZE, 
                             (PROT_READ | PROT_WRITE), MAP_SHARED, 
-                            proc_file, HISTLIST_SIZE);
+                            proc_file, LOADDATALIST_SIZE);
 	if(allocation_array == MAP_FAILED)
 	{
 		perror("allocator_setup: Failed to map allocation_array");
@@ -136,16 +136,16 @@ int allocator_close(int proc_file)
         goto exit0;
     }
 
-	if(munmap(history_array, HISTLIST_SIZE) != 0)
+	if(munmap(loaddata_array, LOADDATALIST_SIZE) != 0)
 	{
-		perror("Failed to unmap history pages!\n");
+		perror("Failed to unmap loaddata pages!\n");
 		retval = -1;
         goto exit0;
 	}
 
 	if(munmap(allocation_array, ALLOC_SIZE) != 0)
 	{
-		perror("Failed to unmap history pages!\n");
+		perror("Failed to unmap loaddata pages!\n");
 		retval = -1;
         goto exit0;
 	}

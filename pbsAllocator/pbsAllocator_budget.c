@@ -4,16 +4,16 @@
 
 #include "pbsAllocator.h"
 
-void compute_budget(SRT_history_t *history, uint64_t* budget)
+void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget)
 {
     
-    int64_t queue_length = history->queue_length;
-    int64_t current_runtime = history->current_runtime;
+    int64_t queue_length = loaddata->queue_length;
+    int64_t current_runtime = loaddata->current_runtime;
     
-    int64_t mean0   = history->u_c0;
-    int64_t meanl   = history->u_cl;
-    int64_t var0    = history->var_c0;
-    int64_t varl    = history->var_cl;
+    int64_t mean0   = loaddata->u_c0;
+    int64_t meanl   = loaddata->u_cl;
+    int64_t var0    = loaddata->var_c0;
+    int64_t varl    = loaddata->var_cl;
     
     int64_t total_var = 0;
     int64_t total_mean = 0;
@@ -21,7 +21,7 @@ void compute_budget(SRT_history_t *history, uint64_t* budget)
     double std;
     
     int64_t estimated_load;
-    int64_t sp_till_deadline = history->sp_till_deadline;
+    int64_t sp_till_deadline = loaddata->sp_till_deadline;
     
     if(queue_length == 0)
     {

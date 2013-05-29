@@ -45,7 +45,7 @@ void allocator_loop_wlogging(int proc_file)
     int retval;
     int t, task_count, task_index;
 
-    SRT_history_t *next;
+    SRT_loaddata_t *next;
 
     uint64_t budget;
 
@@ -64,19 +64,19 @@ void allocator_loop_wlogging(int proc_file)
         sp_count++;
         log_allocator_dat(sp_count);
 
-        next = &(history_array[history_list_header->first]);
-        task_count = history_list_header->SRT_count;
+        next = &(loaddata_array[loaddata_list_header->first]);
+        task_count = loaddata_list_header->SRT_count;
 
 		for(t = 0; t < task_count; t++)		
 		{
-			task_index = next - history_array;
+			task_index = next - loaddata_array;
 
             compute_budget(next, &budget);
 		    allocation_array[task_index] = budget;
 		    
             log_SRT_sp_dat(task_index, sp_count, next, budget);
 
-			next = &(history_array[next->next]);
+			next = &(loaddata_array[next->next]);
 		}
 
 	}
@@ -93,7 +93,7 @@ void allocator_loop(int proc_file)
     int retval;
     int t, task_count, task_index;
 
-    SRT_history_t *next;
+    SRT_loaddata_t *next;
 
     uint64_t budget;
 
@@ -108,17 +108,17 @@ void allocator_loop(int proc_file)
             break;
         }
 
-        next = &(history_array[history_list_header->first]);
-        task_count = history_list_header->SRT_count;
+        next = &(loaddata_array[loaddata_list_header->first]);
+        task_count = loaddata_list_header->SRT_count;
 
 		for(t = 0; t < task_count; t++)		
 		{
-			task_index = next - history_array;
+			task_index = next - loaddata_array;
 
             compute_budget(next, &budget);
 		    allocation_array[task_index] = budget;
 
-            next = &(history_array[next->next]);
+            next = &(loaddata_array[next->next]);
 		}
 
         if(sp_limit > 0)

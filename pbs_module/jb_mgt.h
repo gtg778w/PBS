@@ -64,7 +64,7 @@ SRT_timing_struct
 
 #include "pbs_mmap.h"
 /*
-Everything related to the history structures
+Everything related to the loaddata structures
 */
 
 #include "pbsSRT_cmd.h"
@@ -135,7 +135,7 @@ struct SRT_struct
 	struct pba_struct           pba_struct;
 	struct SRT_job_log 			log;
 
-	SRT_history_t	*history;
+	SRT_loaddata_t	*loaddata;
 	u64				maximum_overuse;
 	u32				overuse_count;
 	short	        queue_length;

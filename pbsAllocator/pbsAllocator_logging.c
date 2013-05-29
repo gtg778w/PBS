@@ -106,27 +106,27 @@ int setup_log_memory(void)
 void log_allocator_dat(long long sp_count)
 {
     sp_start_times[sp_count] = 
-        (unsigned long long)history_list_header->prev_sp_boundary;
+        (unsigned long long)loaddata_list_header->prev_sp_boundary;
 	allocator_runtimes[sp_count] = 
-        (int)history_list_header->last_allocator_runtime;
+        (int)loaddata_list_header->last_allocator_runtime;
 }
 
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
-                    SRT_history_t	*SRT_history_p,
+                    SRT_loaddata_t	*SRT_loaddata_p,
                     uint64_t SRT_budget2)
 {
     struct SRT_record * SRT_record_p = &((SRT_record[task_index])[sp_count]);
 
-    SRT_record_p->SRT_runtime       = SRT_history_p->current_runtime;
-    SRT_record_p->SRT_qlength 	    = SRT_history_p->queue_length;
-    SRT_record_p->sp_till_deadline  = SRT_history_p->sp_till_deadline;
-    SRT_record_p->pid			    = SRT_history_p->pid;
-    SRT_record_p->job_release_time  = SRT_history_p->job_release_time;
-    SRT_record_p->u_c0              = SRT_history_p->u_c0;
-	SRT_record_p->var_c0            = SRT_history_p->var_c0;
-	SRT_record_p->u_cl              = SRT_history_p->u_cl;
-	SRT_record_p->var_cl            = SRT_history_p->var_cl;
+    SRT_record_p->SRT_runtime       = SRT_loaddata_p->current_runtime;
+    SRT_record_p->SRT_qlength 	    = SRT_loaddata_p->queue_length;
+    SRT_record_p->sp_till_deadline  = SRT_loaddata_p->sp_till_deadline;
+    SRT_record_p->pid			    = SRT_loaddata_p->pid;
+    SRT_record_p->job_release_time  = SRT_loaddata_p->job_release_time;
+    SRT_record_p->u_c0              = SRT_loaddata_p->u_c0;
+	SRT_record_p->var_c0            = SRT_loaddata_p->var_c0;
+	SRT_record_p->u_cl              = SRT_loaddata_p->u_cl;
+	SRT_record_p->var_cl            = SRT_loaddata_p->var_cl;
     SRT_record_p->SRT_budget        = allocation_array[task_index];
 }
 

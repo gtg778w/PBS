@@ -28,19 +28,19 @@ mutex related code
 
 #include "pbsAllocator_cmd.h"
 
-extern SRT_history_t	*history_array;
+extern SRT_loaddata_t	*loaddata_array;
 extern u64			*allocation_array;
 
-SRT_history_t* alloc_histentry(void);
-void free_histentry(SRT_history_t* used_entry);
+SRT_loaddata_t* alloc_loaddata(void);
+void free_loaddata(SRT_loaddata_t* used_entry);
 
-void insert_histentry(SRT_history_t* new_entry);
-void remove_histentry(SRT_history_t* new_entry);
+void insert_loaddata(SRT_loaddata_t* new_entry);
+void remove_loaddata(SRT_loaddata_t* new_entry);
 
 int do_pbs_mmap(struct vm_area_struct *vmas);
 
 int allocate_mapping_pages(void);
-int init_histlist(void);
+int init_loaddataList(void);
 void free_mapping_pages(void);
 
 #endif

@@ -272,7 +272,7 @@ int bw_mgt_open(struct inode *inode, struct file *file)
 	printk(KERN_INFO "*********************************\n");
 	printk(KERN_INFO "bw_mgt_open called by process %d.\n", current->pid);
 
-	ret = init_histlist();
+	ret = init_loaddataList();
 	if(ret != 0)
 	{
 		return ret;

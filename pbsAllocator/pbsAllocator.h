@@ -10,8 +10,8 @@ typedef int64_t     s64;
 
 #include "pbsAllocator_cmd.h"
 
-extern SRT_history_t		    *history_array;
-extern history_list_header_t    *history_list_header;
+extern SRT_loaddata_t		    *loaddata_array;
+extern loaddata_list_header_t    *loaddata_list_header;
 extern uint64_t			        *allocation_array;
 
 int allocator_setup(uint64_t scheduling_period,
@@ -24,10 +24,10 @@ int setup_log_memory(void);
 void log_allocator_dat( long long sp_count);
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
-                    SRT_history_t	*SRT_history_p,
+                    SRT_loaddata_t	*SRT_loaddata_p,
                     uint64_t SRT_budget2);
 void free_log_memory(void);
 
-void compute_budget(SRT_history_t *history, uint64_t* budget);
+void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget);
 
 #endif

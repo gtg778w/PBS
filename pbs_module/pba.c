@@ -143,7 +143,7 @@ void pba_firstjob(struct SRT_struct *ss)
 	//obtain the current time
 	now = pbs_clock();
 
-	(ss->history)->current_runtime = 0;
+	(ss->loaddata)->current_runtime = 0;
 
     (ss->log).runtime = 0;
     (ss->log).runtime2 = 0;
@@ -197,9 +197,9 @@ void pba_nextjob(struct SRT_struct *ss)
 	//and accumulated previous runtime
 	total_runtime = current_jb_runtime + (pba_struct_p->total_jb_runtime);
 
-    //update the history structure for the next job
-	(ss->history)->current_runtime = 0;
-	(ss->history)->queue_length = (unsigned short)(ss->queue_length);
+    //update the loaddata structure for the next job
+	(ss->loaddata)->current_runtime = 0;
+	(ss->loaddata)->queue_length = (unsigned short)(ss->queue_length);
 
     //write information regarding the completed job into the log
     (ss->log).runtime = total_runtime;
@@ -326,7 +326,7 @@ void pba_refresh_budget(struct SRT_struct *SRT_struct_p)
 
     pba_struct_p = &(SRT_struct_p->pba_struct);
 
-    (SRT_struct_p->history)->current_runtime = pba_get_jbruntime(pba_struct_p);
+    (SRT_struct_p->loaddata)->current_runtime = pba_get_jbruntime(pba_struct_p);
 
     //determine the amount of time remaining until the bandwidth expires
 	remaining

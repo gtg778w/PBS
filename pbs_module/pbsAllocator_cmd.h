@@ -24,13 +24,13 @@ typedef struct bw_mgt_cmd_s
     s64         args[2];
 } bw_mgt_cmd_t;
 
-#define HISTLIST_SIZE	(1<<20) //1MB
-#define HISTLIST_ORDER	(20-PAGE_SHIFT)
+#define LOADDATALIST_SIZE	(1<<20) //1MB
+#define LOADDATALIST_ORDER	(20-PAGE_SHIFT)
 
 #define ALLOC_SIZE	(1<<17)
 #define ALLOC_ORDER	(17-PAGE_SHIFT)
 
-typedef struct _SRT_history
+typedef struct _SRT_loaddata
 {
 	u64	job_release_time;	// 8 bytes
 	s64 u_c0;               // 8 bytes
@@ -53,9 +53,9 @@ typedef struct _SRT_history
     unsigned char  _padding[2];//2 bytes
 
     // 8 + 4*8 + 4*4 + 3*2 + 2*1= 64 bytes
-} SRT_history_t;
+} SRT_loaddata_t;
 
-typedef struct _history_list_header
+typedef struct _loaddata_list_header
 {
     u64         prev_sp_boundary;   //8
     u64         scheduling_period;  //8
@@ -67,7 +67,7 @@ typedef struct _history_list_header
     unsigned short  first;          //2
     //sum so far = 20 bytes
     unsigned char   _padding[44];   //44 bytes to make the structure 64 bytes
-} history_list_header_t;
+} loaddata_list_header_t;
 
 
 #endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/
