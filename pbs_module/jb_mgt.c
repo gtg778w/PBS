@@ -72,7 +72,6 @@ Global variables and functions associated with the sched_rt_jb_mgt file
 
 ***********************************************************************/
 int jb_mgt_open(struct inode *inode, struct file *filp);
-long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg);
 ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *offset);
 ssize_t jb_mgt_write(   struct file *fileh, 
                     const char __user *data, 
@@ -88,7 +87,6 @@ struct file_operations jb_mgt_fops = {
 	.read 		=	jb_mgt_read,
 	.write      =   jb_mgt_write,
 	.open 		=	jb_mgt_open,
-	.unlocked_ioctl	=	jb_mgt_ioctl,
 	.release	=	jb_mgt_release	
 };
 
@@ -110,45 +108,6 @@ int jb_mgt_open(struct inode *inode, struct file *filp)
 	}
 
 	return ret;
-}
-
-/*FIXME: The entire ioctl command should eventually be removed*/
-long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
-{
-	unsigned int ret = 0;
-
-	struct SRT_struct *SRT_struct;
-
-	printk(KERN_INFO "jb_mgt_ioctl(%d) called by process %d.\n", cmd, current->pid);
-
-	SRT_struct = (struct SRT_struct *)filp->private_data;
-
-	if((SRT_struct->state != SRT_OPEN) && (SRT_struct->state != SRT_CONFIGURED)) 
-	{
-	    return -EBUSY;
-    }
-
-	switch(cmd)
-	{
-		case PBS_IOCTL_JBMGT_SRT_HISTLEN:
-			//Check that the history length is sufficiently small
-			if(arg <= 120)
-			{
-				printk(KERN_INFO "Setting SRT history length to %li.\n", arg);
-				(SRT_struct->history)->history_length = (char)arg;
-			break;
-			}
-			
-			printk(KERN_INFO "history length must be less then 121. Got %li\n", arg);			
-			ret = -EINVAL;
-			break;
-
-		default:
-			printk(KERN_INFO "Bad ioctl command for sched_rt_job_mgt!!\n");
-			ret = -EINVAL;
-	}
-
-	return ret;	
 }
 
 /*Return the number of PBS tasks, for which information is returned*/

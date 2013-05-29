@@ -104,8 +104,6 @@ int init_histlist(void)
 		history_array[hist_index].queue_length	= 0;
 		history_array[hist_index].next		= (hist_index+1);
 		history_array[hist_index].prev		= (hist_index-1);
-		history_array[hist_index].history_length	= 0;	// 1 bytes
-        history_array[hist_index].buffer_index	= 0;
 	}
 	history_array[(HISTLIST_SIZE/sizeof(SRT_history_t))-1].next = 0;
 
@@ -211,8 +209,6 @@ SRT_history_t* alloc_histentry(void)
 	new_entry->sp_till_deadline = 1;
 	new_entry->sp_per_tp = 1;
 	new_entry->queue_length = 0;
-	new_entry->history_length = 0;
-	new_entry->history[0] = 0;
 
 unlock_exit:
 	mutex_unlock(&freelist_lock);

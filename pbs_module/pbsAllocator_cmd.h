@@ -24,12 +24,6 @@ typedef struct bw_mgt_cmd_s
     s64         args[2];
 } bw_mgt_cmd_t;
 
-/*FIXME: This should be removed along with the rest of the ioctl code*/
-#define PBS_IOCTL_BWMGT_PERIOD 		0
-#define PBS_IOCTL_BWMGT_ALLOC_RUNTIME	1
-#define PBS_IOCTL_BWMGT_START			3
-#define PBS_IOCTL_BWMGT_MAX			4
-
 #define HISTLIST_SIZE	(1<<20) //1MB
 #define HISTLIST_ORDER	(20-PAGE_SHIFT)
 
@@ -56,29 +50,23 @@ typedef struct _SRT_history
 	unsigned short	next; 	// 2 bytes
 	unsigned short	prev;	// 2 bytes
 
-	char	        history_length; // 1 bytes
+    unsigned char  _padding[2];//2 bytes
 
-	char	        buffer_index;   //1 byte
-
-    // 8 + 4*8 + 4*4 + 3*2 + 2*1 = 64 bytes
-
-	u32	history[112]; //112*4 bytes = 448 bytes
-
-    //448 + 64 = 512 bytes
+    // 8 + 4*8 + 4*4 + 3*2 + 2*1= 64 bytes
 } SRT_history_t;
 
 typedef struct _history_list_header
 {
-	u64			prev_sp_boundary;		//8
-	u64			scheduling_period;	//8
+    u64         prev_sp_boundary;   //8
+    u64         scheduling_period;  //8
 
-	u64			max_allocator_runtime;	//8
-	u64			last_allocator_runtime;	//8
+    u64         max_allocator_runtime;  //8
+    u64         last_allocator_runtime; //8
 
-	unsigned short	SRT_count;			//2
-	unsigned short	first;			//2
-	//sum so far = 20 bytes
-	unsigned char	buffer[492];//492 bytes to make the structure 512 bytes
+    unsigned short  SRT_count;      //2
+    unsigned short  first;          //2
+    //sum so far = 20 bytes
+    unsigned char   _padding[44];   //44 bytes to make the structure 64 bytes
 } history_list_header_t;
 
 

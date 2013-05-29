@@ -143,9 +143,7 @@ void pba_firstjob(struct SRT_struct *ss)
 	//obtain the current time
 	now = pbs_clock();
 
-    (ss->history)->buffer_index = -((ss->history)->history_length);
 	(ss->history)->current_runtime = 0;
-    (ss->history)->history[0] = 0;
 
     (ss->log).runtime = 0;
     (ss->log).runtime2 = 0;
@@ -186,9 +184,6 @@ void pba_nextjob(struct SRT_struct *ss)
 
 	struct pba_struct *pba_struct_p;
 
-    int hist_length, buffer_index;
-    int index;
-
 	pba_struct_p = &(ss->pba_struct);
 
 	//obtain the current time
@@ -205,67 +200,6 @@ void pba_nextjob(struct SRT_struct *ss)
     //update the history structure for the next job
 	(ss->history)->current_runtime = 0;
 	(ss->history)->queue_length = (unsigned short)(ss->queue_length);
-    hist_length = (int)((ss->history)->history_length);
-    buffer_index  = (int)((ss->history)->buffer_index);
-    //check if history is being maintained
-    if(hist_length > 0)
-    {
-        //FIXME
-        {
-            static unsigned char buffer_filling = 0;
-            static unsigned char flag1 = 1;
-
-            if(flag1)
-            {
-                printk(KERN_INFO "DEBUG: hist_length > 0, "\
-                        "hist_length = %i, "\
-                        "buffer_index = %i, "\
-                        "buffer_filling = %i", 
-                        hist_length, buffer_index, buffer_filling);
-                flag1 = 0;
-            }
-
-            if(buffer_index >= 0)
-            {
-                if(buffer_filling)
-                {
-                    printk(KERN_INFO "DEBUG buffer_filled");
-                    buffer_filling = 0;
-                    flag1 = 1;
-                }
-            }
-            else
-            {
-                if(buffer_filling == 0)
-                {
-                    printk(KERN_INFO "buffer_filling");
-                    buffer_filling = 1;
-                    flag1 = 1;
-                }
-            }
-        }
-
-        //check if the history buffer has been filled
-        index = (buffer_index < 0)? 
-                (buffer_index + hist_length) : buffer_index;
-
-        //store the runtime of the last completed job
-        ((ss->history)->history)[index] = total_runtime;
-
-        //increment the index into the circular buffer
-	    buffer_index++;
-        //cycle the index back to 0, if it reaches its length
-        buffer_index = (buffer_index == hist_length)? 0: buffer_index;
-    }
-    else
-    {
-        //store the runtime of the last completed job
-        ((ss->history)->history)[0] = total_runtime;
-        buffer_index = 0;
-    }
-
-    //store the new value of buffer index
-    ((ss->history)->buffer_index) = (char)buffer_index;
 
     //write information regarding the completed job into the log
     (ss->log).runtime = total_runtime;

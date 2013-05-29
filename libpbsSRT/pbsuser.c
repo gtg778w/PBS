@@ -169,14 +169,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
     
 	handle->start_bandwidth = start_bandwidth;
 
-	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_HISTLEN, history_length);
-	if(ret_val)
-	{
-		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_HISTLEN failed!\n");
-		goto close_exit;
-	}
-	handle->history_length = history_length;
-
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
@@ -343,10 +335,9 @@ void pbsSRT_close(SRT_handle *handle)
 
 	if(handle->logging_enabled == 1)	
 	{
-		fprintf(handle->log_file, "%i, %llu, %llu, %i, 0, 0\n",	getpid(),
+		fprintf(handle->log_file, "%i, %llu, %llu, 0, 0, 0, 0, 0, 0, 0, 0\n",	getpid(),
 											(unsigned long long)handle->period, 
-											(unsigned long long)handle->start_bandwidth, 
-											handle->history_length);
+											(unsigned long long)handle->start_bandwidth);
 
 		for(i = 0; i < handle->log_index; i++)
 		{

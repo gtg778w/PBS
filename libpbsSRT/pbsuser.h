@@ -14,7 +14,6 @@ typedef struct SRT_handle_s
 	pbsSRT_predictor_t  *predictor;
 	uint64_t			period;
 	uint64_t			start_bandwidth;
-	int				    history_length;
 
 	char				logging_enabled;
 	struct SRT_job_log	*log;
