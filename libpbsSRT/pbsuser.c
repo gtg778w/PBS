@@ -158,17 +158,8 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 	}
 	procfile = ret_val;
 
-	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_PERIOD, period);
-	if(ret_val)
-	{
-		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_PERIOD failed!\n");
-		goto close_exit;
-	}
-	handle->period = period;
-
     cmd.cmd = PBS_JBMGT_CMD_SETUP;
     cmd.args[0] = period;
-    cmd.args[1] = (unsigned long)(2.0 * (double)(1 << 16));
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
@@ -176,12 +167,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
         goto close_exit;
     }
     
-	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_RUNTIME, start_bandwidth);
-	if(ret_val) 
-	{
-		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_RUNTIME failed!\n");
-		goto close_exit;
-	}
 	handle->start_bandwidth = start_bandwidth;
 
 	ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_SRT_HISTLEN, history_length);
@@ -191,14 +176,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 		goto close_exit;
 	}
 	handle->history_length = history_length;
-
-    /*FIXME should be able to remove this*/
-	/*ret_val = ioctl(procfile, PBS_IOCTL_JBMGT_START, 0);
-	if(ret_val)
-	{
-		perror("pbs_SRT_setup: ioctl with PBS_IOCTL_JBMGT_SRT_START failed!\n");
-		goto close_exit;
-	}*/
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));

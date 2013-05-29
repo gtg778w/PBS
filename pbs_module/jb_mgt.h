@@ -144,7 +144,6 @@ struct SRT_struct
 	struct task_struct	*task;
 
 	char			state;
-	char			init_mask;
 };
 
 enum {SRT_OPEN, SRT_CONFIGURED, SRT_STARTED, SRT_LOOP, SRT_CLOSED};

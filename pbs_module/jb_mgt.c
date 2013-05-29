@@ -60,7 +60,6 @@ struct SRT_struct *allocate_SRT_struct(void)
 	initable->overuse_count = 0;
 
 	initable->state 	= SRT_OPEN;
-	initable->init_mask 	= 0;
 
 	increment_SRT_count();
 
@@ -113,16 +112,10 @@ int jb_mgt_open(struct inode *inode, struct file *filp)
 	return ret;
 }
 
-#define SRT_PERIOD_INIT_MASK 1
-#define SRT_RUNTIME_INIT_MASK 2
-#define SRT_HISTLEN_INIT_MASK 4
-#define SRT_INITED(strct) (strct->init_mask == (SRT_PERIOD_INIT_MASK | SRT_RUNTIME_INIT_MASK | SRT_HISTLEN_INIT_MASK))
-
 /*FIXME: The entire ioctl command should eventually be removed*/
 long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
 	unsigned int ret = 0;
-	u64 temp;
 
 	struct SRT_struct *SRT_struct;
 
@@ -137,84 +130,17 @@ long jb_mgt_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 	switch(cmd)
 	{
-		case PBS_IOCTL_JBMGT_PERIOD:
-			printk(KERN_INFO "Setting SRT period to %li.\n", arg);
-
-			//Check that the requested period is a multiple of the scheduling period
-			temp = (u64)arg*1000;
-			if((temp != 0) && ( (temp % scheduling_period_ns.tv64) == 0))
-			{
-				SRT_struct->timing_struct.task_period.tv64 = temp;
-				temp = temp / scheduling_period_ns.tv64;
-
-				//Check that the task period is sufficiently small
-				if( (temp & ((s64)(-1) << 32)) == 0)
-				{
-					(SRT_struct->history)->sp_per_tp = temp;
-
-					SRT_struct->init_mask = SRT_struct->init_mask | SRT_PERIOD_INIT_MASK;
-					break;
-				}
-				else
-				{
-					printk(KERN_INFO "Trying to set SRT task period to %li! Too Large!\n", arg);
-					ret = -EINVAL;
-				}
-			}
-			else
-			{
-				printk(KERN_INFO "Trying to set SRT period to %li, not a positive multiple of root period (%li)!\n", 
-					 (arg/1000), (unsigned long)(scheduling_period_ns.tv64/1000));
-				ret = -EINVAL;
-			}
-			
-			printk(KERN_INFO "SRT period is invalid.\n");
-			
-			break;
-
-		case PBS_IOCTL_JBMGT_SRT_RUNTIME:
-			printk(KERN_INFO "Setting SRT runtime to %li.\n", arg);
-
-			//Check that the runtime is less than the task_period
-			temp = (u64)arg*1000;
-			temp = temp/((SRT_struct->history)->sp_per_tp);
-
-			if((temp < SRT_struct->timing_struct.task_period.tv64) && (temp > 0))
-			{
-				allocation_array[SRT_struct->allocation_index] = temp;
-				SRT_struct->init_mask = SRT_struct->init_mask | SRT_RUNTIME_INIT_MASK;
-				break;
-			}
-			printk(KERN_INFO "SRT runtime is invalid.\n");
-			ret = -EINVAL;
-			break;
-
 		case PBS_IOCTL_JBMGT_SRT_HISTLEN:
 			//Check that the history length is sufficiently small
 			if(arg <= 120)
 			{
 				printk(KERN_INFO "Setting SRT history length to %li.\n", arg);
 				(SRT_struct->history)->history_length = (char)arg;
-				SRT_struct->init_mask = SRT_struct->init_mask | SRT_HISTLEN_INIT_MASK;
-				break;
+			break;
 			}
 			
 			printk(KERN_INFO "history length must be less then 121. Got %li\n", arg);			
 			ret = -EINVAL;
-			break;
-
-		case PBS_IOCTL_JBMGT_START:
-			printk(KERN_INFO "Creating cgroup for SRT_task.\n");
-
-			if( SRT_INITED(SRT_struct) )
-			{
-				SRT_struct->state = SRT_STARTED;
-			}
-			else
-			{
-				printk(KERN_INFO "Trying to create cgroup without setting up parameters!\n");
-				ret = -EINVAL;
-			}
 			break;
 
 		default:
@@ -281,10 +207,8 @@ ssize_t jb_mgt_write(   struct file *filep,
     switch(cmd.cmd)
     {
         case PBS_JBMGT_CMD_SETUP:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %lli, %llu.%llu",
-                                cmd.args[0],
-                                ((u64)(cmd.args[1]) >> 16),
-                                ((u64)(cmd.args[1]) & 0xffff));
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %lli",
+                                cmd.args[0]);
             
             /*The PBS_JBMGT_CMD_SETUP command should only be 
             issued in the SRT_OPEN state or SRT_CONFIGURED state*/
@@ -298,7 +222,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             }
 
             /*Check that the task period actually makes sense*/
-            task_period = (u64)cmd.args[0] * 1000;
+            task_period = (u64)cmd.args[0];
             sp_per_tp   = task_period / scheduling_period_ns.tv64;
             
             if( (task_period < 0) || ((task_period % scheduling_period_ns.tv64) != 0))
@@ -323,6 +247,8 @@ ssize_t jb_mgt_write(   struct file *filep,
 			    goto exit0;
 			}
 			
+			SRT_struct->timing_struct.task_period.tv64 = task_period;
+			(SRT_struct->history)->sp_per_tp = sp_per_tp;
 			/*The conditoins and passed values are valid*/
 			SRT_struct->state = SRT_CONFIGURED;
             break;
@@ -340,16 +266,6 @@ ssize_t jb_mgt_write(   struct file *filep,
                 ret = -EINVAL;
                 goto exit0;
             }
-
-            /*FIXME: remove this*/
-		    if( SRT_INITED(SRT_struct) == 0)
-		    {
-			    printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
-			                        "without setting up parameters by process %d.", 
-			                        current->pid);
-			    ret = -EINVAL;
-			    goto exit0;
-		    }
 		    
 		    SRT_struct->state = SRT_STARTED;
             break;
