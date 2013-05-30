@@ -6,7 +6,7 @@ ARFLAGS= -rsv
 
 MODDIR=../pbs_module
 
-PREDICTORS=pbsSRT_predictor_template.o MABank.o
+PREDICTORS=pbsSRT_predictor_template.o MABank.o MAVSLMSBank.o
 
 LIBOBJS= pbsuser.o pbsSRT_predictor.o $(PREDICTORS)
 
@@ -26,6 +26,9 @@ pbsSRT_predictor_template.o: pbsSRT_predictor_template.c
 
 MABank.o: MABank.c MABank.h
 	$(CC) $(CFLAGS) -g -O3 -o MABank.o MABank.c
+
+MAVSLMSBank.o: MAVSLMSBank.c MAVSLMSBank.h
+	$(CC) $(CFLAGS) -g -O3 -o MAVSLMSBank.o MAVSLMSBank.c
 
 predictor_test: libpbsSRT.a predictor_test.c
 	$(CC) -Wall -Wmissing-prototypes -L . -g -o predictor_test predictor_test.c -lpbsSRT

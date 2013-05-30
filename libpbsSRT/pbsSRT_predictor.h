@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "MABank.h"
+#include "MAVSLMSBank.h"
 
 typedef void* (*pbsSRT_alloc_func_t)(void);
 

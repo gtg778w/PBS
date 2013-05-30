@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include "pbsSRT_predictor.h"
@@ -9,11 +10,26 @@ typedef struct pbsSRT_predictor_template_s
     const pbsSRT_predictor_t  predictor;
 } pbsSRT_predictor_template_t;
 
+const pbsSRT_predictor_template_t mavslmsbank_template
+=
+{
+    .name = "mavslmsbank",
+    .next = NULL,
+    .predictor = 
+    {
+        .alloc  =   pbsSRT_alloc_MAVSLMSBank,
+        .init   =   pbsSRT_init_MAVSLMSBank,
+        .update =   pbsSRT_update_MAVSLMSBank,
+        .predict=   pbsSRT_predict_MAVSLMSBank,
+        .free   =   pbsSRT_free_MAVSLMSBank 
+        }
+};
+
 const pbsSRT_predictor_template_t mabank_template
 =
 {
     .name = "mabank",
-    .next = NULL,
+    .next = &mavslmsbank_template,
     .predictor = 
     {
         .alloc  =   pbsSRT_alloc_MABank,

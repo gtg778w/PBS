@@ -3,20 +3,6 @@
 #include <string.h>
 #include <float.h>
 
-/*The forgetting factor for the exponential running average of error values
-1 - 2^(-5) = 1 - 0.03125 = 0.96875*/
-#define MABank_gamma (0.96875)
-
-/*
-    Have a bank of MA filters of length 0, 2, 4, 8, 16, 32, 64
-*/
-
-#define MABank_FCOUNT (7)
-static const int32_t MABank_lengths[MABank_FCOUNT] = {2, 4, 8, 16, 32, 64, 128};
-static const double  MABank_weights[MABank_FCOUNT] = {  (1/2.0), (1/4.0), (1/8.0),
-                                                        (1/16.0), (1/32.0), (1/64.0),
-                                                        (1/128.0)};
-
 typedef struct MABank_s
 {
     int32_t warmup;
