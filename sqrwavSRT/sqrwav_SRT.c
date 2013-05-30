@@ -57,12 +57,12 @@ char *usage_string = "[options]\n"\
         "\n"\
         "-A: prediction algorithm (\"mabank\" by default)"
         "-p: scheduling period\n"\
-        "-b: starting scheduling bandwidth\n"\
-        "-l: job history length\n"\
+        "-b: initial exec-time prediction\n"\
+        "-a: alpha parameter\n"\
         "-L: name of log file\n\n";
 
 char* optstring
-    = "j:P:D:d:M:m:N:A:p:b:l:L:f";
+    = "j:P:D:d:M:m:N:A:p:b:a:L:f";
 
 int main (int argc, char * const * argv)
 {
@@ -74,7 +74,8 @@ int main (int argc, char * const * argv)
 
     //pbs related variables
 	SRT_handle handle;
-	unsigned long period = 40000, bandwidth, hlength = 0;
+	unsigned long period = 40000, bandwidth;
+	double alpha = 1.0;
    	char* logfilename = NULL;
 	unsigned char bflag = 0;
     unsigned char fflag = 0, Lflag = 0;
@@ -214,19 +215,20 @@ int main (int argc, char * const * argv)
 				bflag = 1;
                 break;
 
-            case 'l':
+            case 'a':
                 errno = 0;
-				hlength = strtoul(optarg, NULL, 10);
+				alpha = strtod(optarg, NULL);
 				if(errno)
 				{
-					perror("Failed to parse the p option");
+					perror("Failed to parse the a option");
 		            ret = -EINVAL;
 		            goto exit0;
 				}
 
-                if(hlength > 120)
+                if(alpha < 0)
 	            {
-		            fprintf(stderr, "The history length can be at most 120! got %lu\n", hlength);
+		            fprintf(stderr, "The alpha parameter must be non-negative. "
+		                            "Prased -a %f.\n", alpha);
 		            ret = -EINVAL;
 		            goto exit0;
 	            }
@@ -287,7 +289,7 @@ int main (int argc, char * const * argv)
     printf("\nSchedulng Parameters:\n");
 	printf("\tscheduling period:\t%luus\n", period);
     printf("\tbandwidth:\t\t%lu\n", bandwidth);
-    printf("\thlength:\t\t%lu\n", hlength);
+    printf("\talpha:\t\t%f\n", alpha);
 	if(Lflag == 1)
 	{
 		printf("\tLogging Enabled:\t%s\n\n", logfilename);
@@ -314,7 +316,7 @@ int main (int argc, char * const * argv)
     }
 
 	//setup the scheduler
-	ret = pbsSRT_setup(period, bandwidth, hlength, &predictor, &handle, 
+	ret = pbsSRT_setup(period, bandwidth, alpha, &predictor, &handle, 
 	                   Lflag, 10000, logfilename);
 	if(ret)
 	{

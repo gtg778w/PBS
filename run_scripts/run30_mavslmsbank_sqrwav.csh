@@ -24,8 +24,8 @@
     set A1="mavslmsbank"
     set p1="60000000"
     set b1="24000000"
-    set l1="20"
-    set logfilesuffix1="_1_sqrwavSRT_"${j1}"_"${P1}"_"${D1}"_"${d1}"_"${M1}"_"${m1}"_"${N1}"_"${A1}"_"${p1}"_"${b1}"_"${l1}".log"
+    set a1="1.0"
+    set logfilesuffix1="_1_sqrwavSRT_"${j1}"_"${P1}"_"${D1}"_"${d1}"_"${M1}"_"${m1}"_"${N1}"_"${A1}"_"${p1}"_"${b1}"_"${a1}".log"
 
     set j2="2700"
     set P2="2700"
@@ -37,14 +37,14 @@
     set A2="mavslmsbank"
     set p2="40000000"
     set b2="16000000"
-    set l2="20"
-    set logfilesuffix2="_2_sqrwavSRT_"${j2}"_"${P2}"_"${D2}"_"${d2}"_"${M2}"_"${m2}"_"${N2}"_"${A2}"_"${p2}"_"${b2}"_"${l2}".log"
+    set a2="1.0"
+    set logfilesuffix2="_2_sqrwavSRT_"${j2}"_"${P2}"_"${D2}"_"${d2}"_"${M2}"_"${m2}"_"${N2}"_"${A2}"_"${p2}"_"${b2}"_"${a2}".log"
 
     echo "Training run: ... "
     echo 0 > /proc/sched_pbs_actv
     bin/pbsAllocator -f -s 0 -S &
     sleep 1
-    bin/sqrwavSRT -f -j 16 -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p $p1} -b ${b1} -l ${l1} -L /dev/null
+    bin/sqrwavSRT -f -j 16 -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p $p1} -b ${b1} -a ${a1} -L /dev/null
     echo 0 > /proc/sched_pbs_actv
     echo "complete! "
 
@@ -61,10 +61,9 @@
 
         bin/pbsAllocator -f -s ${sa} > ${logfilea} &
         sleep 1
-        bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -l ${l1} -L ${logfile1} &
-        bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -A ${A2} -p ${p2} -b ${b2} -l ${l2} -L ${logfile2} &
+        bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -a ${a1} -L ${logfile1} &
+        bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -A ${A2} -p ${p2} -b ${b2} -a ${a2} -L ${logfile2} &
         bin/poll_pbs_actv
 
         echo "completed "$i"of 30"
     end
-

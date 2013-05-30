@@ -14,6 +14,7 @@ typedef struct SRT_handle_s
 	pbsSRT_predictor_t  *predictor;
 	uint64_t			period;
 	uint64_t			start_bandwidth;
+	double              alpha_squared;
 
 	char				logging_enabled;
 	struct SRT_job_log	*log;
@@ -23,13 +24,13 @@ typedef struct SRT_handle_s
 	int64_t             *pu_cl;
 	int64_t             *pstd_cl;
 	FILE				*log_file;
-	int				log_index;
-	int				log_size;
+	int				    log_index;
+	int				    log_size;
 
 } SRT_handle;
 
-int pbsSRT_setup(  uint64_t period, uint64_t start_bandwidth, 
-                    int history_length,
+int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth, 
+                    double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
 			        char Lflag, int logCount, char *logFileName);

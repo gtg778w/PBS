@@ -42,7 +42,7 @@ typedef int32_t  s32;
 #include "pbsuser.h"
 
 int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth, 
-                    int history_length,
+                    double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
 			        char Lflag, int logCount, char *logFileName)
@@ -132,7 +132,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 			ret_val = -1;
 			goto free2_exit;
 		}
-		
 		handle->log_index = 0;
 		handle->log_size = logCount;
 		handle->logging_enabled = 1;
@@ -168,6 +167,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
     }
     
 	handle->start_bandwidth = start_bandwidth;
+    handle->alpha_squared   = alpha * alpha;
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
@@ -248,6 +248,9 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 
     job_mgt_cmd_t cmd;
 
+    int64_t u_c0, std_c0;
+    int64_t u_cl, std_cl;
+
     /*Get various data such as execution time for the job that just completed*/
 	if((handle->logging_enabled == 1) && (handle->log_index < handle->log_size))
 	{
@@ -279,17 +282,22 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
     ret = handle->predictor->update(handle->predictor->state,
                                     runtime2,
-                                    &(cmd.args[0]), &(cmd.args[1]),
-                                    &(cmd.args[2]), &(cmd.args[3]));
+                                    &u_c0, &std_c0,
+                                    &u_cl, &std_cl);
     if(ret == -1)
     {
         /*If the predictor is not ready to produce valid output (still warming up)
         use the budget values specified in the command-line arguments*/
-        cmd.args[0] = handle->start_bandwidth;
-        cmd.args[1] = 0;
-        cmd.args[2] = handle->start_bandwidth;
-        cmd.args[3] = 0;
+        u_c0    = handle->start_bandwidth;
+        std_c0  = 0;
+        u_cl    = handle->start_bandwidth;
+        std_cl  = 0;
     }
+    
+    cmd.args[0] = u_c0;
+    cmd.args[1] = (int64_t)(handle->alpha_squared * (double)std_c0);
+    cmd.args[2] = u_cl;
+    cmd.args[3] = (int64_t)(handle->alpha_squared * (double)std_cl);
 
     if((handle->logging_enabled == 1) && (handle->log_index <= handle->log_size))
     {
