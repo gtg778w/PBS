@@ -149,9 +149,6 @@ void pba_firstjob(struct SRT_struct *ss)
     (ss->log).runtime2 = 0;
     (ss->log).last_sp_compt_allocated	= (pba_struct_p->sp_budget);
 	(ss->log).last_sp_compt_used_sofar	= 0;
-    //FIXME
-    (ss->log).throttle_count = 0;
-    (ss->log).switch_count = 0;
 
     //reset the total accumulated runtime to 0
 	pba_struct_p->total_jb_runtime = 0;
@@ -168,10 +165,6 @@ void pba_firstjob(struct SRT_struct *ss)
     pba_struct_p->total_sp_runtime = 0;
     //set now as the beginning of current activation
     pba_struct_p->last_actv_time = now;
-
-    //FIXME
-    pba_struct_p->switch_count = 0;
-    pba_struct_p->throttle_count = 0;
 
 }
 
@@ -205,19 +198,11 @@ void pba_nextjob(struct SRT_struct *ss)
     (ss->log).runtime = total_runtime;
     (ss->log).last_sp_compt_allocated	= (pba_struct_p->sp_budget);
 	(ss->log).last_sp_compt_used_sofar	= current_sp_runtime;
-    //FIXME
-    (ss->log).throttle_count = pba_struct_p->throttle_count;
-    (ss->log).switch_count = pba_struct_p->switch_count;
-	(ss->log).miss = (ss->queue_length != 0);
 
     //reset the total accumulated runtime to 0
 	pba_struct_p->total_jb_runtime = 0;
 	//set now as the beginning of the new job
 	pba_struct_p->jb_actv_time = now;
-    //FIXME
-    pba_struct_p->switch_count = 0;
-    pba_struct_p->throttle_count = 0;
-
 }
 
 /*Job boundary according to the second definition of job*/
@@ -308,7 +293,6 @@ u64 check_budget_remaining(struct pba_struct *pba_struct_p)
             }
 
             pba_struct_p->flags |= PBA_THROTTLED;
-            (pba_struct_p->throttle_count)++;
 
             //throttle the task (by putting it to sleep)
             set_current_state(TASK_UNINTERRUPTIBLE);
@@ -468,8 +452,6 @@ void pba_schedin(   struct preempt_notifier *notifier,
 	    pba_struct_p->last_actv_time = now;
         pba_struct_p->jb_actv_time = now;
         pba_struct_p->jb_actv_time2 = now;
-
-        (pba_struct_p->switch_count)++;
 
         //reset the SLEEPING flag
         pba_struct_p->flags &= (~PBA_SLEEPING);

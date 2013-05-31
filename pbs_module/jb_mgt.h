@@ -118,9 +118,6 @@ struct pba_struct
 
     u16 flags;
 
-    //FIXME
-    u16 switch_count;
-    u16 throttle_count;
 };
 
 //the following are bits in the flags field 

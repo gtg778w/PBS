@@ -166,6 +166,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
         goto close_exit;
     }
     
+	handle->period          = period;
 	handle->start_bandwidth = start_bandwidth;
     handle->alpha_squared   = alpha * alpha;
 
@@ -330,6 +331,9 @@ void pbsSRT_close(SRT_handle *handle)
 
     job_mgt_cmd_t cmd;
 	int ret_val;
+	
+	int64_t relative_LFT;
+	unsigned long miss;
 
     /*Stop adaptive budget allocation and enforcement for the task*/
     cmd.cmd = PBS_JBMGT_CMD_STOP;
@@ -344,16 +348,18 @@ void pbsSRT_close(SRT_handle *handle)
 	if(handle->logging_enabled == 1)	
 	{
 		fprintf(handle->log_file, "%i, %llu, %llu, 0, 0, 0, 0, 0, 0, 0, 0\n",	getpid(),
-											(unsigned long long)handle->period, 
+											(unsigned long long)handle->period,
 											(unsigned long long)handle->start_bandwidth);
 
 		for(i = 0; i < handle->log_index; i++)
 		{
 			log_entry = &(handle->log[i]);
+			relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
+			miss = (relative_LFT > handle->period);
 			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
 												(unsigned long)log_entry->runtime,
 												(unsigned long)log_entry->runtime2,
-                                                (unsigned long)log_entry->miss,
+                                                miss,
                                                 (unsigned long)log_entry->abs_releaseTime,
                                                 (unsigned long)log_entry->abs_LFT,
                                                 log_entry->last_sp_compt_allocated,

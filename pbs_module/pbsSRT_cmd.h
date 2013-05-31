@@ -32,26 +32,14 @@ typedef struct job_mgt_cmd_s
 
 struct SRT_job_log
 {
+	u64 runtime2;
+	u64	runtime;
 	u64	abs_releaseTime;
 	u64	abs_LFT;
-	u32	runtime;
-	u32 runtime2;
 
     u32	last_sp_compt_allocated;
 	u32	last_sp_compt_used_sofar;
-
-    //FIXME
-    u32 throttle_count;
-    u32 switch_count;
-    unsigned char miss;
 };
-
-/*FIXME: This should be removed along with the rest of the ioctl code*/
-#define PBS_IOCTL_JBMGT_PERIOD 		0
-#define PBS_IOCTL_JBMGT_SRT_RUNTIME		1
-#define PBS_IOCTL_JBMGT_SRT_HISTLEN		3
-#define PBS_IOCTL_JBMGT_START			4
-#define PBS_IOCTL_JBMGT_MAX			5
 
 
 
