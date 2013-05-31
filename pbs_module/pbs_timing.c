@@ -243,6 +243,9 @@ void assign_bandwidths(void)
 
 		//modify its bandwidth allocation
         pba_set_budget(SRT_struct, allocation);
+        
+        //accumulate the total budget allocated
+        SRT_struct->cumulative_budget = SRT_struct->cumulative_budget + allocation;
 
 		//move to the next task in the list
 		pos = pos->next;		
@@ -400,8 +403,15 @@ int sleep_till_next_period(struct SRT_timing_struct *tq_entry)
 	}
     else
     {
-        if((ss->queue_length) < 0)
+        if((ss->queue_length) > 0)
         {
+            /*There are more jobs accumulated and so the last job missed its deadline.
+            The next job has already been released*/
+            (ss->total_misses)++;
+        }
+        else /*if((ss->queue_length) < 0)*/
+        {
+            /*Something really screwey is going on with negative queue lengths*/
             static unsigned char flag = 1;
 
             if(flag == 1)

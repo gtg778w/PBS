@@ -21,6 +21,13 @@ static void free_SRT_struct(struct SRT_struct *freeable)
 {
 	free_loaddata(freeable->loaddata);
 
+    /*FIXME*/
+    printk(KERN_INFO    "free_SRT_struct called by task (%d), cumulative budget %lluns, "
+                        "total misses %llu\n", 
+                        freeable->task->pid, 
+                        freeable->cumulative_budget,
+                        freeable->total_misses);
+
 	kmem_cache_free(SRT_struct_slab_cache, freeable);
 
 	decrement_SRT_count();
@@ -37,6 +44,9 @@ struct SRT_struct *allocate_SRT_struct(void)
 		printk(KERN_INFO "Failed to allocate memory for jb_mgt_struct_t in jb_mgt_open!\n");
 		return NULL;
 	}
+
+    initable->cumulative_budget = 0;
+    initable->total_misses = 0;
 
 	initable->loaddata = alloc_loaddata();
 	if(initable->loaddata == NULL)
