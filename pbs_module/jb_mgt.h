@@ -125,19 +125,12 @@ struct pba_struct
 #define PBA_SLEEPING (0x1)
 #define PBA_THROTTLED (0x2)
 
-
 struct SRT_struct
 {
 	struct SRT_timing_struct	timing_struct;
 	struct pba_struct           pba_struct;
 	struct SRT_job_log 			log;
-
-    /*the total budget allocated to this task since the first scheduling period for this 
-    task*/
-    u64 cumulative_budget;
-    /*the total number of jobs that missed the corresponding deadline since the first
-    job*/
-    u64 total_misses;
+    struct SRT_summary_s        summary;
 
 	SRT_loaddata_t	*loaddata;
 	u64				maximum_overuse;

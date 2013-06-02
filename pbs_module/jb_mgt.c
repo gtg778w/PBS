@@ -22,11 +22,16 @@ static void free_SRT_struct(struct SRT_struct *freeable)
 	free_loaddata(freeable->loaddata);
 
     /*FIXME*/
-    printk(KERN_INFO    "free_SRT_struct called by task (%d), cumulative budget %lluns, "
+    printk(KERN_INFO    "free_SRT_struct called by task (%d), "
+                        "cumulative budget %llins, "
+                        "cumulative budget before saturation %llins, "
+                        "total consumed budget %llins, "
                         "total misses %llu\n", 
                         freeable->task->pid, 
-                        freeable->cumulative_budget,
-                        freeable->total_misses);
+                        freeable->summary.cumulative_budget,
+                        freeable->summary.cumulative_budget_sat,
+                        freeable->summary.consumed_budget,
+                        freeable->summary.total_misses);
 
 	kmem_cache_free(SRT_struct_slab_cache, freeable);
 
@@ -45,8 +50,8 @@ struct SRT_struct *allocate_SRT_struct(void)
 		return NULL;
 	}
 
-    initable->cumulative_budget = 0;
-    initable->total_misses = 0;
+    /*zero out the summary structure*/
+    initable->summary = (struct SRT_summary_s){0, 0, 0, 0};
 
 	initable->loaddata = alloc_loaddata();
 	if(initable->loaddata == NULL)
@@ -124,26 +129,20 @@ int jb_mgt_open(struct inode *inode, struct file *filp)
 ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *offset)
 {
 	struct SRT_struct *SRT_struct;
-	int ret = count;
 
 	SRT_struct = (struct SRT_struct*)(filp->private_data);
 
     pba_nextjob2(SRT_struct);
 
-    if(sizeof(struct SRT_job_log) == count)
-    {
-	    if(copy_to_user(dst, &(SRT_struct->log), sizeof(struct SRT_job_log)))
-		{
-			ret = -EFAULT;
-		}
-		/*else everything is going smoothely*/ 
-	}
-	else
+    count = (count > sizeof(struct SRT_job_log))?
+            sizeof(struct SRT_job_log) : count;
+    
+    if(copy_to_user(dst, &(SRT_struct->log), count))
 	{
-	    ret = -EINVAL;
+		count = -EFAULT;
 	}
 
-	return ret;
+	return count;
 }
 
 ssize_t jb_mgt_write(   struct file *filep, 
@@ -155,6 +154,7 @@ ssize_t jb_mgt_write(   struct file *filep,
     ssize_t ret = count;
     
 	struct SRT_struct *SRT_struct = (struct SRT_struct*)(filep->private_data);
+	struct SRT_summary __user *summary_p = NULL;
 	
 	u64 task_period;
     u64 sp_per_tp; /*reservation periods in a task period*/
@@ -310,11 +310,21 @@ ssize_t jb_mgt_write(   struct file *filep,
 		        SRT_struct->state = SRT_CLOSED;
 		        preempt_enable();
             }
-            /*FIXME: Reset the SRT_struct to its state after the last valid call to 
-            PBS_JBMGT_CMD_SETUP*/
+            
             SRT_struct->state = SRT_CLOSED;
             break;
-                
+        
+        case PBS_JBMGT_CMD_GETSUMMARY:
+            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_GETSUMMARY");
+            summary_p = (struct SRT_summary __user *)cmd.args[0];
+            if( copy_to_user(   summary_p, &(SRT_struct->summary), 
+                                sizeof(struct SRT_summary_s)) )
+		    {
+			    ret = -EFAULT;
+			    goto exit0;
+		    }
+            break;
+            
         default:
             printk(KERN_INFO    "Invalid cmd code in job_mgt_cmd_t structure passed to "
                                 "jb_mgt_write by process %d.", current->pid);

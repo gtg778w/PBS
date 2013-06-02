@@ -216,8 +216,13 @@ void assign_bandwidths(void)
 
 		bw_sum = bw_sum + allocation_array[SRT_struct->allocation_index];
 
+        //accumulate the total budget allocated before saturation
+        SRT_struct->summary.cumulative_budget = 
+            SRT_struct->summary.cumulative_budget + 
+            allocation_array[SRT_struct->allocation_index];
+
 		//move to the next task in the list
-		pos = pos->next;				
+		pos = pos->next;		
 	}
 
     //compute the appropriate saturation level according to time remaining
@@ -245,7 +250,8 @@ void assign_bandwidths(void)
         pba_set_budget(SRT_struct, allocation);
         
         //accumulate the total budget allocated
-        SRT_struct->cumulative_budget = SRT_struct->cumulative_budget + allocation;
+        SRT_struct->summary.cumulative_budget_sat = 
+            SRT_struct->summary.cumulative_budget_sat + allocation;
 
 		//move to the next task in the list
 		pos = pos->next;		
@@ -352,7 +358,7 @@ int stop_pbs_timing(char not_allocator)
 	}
 
 
-//print any allocator related statistics
+    //print any allocator related statistics
     if(allocator_boundaryrun_count > 0)
     {
 		printk(KERN_INFO "Allocator detected running at scheduling period"
@@ -407,7 +413,7 @@ int sleep_till_next_period(struct SRT_timing_struct *tq_entry)
         {
             /*There are more jobs accumulated and so the last job missed its deadline.
             The next job has already been released*/
-            (ss->total_misses)++;
+            (ss->summary.total_misses)++;
         }
         else /*if((ss->queue_length) < 0)*/
         {

@@ -331,6 +331,9 @@ void pba_refresh_budget(struct SRT_struct *SRT_struct_p)
 		}
 	}
 
+	//accumulate the budget used
+	SRT_struct_p->summary.consumed_budget = 
+	    SRT_struct_p->summary.consumed_budget + pba_struct_p->total_sp_runtime;
 	pba_struct_p->total_sp_runtime = 0;
 
     if(pba_struct_p->flags & PBA_THROTTLED)

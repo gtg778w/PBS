@@ -45,7 +45,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
                     double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
-			        char Lflag, int logCount, char *logFileName)
+			        int loglevel, int logCount, char *logFileName)
 {
 	pid_t mypid;
 	int	min_priority;
@@ -59,11 +59,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 	int ret_val;
 
 	mypid =  getpid();
-
-#ifdef VERBOSE_PBS
-
-	printf("SRT task has pid: %i\n\n", mypid);
-#endif
 
 /***************************************************************************/
 //setup Linux scheduling parameters
@@ -84,7 +79,10 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 /***************************************************************************/
 //check if logging is enabled and if so allocate memory for it
 
-	if(Lflag == 1)
+    handle->loglevel = loglevel;
+    handle->job_count = 0;
+    
+	if(loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
 	{
 		handle->log_file = fopen(logFileName, "w");
 		if(handle->log_file == NULL)
@@ -94,56 +92,50 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
 			goto streight_exit;
 		}
 
-		handle->log = (struct SRT_job_log*)malloc(logCount*sizeof(struct SRT_job_log));
-		if(handle->log == NULL)
-		{
-			perror("ERROR: ");
-			fprintf(stderr, "pbs_SRT_setup: Failed to allocate memory for log!\n");		
-			ret_val = -1;
-			goto lclose_exit;
-		}
-
-		ret_val = mlock(handle->log, (logCount*sizeof(struct SRT_job_log)));
-		if(ret_val)
-		{
-			perror("pbs_SRT_setup: mlock failed for the log array");
-			ret_val = -1;
-			goto free_exit;
-		}
-
-        handle->pu_c0   = (int64_t*)calloc(logCount*4, sizeof(int64_t));
-        if(NULL == handle->pu_c0)
+        if(loglevel >= pbsSRT_LOGLEVEL_FULL)
         {
-            perror("pbs_SRT_setup: calloc failed for the predictor output arrays");
-			ret_val = -1;
-			goto free_exit;
-        }
-        else
-        {
-            handle->pstd_c0 = &(handle->pu_c0[logCount]);
-            handle->pu_cl   = &(handle->pstd_c0[logCount]);
-            handle->pstd_cl =  &(handle->pu_cl[logCount]);
-        }
-        
-        ret_val = mlock(handle->pu_c0, (logCount*4 * sizeof(int64_t)));
-		if(ret_val)
-		{
-			perror("pbs_SRT_setup: mlock failed for the predictor output arrays");
-			ret_val = -1;
-			goto free2_exit;
-		}
-		handle->log_index = 0;
-		handle->log_size = logCount;
-		handle->logging_enabled = 1;
-	}
-	else
-	{
-		handle->log_file = NULL;
-		handle->log = NULL;
-		handle->log_index = 0;
-		handle->log_size = 0;
-		handle->logging_enabled = 0;
-	}
+
+		    handle->log = (struct SRT_job_log*)malloc(logCount*sizeof(struct SRT_job_log));
+		    if(handle->log == NULL)
+		    {
+			    perror("ERROR: ");
+			    fprintf(stderr, "pbs_SRT_setup: Failed to allocate memory for log!\n");		
+			    ret_val = -1;
+			    goto lclose_exit;
+		    }
+
+		    ret_val = mlock(handle->log, (logCount*sizeof(struct SRT_job_log)));
+		    if(ret_val)
+		    {
+			    perror("pbs_SRT_setup: mlock failed for the log array");
+			    ret_val = -1;
+			    goto free_exit;
+		    }
+
+            handle->pu_c0   = (int64_t*)calloc(logCount*4, sizeof(int64_t));
+            if(NULL == handle->pu_c0)
+            {
+                perror("pbs_SRT_setup: calloc failed for the predictor output arrays");
+			    ret_val = -1;
+			    goto free_exit;
+            }
+            else
+            {
+                handle->pstd_c0 = &(handle->pu_c0[logCount]);
+                handle->pu_cl   = &(handle->pstd_c0[logCount]);
+                handle->pstd_cl =  &(handle->pu_cl[logCount]);
+            }
+            
+            ret_val = mlock(handle->pu_c0, (logCount*4 * sizeof(int64_t)));
+		    if(ret_val)
+		    {
+			    perror("pbs_SRT_setup: mlock failed for the predictor output arrays");
+			    ret_val = -1;
+			    goto free2_exit;
+		    }
+		    handle->log_size = logCount;
+	    }/* if(loglevel > pbsSRT_LOGLEVEL_SUMMARY)*/
+    }/* if(loglevel > pbsSRT_LOGLEVEL_NONE)*/
 
 /***************************************************************************/
 //regster with the pbs module and setup the pbs scheduling parameters
@@ -244,7 +236,6 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 {
 	int ret = 0;
 
-	struct SRT_job_log dummy;
 	u64 runtime2;
 
     job_mgt_cmd_t cmd;
@@ -253,34 +244,35 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     int64_t u_cl, std_cl;
 
     /*Get various data such as execution time for the job that just completed*/
-	if((handle->logging_enabled == 1) && (handle->log_index < handle->log_size))
+	if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+	    (handle->job_count < handle->log_size))
 	{
 	    /*Store the data in the log if logging is enabled.*/
-		ret = read(handle->procfile, &(handle->log[handle->log_index]), sizeof(struct SRT_job_log));
+		ret = read(handle->procfile, &(handle->log[handle->job_count]), sizeof(struct SRT_job_log));
 		if(ret != sizeof(struct SRT_job_log))
 		{
 		    ret = -1; 
 			goto exit0;
 		}
 		
-		runtime2 = (handle->log[handle->log_index]).runtime2;
-		(handle->log_index)++;
+		runtime2 = (handle->log[handle->job_count]).runtime2;
 	}
 	else
 	{
-	    /*Store the data in a local variable if logging is disabled.*/
-		ret = read(handle->procfile, &dummy, sizeof(struct SRT_job_log));
-		if(ret != sizeof(struct SRT_job_log))
+	    /*Store just the runtime in a local variable if logging is disabled.*/
+		ret = read(handle->procfile, &runtime2, sizeof(u64));
+		if(ret != sizeof(u64))
 		{
 			ret = -1;
 			goto exit0;
 		}
 		
-		runtime2 = dummy.runtime2;
 	}
 
+    /*Increment the job count*/
+	(handle->job_count)++;
+
     /*Update the predictor and predict the execution time of the next job*/
-    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
     ret = handle->predictor->update(handle->predictor->state,
                                     runtime2,
                                     &u_c0, &std_c0,
@@ -295,22 +287,12 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         std_cl  = 0;
     }
     
+    /*Issue the PBS_JBMGT_CMD_NEXTJOB command with the updated prediction*/
+    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
     cmd.args[0] = u_c0;
     cmd.args[1] = (int64_t)(handle->alpha_squared * (double)std_c0);
     cmd.args[2] = u_cl;
     cmd.args[3] = (int64_t)(handle->alpha_squared * (double)std_cl);
-
-    if((handle->logging_enabled == 1) && (handle->log_index <= handle->log_size))
-    {
-        /*If logging is enabled, log the predicted execution time and the estimated
-        variance in the prediction error*/
-        handle->pu_c0[handle->log_index-1] = cmd.args[0];
-        handle->pstd_c0[handle->log_index-1] = cmd.args[1];
-        handle->pu_cl[handle->log_index-1] = cmd.args[2];
-        handle->pstd_cl[handle->log_index-1] = cmd.args[3];
-    }
-    
-    /*Issue the command with the updated prediction*/
     ret = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret != sizeof(cmd))
     {
@@ -318,6 +300,17 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         return -1;
     }
 
+    /*If "FULL" logging is enabled, log the predicted execution time and the estimated
+    variance in the prediction error*/
+    if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+	    (handle->job_count < handle->log_size))
+    {
+        handle->pu_c0[handle->job_count-1] = cmd.args[0];
+        handle->pstd_c0[handle->job_count-1] = cmd.args[1];
+        handle->pu_cl[handle->job_count-1] = cmd.args[2];
+        handle->pstd_cl[handle->job_count-1] = cmd.args[3];
+    }
+    
     ret = 0;
 
 exit0:
@@ -330,6 +323,7 @@ void pbsSRT_close(SRT_handle *handle)
 	struct SRT_job_log *log_entry;
 
     job_mgt_cmd_t cmd;
+    SRT_summary_t summary = {0, 0, 0, 0};
 	int ret_val;
 	
 	int64_t relative_LFT;
@@ -343,35 +337,54 @@ void pbsSRT_close(SRT_handle *handle)
         perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_STOP cmd failed!\n");
     }
     
-	close(handle->procfile);
-
-	if(handle->logging_enabled == 1)	
+	if(handle->loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
 	{
-		fprintf(handle->log_file, "%i, %llu, %llu, 0, 0, 0, 0, 0, 0, 0, 0\n",	getpid(),
-											(unsigned long long)handle->period,
-											(unsigned long long)handle->start_bandwidth);
+        cmd.cmd = PBS_JBMGT_CMD_GETSUMMARY;
+	    cmd.args[0] = (s64)&summary;
+        ret_val = write(handle->procfile, &cmd, sizeof(cmd));
+        if(ret_val != sizeof(cmd))
+        {
+            perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
+        }
+        
+		fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, "
+		                            "0, 0, 0\n\n", getpid(),
+									(unsigned long long)handle->period,
+									(unsigned long long)handle->start_bandwidth,
+									(unsigned long long)handle->job_count,
+									(unsigned long long)summary.cumulative_budget,
+									(unsigned long long)summary.cumulative_budget_sat,
+									(unsigned long long)summary.consumed_budget,
+									(unsigned long long)summary.total_misses);
 
-		for(i = 0; i < handle->log_index; i++)
-		{
-			log_entry = &(handle->log[i]);
-			relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
-			miss = (relative_LFT > handle->period);
-			fprintf(handle->log_file, "%lu, %lu, %lu, %lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
-												(unsigned long)log_entry->runtime,
-												(unsigned long)log_entry->runtime2,
-                                                miss,
-                                                (unsigned long)log_entry->abs_releaseTime,
-                                                (unsigned long)log_entry->abs_LFT,
-                                                log_entry->last_sp_compt_allocated,
-                                                log_entry->last_sp_compt_used_sofar,
-                                                (unsigned long)handle->pu_c0[i],
-                                                (unsigned long)handle->pstd_c0[i],
-                                                (unsigned long)handle->pu_cl[i],
-                                                (unsigned long)handle->pstd_cl[i]);
-		}
+	    if(handle->loglevel >= pbsSRT_LOGLEVEL_FULL)
+	    {
 
-		fclose(handle->log_file);
-		free(handle->log);
+		    for(i = 0; i < handle->job_count; i++)
+		    {
+			    log_entry = &(handle->log[i]);
+			    relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
+			    miss = (relative_LFT > handle->period);
+			    fprintf(handle->log_file,   "%lu, %lu, %lu, "
+			                                "%lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
+										    (unsigned long)log_entry->runtime,
+										    (unsigned long)log_entry->runtime2,
+                                            miss,
+                                            (unsigned long)log_entry->abs_releaseTime,
+                                            (unsigned long)log_entry->abs_LFT,
+                                            log_entry->last_sp_compt_allocated,
+                                            log_entry->last_sp_compt_used_sofar,
+                                            (unsigned long)handle->pu_c0[i],
+                                            (unsigned long)handle->pstd_c0[i],
+                                            (unsigned long)handle->pu_cl[i],
+                                            (unsigned long)handle->pstd_cl[i]);
+		    }
+
+		    fclose(handle->log_file);
+		    free(handle->log);
+        }
 	}
+	
+	close(handle->procfile);
 }
 

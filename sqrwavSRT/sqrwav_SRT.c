@@ -59,10 +59,11 @@ char *usage_string = "[options]\n"\
         "-p: scheduling period\n"\
         "-b: initial exec-time prediction\n"\
         "-a: alpha parameter\n"\
-        "-L: name of log file\n\n";
+        "-L: logging level\n"\
+        "-R: name of log file (\"log.csv\" by default)\n\n";
 
 char* optstring
-    = "j:P:D:d:M:m:N:A:p:b:a:L:f";
+    = "j:P:D:d:M:m:N:A:p:b:a:L:R:f";
 
 int main (int argc, char * const * argv)
 {
@@ -76,9 +77,11 @@ int main (int argc, char * const * argv)
 	SRT_handle handle;
 	unsigned long period = 40000, bandwidth;
 	double alpha = 1.0;
-   	char* logfilename = NULL;
 	unsigned char bflag = 0;
-    unsigned char fflag = 0, Lflag = 0;
+    unsigned char fflag = 0;
+    //logging related variables
+    int loglevel = 0;
+  	char* logfilename = "log.csv";
 
     //execution-time predictor related variables
     pbsSRT_predictor_t predictor;
@@ -235,10 +238,29 @@ int main (int argc, char * const * argv)
                 break;
 
             case 'L':
-                Lflag = 1;
-				logfilename = optarg;
+                errno = 0;
+                loglevel = strtol(optarg, NULL, 0);
+                if(errno)
+                {
+                    perror("Failed to parse the L option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
+                
+                if((loglevel < pbsSRT_LOGLEVEL_MIN) || (loglevel > pbsSRT_LOGLEVEL_MAX))
+                {
+                    fprintf(stderr, "The log level option (-L) , must have an integer "
+                                    "argument between %i and %i inclusive.\n",
+                                    pbsSRT_LOGLEVEL_MIN, pbsSRT_LOGLEVEL_MAX);
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
-
+            
+            case 'R':
+                logfilename = optarg;
+                break;
+                
             case 'f':
                 fflag = 1;
                 break;
@@ -290,11 +312,10 @@ int main (int argc, char * const * argv)
 	printf("\tscheduling period:\t%luus\n", period);
     printf("\tbandwidth:\t\t%lu\n", bandwidth);
     printf("\talpha:\t\t%f\n", alpha);
-	if(Lflag == 1)
-	{
-		printf("\tLogging Enabled:\t%s\n\n", logfilename);
-	}
 
+	printf("\tLogging level:\t%i\n", loglevel);
+	printf("\tLog file:\t\t%s\n\n", logfilename);
+	
 	if(fflag == 0)
 	{
 		if(fgetc(stdin) == (int)'q')
@@ -317,7 +338,7 @@ int main (int argc, char * const * argv)
 
 	//setup the scheduler
 	ret = pbsSRT_setup(period, bandwidth, alpha, &predictor, &handle, 
-	                   Lflag, 10000, logfilename);
+	                   loglevel, maxjobs, logfilename);
 	if(ret)
 	{
 		fprintf(stderr, "Failed to setup scheduler!\n");

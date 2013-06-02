@@ -44,7 +44,7 @@
     echo 0 > /proc/sched_pbs_actv
     bin/pbsAllocator -f -s 0 -S &
     sleep 1
-    bin/sqrwavSRT -f -j 16 -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p $p1} -b ${b1} -a ${a1} -L /dev/null
+    bin/sqrwavSRT -f -j 16 -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p $p1} -b ${b1} -a ${a1} -L 2 -R /dev/null
     echo 0 > /proc/sched_pbs_actv
     echo "complete! "
 
@@ -61,8 +61,8 @@
 
         bin/pbsAllocator -f -s ${sa} > ${logfilea} &
         sleep 1
-        bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -a ${a1} -L ${logfile1} &
-        bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -A ${A2} -p ${p2} -b ${b2} -a ${a2} -L ${logfile2} &
+        bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -a ${a1} -L 2 -R ${logfile1} &
+        bin/sqrwavSRT -f -j ${j2} -P ${P2} -D ${D2} -d ${d2} -M ${M2} -m ${m2} -N ${N2} -A ${A2} -p ${p2} -b ${b2} -a ${a2} -L 2 -R ${logfile2} &
         bin/poll_pbs_actv
 
         echo "completed "$i"of 30"

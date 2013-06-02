@@ -2,7 +2,6 @@
 #define PBS_JBMGT_CMD_SETUP     (0)
 /*
     0) period (us)
-    1) alpha  (x65536 i.e. fixed point value with 16bits after the point)
 */
 
 #define PBS_JBMGT_CMD_START     (1)
@@ -21,7 +20,12 @@
 /*
 */
 
-#define PBS_JBMGT_CMD_MAX       (4)
+#define PBS_JBMGT_CMD_GETSUMMARY (4)
+/*
+    0) *SRT_summary_s
+*/
+
+#define PBS_JBMGT_CMD_MAX       (5)
 #define PBS_JBMGT_CMD_MAXARGS   (4)
 typedef struct job_mgt_cmd_s
 {
@@ -41,5 +45,20 @@ struct SRT_job_log
 	u32	last_sp_compt_used_sofar;
 };
 
+typedef struct SRT_summary_s
+{
+    /*The total budget allocated to this task since 
+    the first scheduling period for this task.*/
+    s64 cumulative_budget;
+    
+    /*Same as cumulative_budget, but after any saturation.*/
+    s64 cumulative_budget_sat;
 
+    /*Total comsumed budget (vs allocated budget)*/
+    s64 consumed_budget;
+
+    /*The total number of jobs that missed the 
+    corresponding deadline since the first job.*/
+    s64 total_misses;
+} SRT_summary_t;
 
