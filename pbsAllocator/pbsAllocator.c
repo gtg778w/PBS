@@ -131,6 +131,8 @@ void allocator_loop(int proc_file)
 
 char *options_string = \
 "\n\t-f:\trun without prompting\n"\
+"\t-P:\tThe length of a scheduling period. (ns)\n"\
+"\t-B:\tThe budget allocated to the scheduler over a scheduling period. (ns)\n"\
 "\t-s:\tthe number of scheduling periods (1)\n"\
 "\t-S:\tdo not keep or output a log\n";
 
@@ -140,35 +142,80 @@ int main(int argc, char** argv)
 
     int proc_file;
 
+    uint64_t scheduling_period = 10000000;
+    uint64_t allocator_budget = 1000000;
+
 	/*variables for parsing input arguments*/
 	unsigned char   fflag=0, Sflag = 0;
 
 	sp_limit = 1;
 
-    while((retval = getopt(argc, argv, "fs:S")) != -1)
+    while((retval = getopt(argc, argv, "fP:B:s:S")) != -1)
     {
         switch(retval)
         {
             case 'f':
                 fflag = 1;
                 break;
-            case 's':
-                sp_limit = strtoul(optarg, NULL, 10);
-                if(sp_limit < 0)
+                
+            case 'P':
+                errno = 0;
+                scheduling_period = strtoul(optarg, NULL, 10);
+                if(errno)
                 {
-                    fprintf(stderr, "Bad sp_limit value (%lli), should be positive or "
-                                    "0(infinite)!\n", 
-                                    (long long int)sp_limit);
-                    return -EINVAL;
+                    perror("Failed to parse the P option");
+                    retval = -EINVAL;
+                    goto exit0;
+                }
+
+                if(0 == scheduling_period)
+                {
+                    fprintf(stderr, "The scheduling period must be strictly positive!\n");
+                    retval = -EINVAL;
+                    goto exit0;
+                }
+
+                break;
+                
+            case 'B':
+                errno = 0;
+                allocator_budget = strtoul(optarg, NULL, 10);
+                if(errno)
+                {
+                    perror("Failed to parse the B option");
+                    retval = -EINVAL;
+                    goto exit0;
+                }
+                
+                if(0 == allocator_budget)
+                {
+                    fprintf(stderr, "The allocator budget must be strictly positive!\n");
+                    retval = -EINVAL;
+                    goto exit0;
+                }
+                
+                break;
+                
+            case 's':
+                errno = 0;
+                sp_limit = strtoul(optarg, NULL, 10);
+                if(errno)
+                {
+                    perror("Failed to parse the s option");
+                    retval = -EINVAL;
+                    goto exit0;
                 }
                 break;
+                
             case 'S':
                 Sflag = 1;
                 break;
+                
             default:
                 fprintf(stderr, "Usage: %s [Options]\n%s\n", 
-                    argv[0], options_string);
-                return -EINVAL;
+                                argv[0], options_string);
+                retval = -EINVAL;
+                goto exit0;
         }
     }
 
@@ -176,9 +223,30 @@ int main(int argc, char** argv)
 	if(optind != argc)
 	{
 		fprintf(stderr, "Usage: %s [Options]\n%s\n", argv[0], options_string);
-		return -1;
+		retval = -EINVAL;
+		goto exit0;
 	}
 
+    /*Make sure the scheduling period and allocator budget make sense*/
+    if(scheduling_period < allocator_budget)
+    {
+        fprintf(stderr, "Invalid parameters for scheduling period and allocator budget:\n"
+                        "(T, Q) = (%llu, %llu) \n"
+                        "The allocator budget must be less than the scheduling period.\n",
+                        (long long unsigned int)scheduling_period, 
+                        (long long unsigned int)allocator_budget);
+        retval = EINVAL;
+        goto exit0;
+    }
+    else
+    {
+        fprintf(stderr, "(T, Q) = (%llu, %llu)",
+                        (long long unsigned int)scheduling_period, 
+                        (long long unsigned int)allocator_budget);
+    }
+
+    /*If no bound is imposed on the number of reservation periods,
+      make sure logging is disabled*/
     if((sp_limit == 0) && (Sflag == 0))
     {
 		fprintf(stderr, 
@@ -187,45 +255,58 @@ int main(int argc, char** argv)
         Sflag = 1;
     }
 
+    /*Display the number of reservation periods*/
     if(sp_limit == 0)
+    {
         fprintf(stderr, ", count = infinity");
+    }
     else
+    {
         fprintf(stderr, ", count = %lli", (long long int)sp_limit);
-
+    }
+    
+    /*Check if logging is enabled*/
     if(Sflag == 0)
+    {
         fprintf(stderr, ", logging to stdout enabled.\n");
+    }
     else
+    {
         fprintf(stderr, ", logging to stdout disabled.\n");
-
+    }
+    
+    /*Check if the user will be prompted before proceeding*/
 	if(fflag == 0)
 	{
         fprintf(stderr, "Waiting for prompt from user ...\n");
 		if(fgetc(stdin) == (int)'q')
 		{
 			fprintf(stderr, "\nExiting...\n");
-			return 0;
+			retval = 0;
+			goto exit0;
 		}
         fprintf(stderr, "\nRunning...\n");
 	}
 
-    //This should only be done if logging is enabled
+    //If logging is enabled, setup the log memory
     if(Sflag == 0)
     {
 	    retval = setup_log_memory();
         if(retval)
         {
             fprintf(stderr, "setup_log_memory failed!\n");
-            exit(EXIT_FAILURE);
+            goto exit0;
         }
     }
 
     //Setup the interface with the pbs_allocator module
     //and scheduling related parameters
-    proc_file = allocator_setup(10000, 1000);
+    proc_file = allocator_setup(scheduling_period, allocator_budget);
     if(proc_file < 0)
     {
         fprintf(stderr, "allocator_setup failed!");
-        exit(EXIT_FAILURE);
+        retval = proc_file;
+        goto exit0;
     }
 
     if(Sflag == 0)
@@ -241,7 +322,7 @@ int main(int argc, char** argv)
     if(retval)
     {
         fprintf(stderr, "allocator_close failed!");
-        exit(EXIT_FAILURE);
+        goto exit0;
     }
 
     if(Sflag == 0)
@@ -250,6 +331,7 @@ int main(int argc, char** argv)
     }
 
 	printf("\n");
+exit0:
 	return 0;
 }
 

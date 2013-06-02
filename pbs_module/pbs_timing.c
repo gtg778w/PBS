@@ -261,8 +261,8 @@ void assign_bandwidths(void)
 
 int setup_allocator(s64 period, s64 runtime)
 {
-   	scheduling_period_ns.tv64	= period*1000;
-	allocator_runtime_ns		= runtime*1000;
+   	scheduling_period_ns.tv64	= period;
+	allocator_runtime_ns		= runtime;
     
     //FIXME
     printk(KERN_INFO "allocator scheduling period: %lli runtime: %lli\n", 
