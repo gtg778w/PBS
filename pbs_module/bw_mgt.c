@@ -16,7 +16,7 @@ Global variables and functions associated with the allocator task.
 
 ***********************************************************************/
 
-unsigned char	allocator_state = MODULE_LOADED;
+unsigned char    allocator_state = MODULE_LOADED;
 
 /*The number of SRT tasks active in the system*/
 static atomic_t SRT_count;
@@ -42,11 +42,11 @@ int bw_mgt_release( struct inode *inode,
 char*  bw_mgt_file_name = "sched_rt_bw_mgt";
 struct proc_dir_entry* p_bw_mgt_file;
 struct file_operations bw_mgt_fops = {
-	.owner		=	THIS_MODULE,
-	.write      =   bw_mgt_write,
-	.mmap		=	bw_mgt_mmap,
-	.open 		=	bw_mgt_open,
-	.release	=	bw_mgt_release	
+    .owner      =   THIS_MODULE,
+    .write      =   bw_mgt_write,
+    .mmap       =   bw_mgt_mmap,
+    .open       =   bw_mgt_open,
+    .release    =   bw_mgt_release
 };
 
 /**********************************************************************
@@ -58,29 +58,29 @@ helper function allocator_sleep
 
 void allocator_sleep(void)
 {
-	set_current_state(TASK_UNINTERRUPTIBLE);
-	preempt_enable_no_resched();
-	schedule();
-	preempt_disable();
+    set_current_state(TASK_UNINTERRUPTIBLE);
+    preempt_enable_no_resched();
+    schedule();
+    preempt_disable();
 }
 
 int bw_mgt_mmap(struct file *file, struct vm_area_struct *vmas)
 {
-	int ret;
+    int ret;
 
-	if((allocator_state == ALLOCATOR_OPEN) || (allocator_state == ALLOCATOR_START))
-	{
-		ret =  do_pbs_mmap(vmas);
-	}
-	else
-	{
+    if((allocator_state == ALLOCATOR_OPEN) || (allocator_state == ALLOCATOR_START))
+    {
+        ret =  do_pbs_mmap(vmas);
+    }
+    else
+    {
         //FIXME
-		//printk(KERN_INFO "Process %d calling mmap while allocator state = %s!\n", current->pid, a_state_strings[allocator_state]);
+        //printk(KERN_INFO "Process %d calling mmap while allocator state = %s!\n", current->pid, a_state_strings[allocator_state]);
         printk(KERN_INFO "Process %d calling mmap while allocator state = %i!\n", current->pid, allocator_state);
-		ret = -EINVAL;		
-	}
+        ret = -EINVAL;
+    }
 
-	return ret;
+    return ret;
 }
 
 ssize_t bw_mgt_write(   struct file *filep, 
@@ -91,9 +91,9 @@ ssize_t bw_mgt_write(   struct file *filep,
     bw_mgt_cmd_t cmd;
     ssize_t ret;
     
-    s64	allocator_runtime;
-	s64	allocator_period;
-	    
+    s64 allocator_runtime;
+    s64 allocator_period;
+        
     if(sizeof(bw_mgt_cmd_t) != count)
     {
         printk(KERN_INFO    "The argument written through bw_mgt_write by process %d "
@@ -145,8 +145,8 @@ ssize_t bw_mgt_write(   struct file *filep,
                                         current->pid,
                                         (long int)cmd.args[0],
                                         (long int)cmd.args[1]);
-				    ret = -EINVAL;
-				    goto exit0;
+                    ret = -EINVAL;
+                    goto exit0;
                 }
             }
             else
@@ -162,89 +162,89 @@ ssize_t bw_mgt_write(   struct file *filep,
                 goto exit0;
             }
     
-			ret = setup_allocator(allocator_period, allocator_runtime);
-			if(ret == 0)
-			{
-				allocator_state = ALLOCATOR_START;
-			}
-			else
-			{
-			    printk(KERN_INFO "setup_allocator() failed! Returned (%li)", ret);
-			}
+            ret = setup_allocator(allocator_period, allocator_runtime);
+            if(ret == 0)
+            {
+                allocator_state = ALLOCATOR_START;
+            }
+            else
+            {
+                printk(KERN_INFO "setup_allocator() failed! Returned (%li)", ret);
+            }
             break;
             
         case PBS_BWMGT_CMD_NEXTJOB:
             //Is this the first time the NEXTJOB command has been issued?
-        	if(allocator_state == ALLOCATOR_START)
-        	{
-        	    printk(KERN_INFO    "PBS_BWMGT_CMD_NEXTJOB command issued for the first "
-        	                        "time by allocator(%i)", current->pid);
-        	
-	            //from this point forward, donot allow other tasks to preempt the 
-	            //allocator task
-	            preempt_disable();
-	            ret = start_pbs_timing();
-	            if(ret)
-	            {
-		            preempt_enable();
+            if(allocator_state == ALLOCATOR_START)
+            {
+                printk(KERN_INFO    "PBS_BWMGT_CMD_NEXTJOB command issued for the first "
+                                    "time by allocator(%i)", current->pid);
+            
+                //from this point forward, donot allow other tasks to preempt the 
+                //allocator task
+                preempt_disable();
+                ret = start_pbs_timing();
+                if(ret)
+                {
+                    preempt_enable();
                     goto exit0;
-	            }
-        	    
-	            //state is changed to ALLOCATOR LOOP after the first execution of the 
-	            //function "sp_timer_func" this is done to ensure that expires_next 
-	            //and expires_prev are initialized by it
-	            allocator_state = ALLOCATOR_LOOP;
+                }
+                
+                //state is changed to ALLOCATOR LOOP after the first execution of the 
+                //function "sp_timer_func" this is done to ensure that expires_next 
+                //and expires_prev are initialized by it
+                allocator_state = ALLOCATOR_LOOP;
 
-	            allocator_sleep();
-        	}
-        	else
-        	{
-   	        	//check before going to sleep
-        	    if(allocator_state == ALLOCATOR_LOOP)
-        	    {
-	                //assign new bandwidths
-	                assign_bandwidths();
+                allocator_sleep();
+            }
+            else
+            {
+                //check before going to sleep
+                if(allocator_state == ALLOCATOR_LOOP)
+                {
+                    //assign new bandwidths
+                    assign_bandwidths();
 
-	                //sleep until the next scheduling period
-	                allocator_sleep();
+                    //sleep until the next scheduling period
+                    allocator_sleep();
 
-	                //check after going to sleep
-	                if(allocator_state != ALLOCATOR_LOOP)
-	                {
-		                ret = -ECANCELED;
-		                goto exit0;
-	                }
+                    //check after going to sleep
+                    if(allocator_state != ALLOCATOR_LOOP)
+                    {
+                        ret = -ECANCELED;
+                        goto exit0;
+                    }
 
-	                //wakeup all appropriate SRT tasks and refresh their bandwidths
-	                sched_period_tick();
+                    //wakeup all appropriate SRT tasks and refresh their bandwidths
+                    sched_period_tick();
 
-        	    }
-        	    else
-        	    {
-        	        ret = -ECANCELED;
-    		        goto exit0;
-        	    }
-        	}
+                }
+                else
+                {
+                    ret = -ECANCELED;
+                    goto exit0;
+                }
+            }
 
             break;
 
         case PBS_BWMGT_CMD_STOP:
-    	    printk(KERN_INFO    "PBS_BWMGT_CMD_STOP command issued by the allocator(%i)!", 
-    	                        current->pid);
+            printk(KERN_INFO    "PBS_BWMGT_CMD_STOP command issued by the allocator(%i)!", 
+                                current->pid);
             if(ALLOCATOR_LOOP == allocator_state)
             {
-    			stop_pbs_timing(0);
-    			preempt_enable();
-			}
-			else 
-			{
-			    if(ALLOCATOR_PRECLOSING == allocator_state)
-			    {
-			        preempt_enable();
-			    }
-		    }
-			
-			allocator_state = ALLOCATOR_CLOSING;
+                stop_pbs_timing(0);
+                preempt_enable();
+            }
+            else 
+            {
+                if(ALLOCATOR_PRECLOSING == allocator_state)
+                {
+                    preempt_enable();
+                }
+            }
+            
+            allocator_state = ALLOCATOR_CLOSING;
             break;
             
         default:
@@ -262,58 +262,58 @@ exit0:
 
 int bw_mgt_open(struct inode *inode, struct file *file)
 {
-	int ret = 0;
+    int ret = 0;
 
-	if(allocator_state != MODULE_LOADED)
-	{
-		return -EBUSY;
-	}
+    if(allocator_state != MODULE_LOADED)
+    {
+        return -EBUSY;
+    }
 
-	printk(KERN_INFO "*********************************\n");
-	printk(KERN_INFO "bw_mgt_open called by process %d.\n", current->pid);
+    printk(KERN_INFO "*********************************\n");
+    printk(KERN_INFO "bw_mgt_open called by process %d.\n", current->pid);
 
-	ret = init_loaddataList();
-	if(ret != 0)
-	{
-		return ret;
-	}
+    ret = init_loaddataList();
+    if(ret != 0)
+    {
+        return ret;
+    }
 
-	allocator_state = ALLOCATOR_OPEN;
+    allocator_state = ALLOCATOR_OPEN;
 
-	return ret;
+    return ret;
 }
 
 int bw_mgt_release(struct inode *inode, struct file *filp)
 {
-	int local_count;
-	printk(KERN_INFO "bw_mgt_release called by process %d.\n", current->pid);
+    int local_count;
+    printk(KERN_INFO "bw_mgt_release called by process %d.\n", current->pid);
 
-	switch(allocator_state)
-	{
-		case ALLOCATOR_LOOP:
+    switch(allocator_state)
+    {
+        case ALLOCATOR_LOOP:
 
-			stop_pbs_timing(0);
+            stop_pbs_timing(0);
 
-		case ALLOCATOR_PRECLOSING:
-			preempt_enable();
-			
-		default:
-			allocator_state = ALLOCATOR_CLOSING;
-			local_count = atomic_read(&SRT_count);
-			if(local_count == 0)
-			{
-				allocator_state = MODULE_LOADED;
-			}
-			else
-			{
-				printk(KERN_INFO "Exiting with %i tasks in system.\n", local_count);		
-			}
+        case ALLOCATOR_PRECLOSING:
+            preempt_enable();
+            
+        default:
+            allocator_state = ALLOCATOR_CLOSING;
+            local_count = atomic_read(&SRT_count);
+            if(local_count == 0)
+            {
+                allocator_state = MODULE_LOADED;
+            }
+            else
+            {
+                printk(KERN_INFO "Exiting with %i tasks in system.\n", local_count);
+            }
 
-			
-			break; 		
-	}
-		
-	return 0;
+            
+            break;
+    }
+    
+    return 0;
 }
 
 /**********************************************************************
@@ -325,53 +325,53 @@ and asynchronously disabling the allocator.
 
 void reset_SRT_count(void)
 {
-	atomic_set(&SRT_count, 0);
+    atomic_set(&SRT_count, 0);
 }
 
 void increment_SRT_count(void)
 {
-	atomic_inc(&SRT_count);
+    atomic_inc(&SRT_count);
 }
 
 void decrement_SRT_count(void)
 {
-	int local_count;
+    int local_count;
 
-	preempt_disable();
+    preempt_disable();
 
-	local_count = atomic_dec_return(&SRT_count);
+    local_count = atomic_dec_return(&SRT_count);
 
-	if(local_count == 0)
-	{
-		if(allocator_state == ALLOCATOR_CLOSING)
-		{
-			allocator_state = MODULE_LOADED;
-		}
-	}
+    if(local_count == 0)
+    {
+        if(allocator_state == ALLOCATOR_CLOSING)
+        {
+            allocator_state = MODULE_LOADED;
+        }
+    }
 
-	preempt_enable();
+    preempt_enable();
 }
 
 int disable_allocator(void)
 {
-	int ret = 0;
+    int ret = 0;
 
-	preempt_disable();
-	if(allocator_state == ALLOCATOR_LOOP)
-	{
-		ret = stop_pbs_timing(1);
-		if(ret == 0)
-		{
-			allocator_state = ALLOCATOR_PRECLOSING;
-		}
-	}
-	else
-	{
-		ret = -EBUSY;
-	}
-	preempt_enable();
+    preempt_disable();
+    if(allocator_state == ALLOCATOR_LOOP)
+    {
+        ret = stop_pbs_timing(1);
+        if(ret == 0)
+        {
+            allocator_state = ALLOCATOR_PRECLOSING;
+        }
+    }
+    else
+    {
+        ret = -EBUSY;
+    }
+    preempt_enable();
 
-	return ret;
+    return ret;
 }
 
 /**********************************************************************
@@ -385,48 +385,48 @@ void uninit_pbs_actv(void);
 
 int init_bw_mgt(void)
 {
-	int returnable = 0;
+    int returnable = 0;
 
-	/*Allocate pages for mapping*/
-	if(allocate_mapping_pages() != 0)
-	{
-		returnable = -ENOMEM;
-		goto error;
-	}
+    /*Allocate pages for mapping*/
+    if(allocate_mapping_pages() != 0)
+    {
+        returnable = -ENOMEM;
+        goto error;
+    }
 
-	returnable = init_pbs_actv();
-	if(returnable != 0)
-	{
-		printk(KERN_INFO "Failed to initialize \"sched_pbs_actv\"!\n");
-		return returnable;
-	}
+    returnable = init_pbs_actv();
+    if(returnable != 0)
+    {
+        printk(KERN_INFO "Failed to initialize \"sched_pbs_actv\"!\n");
+        return returnable;
+    }
 
-	/*Create the file in the root of the profcs directory, initially with no permissions for others*/
-	p_bw_mgt_file = create_proc_entry(bw_mgt_file_name, 0600, NULL);
-	if(p_bw_mgt_file == NULL)
-	{
-		returnable = -ENOMEM;
-		goto error;
-	}
-	p_bw_mgt_file->data = NULL;
-	p_bw_mgt_file->proc_fops = &bw_mgt_fops;
-	p_bw_mgt_file->mode = 0666;
+    /*Create the file in the root of the profcs directory, initially with no permissions for others*/
+    p_bw_mgt_file = create_proc_entry(bw_mgt_file_name, 0600, NULL);
+    if(p_bw_mgt_file == NULL)
+    {
+        returnable = -ENOMEM;
+        goto error;
+    }
+    p_bw_mgt_file->data = NULL;
+    p_bw_mgt_file->proc_fops = &bw_mgt_fops;
+    p_bw_mgt_file->mode = 0666;
 
-	allocator_state = MODULE_LOADED;
+    allocator_state = MODULE_LOADED;
 error:
-	return returnable;
+    return returnable;
 }
 
 int uninit_bw_mgt(void)
 {
-	int returnable = 0;
+    int returnable = 0;
 
-	free_mapping_pages();
+    free_mapping_pages();
 
-	remove_proc_entry(bw_mgt_file_name, NULL);
+    remove_proc_entry(bw_mgt_file_name, NULL);
 
-	uninit_pbs_actv();
+    uninit_pbs_actv();
 
-	return returnable;
+    return returnable;
 }
 

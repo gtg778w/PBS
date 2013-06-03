@@ -36,9 +36,9 @@ memory mapping stuff
 
 #include "pbsAllocator.h"
 
-SRT_loaddata_t		    *loaddata_array;
-loaddata_list_header_t   *loaddata_list_header;
-uint64_t			    *allocation_array;
+SRT_loaddata_t          *loaddata_array;
+loaddata_list_header_t  *loaddata_list_header;
+uint64_t                *allocation_array;
 
 int allocator_setup(uint64_t scheduling_period,
                     uint64_t allocator_bandwidth)
@@ -46,66 +46,66 @@ int allocator_setup(uint64_t scheduling_period,
     int proc_file;
     int retval;
 
-	pid_t  mypid;
-	struct sched_param my_sched_params;
-	int min_priority;
+    pid_t  mypid;
+    struct sched_param my_sched_params;
+    int min_priority;
 
     bw_mgt_cmd_t cmd;
 
     /*Need to change the scheduling policy of the task to real-time 
       (SCHED_FIFO)*/
 
-	/*Determine own PID*/
-	mypid =  getpid();
+    /*Determine own PID*/
+    mypid =  getpid();
 
-	/*Determine the lowest valid priority for the given scheduling policy*/
-	min_priority = sched_get_priority_min(SCHED_FIFO);
-	
-	/*Set the priority*/
-	my_sched_params.sched_priority = min_priority+1;
+    /*Determine the lowest valid priority for the given scheduling policy*/
+    min_priority = sched_get_priority_min(SCHED_FIFO);
+    
+    /*Set the priority*/
+    my_sched_params.sched_priority = min_priority+1;
 
-	/*Try to change the scheduling policy and priority*/
+    /*Try to change the scheduling policy and priority*/
     retval = sched_setscheduler(mypid, SCHED_FIFO, &my_sched_params);
-	if(retval)
-	{
-		perror("allocator_setup: sched_setscheduler failed");
-		retval = -1;
-		goto exit0;
-	}
+    if(retval)
+    {
+        perror("allocator_setup: sched_setscheduler failed");
+        retval = -1;
+        goto exit0;
+    }
 
     /*Perform setup operations needed to interact with the pbs_allocator
       module*/
-	proc_file = open("/proc/sched_rt_bw_mgt", O_RDWR);
-	if(proc_file == -1)
-	{
-		perror("allocator_setup: Failed to open \"/proc/sched_rt_bw_mgt\"");
-		retval = proc_file;
-		goto exit0;
-	}
+    proc_file = open("/proc/sched_rt_bw_mgt", O_RDWR);
+    if(proc_file == -1)
+    {
+        perror("allocator_setup: Failed to open \"/proc/sched_rt_bw_mgt\"");
+        retval = proc_file;
+        goto exit0;
+    }
 
-	//setup the loaddata mapping
-	loaddata_array = mmap(NULL, LOADDATALIST_SIZE, 
+    //setup the loaddata mapping
+    loaddata_array = mmap(NULL, LOADDATALIST_SIZE, 
                          (PROT_READ), MAP_SHARED, 
                          proc_file, 0);
-	if(loaddata_array == MAP_FAILED)
-	{
-		perror("allocator_setup: Failed to map loaddata_array");
-		retval = -1;
-		goto exit0;
-	}
+    if(loaddata_array == MAP_FAILED)
+    {
+        perror("allocator_setup: Failed to map loaddata_array");
+        retval = -1;
+        goto exit0;
+    }
 
-	loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
+    loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
 
-	//setup the allocations mapping
-	allocation_array = mmap(NULL, ALLOC_SIZE, 
+    //setup the allocations mapping
+    allocation_array = mmap(NULL, ALLOC_SIZE, 
                             (PROT_READ | PROT_WRITE), MAP_SHARED, 
                             proc_file, LOADDATALIST_SIZE);
-	if(allocation_array == MAP_FAILED)
-	{
-		perror("allocator_setup: Failed to map allocation_array");
-		retval = -1;
-		goto exit0;
-	}
+    if(allocation_array == MAP_FAILED)
+    {
+        perror("allocator_setup: Failed to map allocation_array");
+        retval = -1;
+        goto exit0;
+    }
 
     cmd.cmd = PBS_BWMGT_CMD_SETUP_START;
     cmd.args[0] = scheduling_period;
@@ -136,26 +136,26 @@ int allocator_close(int proc_file)
         goto exit0;
     }
 
-	if(munmap(loaddata_array, LOADDATALIST_SIZE) != 0)
-	{
-		perror("Failed to unmap loaddata pages!\n");
-		retval = -1;
+    if(munmap(loaddata_array, LOADDATALIST_SIZE) != 0)
+    {
+        perror("Failed to unmap loaddata pages!\n");
+        retval = -1;
         goto exit0;
-	}
+    }
 
-	if(munmap(allocation_array, ALLOC_SIZE) != 0)
-	{
-		perror("Failed to unmap loaddata pages!\n");
-		retval = -1;
+    if(munmap(allocation_array, ALLOC_SIZE) != 0)
+    {
+        perror("Failed to unmap loaddata pages!\n");
+        retval = -1;
         goto exit0;
-	}
+    }
 
-	if(close(proc_file) != 0)
-	{
-		perror("Failed to close proc_file!\n");
-		retval = -1;
+    if(close(proc_file) != 0)
+    {
+        perror("Failed to close proc_file!\n");
+        retval = -1;
         goto exit0;
-	}
+    }
 
     retval = 0;
 exit0:

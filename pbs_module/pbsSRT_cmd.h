@@ -36,13 +36,13 @@ typedef struct job_mgt_cmd_s
 
 struct SRT_job_log
 {
-	u64 runtime2;
-	u64	runtime;
-	u64	abs_releaseTime;
-	u64	abs_LFT;
+    u64 runtime2;
+    u64 runtime;
+    u64 abs_releaseTime;
+    u64 abs_LFT;
 
-    u32	last_sp_compt_allocated;
-	u32	last_sp_compt_used_sofar;
+    u32 last_sp_compt_allocated;
+    u32 last_sp_compt_used_sofar;
 };
 
 typedef struct SRT_summary_s

@@ -38,7 +38,7 @@ void* pbsSRT_alloc_MAVSLMSBank(void)
 
 static void inline VSLMSBank_init(MAVSLMSBank_t *MAVSLMSBank_p)
 {
-	int32_t fid, i; 
+    int32_t fid, i; 
 
     double *double_buffer_address;
     int8_t *byte_buffer_address;
@@ -153,14 +153,14 @@ static void inline VSLMSBank_update_stepsize(   int8_t *previous_sign_p,
     int8_t schange_count;
 
     double step_size;
-	    
+        
     /*Determine the sign of the gradient*/
     gradient_newsign    = (gradient < 0)? -1 : 0;
     gradient_newsign    = (gradient > 0)? 1 : gradient_newsign;
     gradient_prevsign   = *previous_sign_p;
     *previous_sign_p    = gradient_newsign;
     
-	/*gradient_sign_changed should be 0 in case of no sign change or nonzero otherwise*/
+    /*gradient_sign_changed should be 0 in case of no sign change or nonzero otherwise*/
     gradient_sign_changed = gradient_prevsign - gradient_newsign;
     
     /*positive schange count means sign changes. negative schange count means same signs*/
@@ -310,19 +310,19 @@ static void inline VSLMSBank_update(MAVSLMSBank_t *MAVSLMSBank_p, double observe
 static void inline MABank_shift_predict(MAVSLMSBank_t *MAVSLMSBank_p, double observed)
 {
     int32_t fid;
-	int32_t i;
-	
-	double  *prediction = MAVSLMSBank_p->ma_prediction;
-	double  *error_var  = MAVSLMSBank_p->ma_error_var;
-	double  *buffer     = MAVSLMSBank_p->buffer;
-	
-	double  next_indep_var;
-	double  prev_indep_var;
+    int32_t i;
+    
+    double  *prediction = MAVSLMSBank_p->ma_prediction;
+    double  *error_var  = MAVSLMSBank_p->ma_error_var;
+    double  *buffer     = MAVSLMSBank_p->buffer;
+    
+    double  next_indep_var;
+    double  prev_indep_var;
 
     double  error;
     double  error_diff;
 
-	double  filter_acc;
+    double  filter_acc;
     
     /*Initially set the minimum varriance to the maximum possible value of a double,
     and set the minimum varriance filter to the invalid value -1*/
@@ -394,10 +394,10 @@ static void inline MABank_shift_predict(MAVSLMSBank_t *MAVSLMSBank_p, double obs
 static void inline VSLMS_predict(MAVSLMSBank_t *MAVSLMSBank_p)
 {
     int32_t fid;
-	int32_t i;
+    int32_t i;
 
-	double *coefficients;
-	double filter_acc;
+    double *coefficients;
+    double filter_acc;
 
     /*Perform the filtering operation for the LMS filters,
     the buffer has been already updated so no more shifting necessary*/

@@ -28,8 +28,8 @@ mutex related code
 
 #include "pbsAllocator_cmd.h"
 
-extern SRT_loaddata_t	*loaddata_array;
-extern u64			*allocation_array;
+extern SRT_loaddata_t   *loaddata_array;
+extern u64              *allocation_array;
 
 SRT_loaddata_t* alloc_loaddata(void);
 void free_loaddata(SRT_loaddata_t* used_entry);

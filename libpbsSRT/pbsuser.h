@@ -17,22 +17,22 @@ enum {  pbsSRT_LOGLEVEL_NONE,
 
 typedef struct SRT_handle_s
 {
-	int 				procfile;
-	pbsSRT_predictor_t  *predictor;
-	uint64_t			period;
-	uint64_t			start_bandwidth;
-	double              alpha_squared;
+    int                 procfile;
+    pbsSRT_predictor_t  *predictor;
+    uint64_t            period;
+    uint64_t            start_bandwidth;
+    double              alpha_squared;
 
-	FILE				*log_file;
-	struct SRT_job_log	*log;
-	/*FIXME: remove these buffers to reduce overhead*/
-	int64_t             *pu_c0;
-	int64_t             *pstd_c0;
-	int64_t             *pu_cl;
-	int64_t             *pstd_cl;
-	int64_t			    job_count;
-	int				    log_size;
-	int				    loglevel;
+    FILE                *log_file;
+    struct SRT_job_log  *log;
+    /*FIXME: remove these buffers to reduce overhead*/
+    int64_t             *pu_c0;
+    int64_t             *pstd_c0;
+    int64_t             *pu_cl;
+    int64_t             *pstd_cl;
+    int64_t             job_count;
+    int                 log_size;
+    int                 loglevel;
 
 } SRT_handle;
 
@@ -40,7 +40,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
                     double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
-			        int loglevel, int logCount, char *logFileName);
+                    int loglevel, int logCount, char *logFileName);
 
 int pbsSRT_sleepTillFirstJob(SRT_handle *handle);
 int pbsSRT_sleepTillNextJob(SRT_handle *handle);

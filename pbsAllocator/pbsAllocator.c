@@ -67,19 +67,19 @@ void allocator_loop_wlogging(int proc_file)
         next = &(loaddata_array[loaddata_list_header->first]);
         task_count = loaddata_list_header->SRT_count;
 
-		for(t = 0; t < task_count; t++)		
-		{
-			task_index = next - loaddata_array;
+        for(t = 0; t < task_count; t++)
+        {
+            task_index = next - loaddata_array;
 
             compute_budget(next, &budget);
-		    allocation_array[task_index] = budget;
-		    
+            allocation_array[task_index] = budget;
+            
             log_SRT_sp_dat(task_index, sp_count, next, budget);
 
-			next = &(loaddata_array[next->next]);
-		}
+            next = &(loaddata_array[next->next]);
+        }
 
-	}
+    }
     
 }
 
@@ -111,22 +111,22 @@ void allocator_loop(int proc_file)
         next = &(loaddata_array[loaddata_list_header->first]);
         task_count = loaddata_list_header->SRT_count;
 
-		for(t = 0; t < task_count; t++)		
-		{
-			task_index = next - loaddata_array;
+        for(t = 0; t < task_count; t++)
+        {
+            task_index = next - loaddata_array;
 
             compute_budget(next, &budget);
-		    allocation_array[task_index] = budget;
+            allocation_array[task_index] = budget;
 
             next = &(loaddata_array[next->next]);
-		}
+        }
 
         if(sp_limit > 0)
         {
             sp_count++;
             loop_condition = (sp_count < sp_limit);
         }
-	}
+    }
 }
 
 char *options_string = \
@@ -138,17 +138,17 @@ char *options_string = \
 
 int main(int argc, char** argv)
 {
-	int retval;
+    int retval;
 
     int proc_file;
 
     uint64_t scheduling_period = 10000000;
     uint64_t allocator_budget = 1000000;
 
-	/*variables for parsing input arguments*/
-	unsigned char   fflag=0, Sflag = 0;
+    /*variables for parsing input arguments*/
+    unsigned char   fflag=0, Sflag = 0;
 
-	sp_limit = 1;
+    sp_limit = 1;
 
     while((retval = getopt(argc, argv, "fP:B:s:S")) != -1)
     {
@@ -219,13 +219,13 @@ int main(int argc, char** argv)
         }
     }
 
-	/*Make sure the number of arguments make sense*/
-	if(optind != argc)
-	{
-		fprintf(stderr, "Usage: %s [Options]\n%s\n", argv[0], options_string);
-		retval = -EINVAL;
-		goto exit0;
-	}
+    /*Make sure the number of arguments make sense*/
+    if(optind != argc)
+    {
+        fprintf(stderr, "Usage: %s [Options]\n%s\n", argv[0], options_string);
+        retval = -EINVAL;
+        goto exit0;
+    }
 
     /*Make sure the scheduling period and allocator budget make sense*/
     if(scheduling_period < allocator_budget)
@@ -249,7 +249,7 @@ int main(int argc, char** argv)
       make sure logging is disabled*/
     if((sp_limit == 0) && (Sflag == 0))
     {
-		fprintf(stderr, 
+        fprintf(stderr, 
             "WARNING: The number of scheduling periods is not bounded!" 
             "Logging is automatically disabled!\n");
         Sflag = 1;
@@ -276,22 +276,22 @@ int main(int argc, char** argv)
     }
     
     /*Check if the user will be prompted before proceeding*/
-	if(fflag == 0)
-	{
+    if(fflag == 0)
+    {
         fprintf(stderr, "Waiting for prompt from user ...\n");
-		if(fgetc(stdin) == (int)'q')
-		{
-			fprintf(stderr, "\nExiting...\n");
-			retval = 0;
-			goto exit0;
-		}
+        if(fgetc(stdin) == (int)'q')
+        {
+            fprintf(stderr, "\nExiting...\n");
+            retval = 0;
+            goto exit0;
+        }
         fprintf(stderr, "\nRunning...\n");
-	}
+    }
 
     //If logging is enabled, setup the log memory
     if(Sflag == 0)
     {
-	    retval = setup_log_memory();
+        retval = setup_log_memory();
         if(retval)
         {
             fprintf(stderr, "setup_log_memory failed!\n");
@@ -317,7 +317,7 @@ int main(int argc, char** argv)
     {
         allocator_loop(proc_file);
     }
-	
+    
     retval = allocator_close(proc_file);
     if(retval)
     {
@@ -330,8 +330,8 @@ int main(int argc, char** argv)
         free_log_memory();
     }
 
-	printf("\n");
+    printf("\n");
 exit0:
-	return 0;
+    return 0;
 }
 

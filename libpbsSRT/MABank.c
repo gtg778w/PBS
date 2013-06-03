@@ -33,20 +33,20 @@ int pbsSRT_update_MABank(   void    *state, int64_t exec_time,
     MABank_t *MABank_p  = (MABank_t*)state;
     double   observed   = (double)exec_time;
     int32_t fid;
-	int32_t i;
+    int32_t i;
 
-	double  *prediction = MABank_p->prediction;
-	double  *error_mean = MABank_p->error_mean;
-	double  *error_var  = MABank_p->error_var;
-	double  *buffer     = MABank_p->buffer;
+    double  *prediction = MABank_p->prediction;
+    double  *error_mean = MABank_p->error_mean;
+    double  *error_var  = MABank_p->error_var;
+    double  *buffer     = MABank_p->buffer;
 
-	double  next_indep_var;
-	double  prev_indep_var;
+    double  next_indep_var;
+    double  prev_indep_var;
 
     double  error;
     double  error_diff;
 
-	double  filter_acc;
+    double  filter_acc;
 
     int32_t min_var_f;
     double  min_var;
@@ -170,11 +170,11 @@ int pbsSRT_predict_MABank(  void   *state,
 {
     MABank_t *MABank_p  = (MABank_t*)state;
 
-	double  *error_var  = MABank_p->error_var;
+    double  *error_var  = MABank_p->error_var;
     int min_var_f = MABank_p->min_var_f;
 
     int warmup = MABank_p->warmup;
-    	    
+    
     int ret;
 
     *pu_c0      = (int64_t)MABank_p->x_hat;

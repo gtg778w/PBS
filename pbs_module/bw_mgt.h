@@ -34,12 +34,12 @@ semaphore related stuff
 __init
 */
 
-#include <linux/kernel.h>	
+#include <linux/kernel.h>
 /* 
 printk() 
 */
 
-#include <linux/errno.h>	
+#include <linux/errno.h>
 /* 
 error codes 
 */
@@ -61,27 +61,14 @@ current
 
 enum 
 {
-	MODULE_LOADED, 
-	ALLOCATOR_OPEN, 
-	ALLOCATOR_START, 
-	ALLOCATOR_LOOP, 
-	ALLOCATOR_PRECLOSING, 
-	ALLOCATOR_CLOSING,
-	ALLOCATOR_STATE_COUNT
+    MODULE_LOADED, 
+    ALLOCATOR_OPEN, 
+    ALLOCATOR_START, 
+    ALLOCATOR_LOOP, 
+    ALLOCATOR_PRECLOSING, 
+    ALLOCATOR_CLOSING,
+    ALLOCATOR_STATE_COUNT
 };
-
-//FIXME
-/*
-static const char *a_state_strings[ALLOCATOR_STATE_COUNT] = 
-{
-	"MODULE_LOADED", 
-	"ALLOCATOR_OPEN", 
-	"ALLOCATOR_START", 
-	"ALLOCATOR_LOOP", 
-	"ALLOCATOR_PRECLOSING", 
-	"ALLOCATOR_CLOSING"
-};
-*/
 
 extern unsigned char allocator_state;
 

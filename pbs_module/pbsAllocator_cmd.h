@@ -24,31 +24,31 @@ typedef struct bw_mgt_cmd_s
     s64         args[2];
 } bw_mgt_cmd_t;
 
-#define LOADDATALIST_SIZE	(1<<20) //1MB
-#define LOADDATALIST_ORDER	(20-PAGE_SHIFT)
+#define LOADDATALIST_SIZE   (1<<20) //1MB
+#define LOADDATALIST_ORDER  (20-PAGE_SHIFT)
 
-#define ALLOC_SIZE	(1<<17)
-#define ALLOC_ORDER	(17-PAGE_SHIFT)
+#define ALLOC_SIZE  (1<<17)
+#define ALLOC_ORDER (17-PAGE_SHIFT)
 
 typedef struct _SRT_loaddata
 {
-	u64	job_release_time;	// 8 bytes
-	s64 u_c0;               // 8 bytes
-	s64 var_c0;             // 8 bytes
-	s64 u_cl;               // 8 bytes
-	s64 var_cl;             // 8 bytes
-	u32	pid;			    // 4 bytes
-	u32	current_runtime;	// 4 bytes
-	u32	sp_till_deadline;   // 4 bytes
-	u32	sp_per_tp;		    // 4 bytes
+    u64 job_release_time;   // 8 bytes
+    s64 u_c0;               // 8 bytes
+    s64 var_c0;             // 8 bytes
+    s64 u_cl;               // 8 bytes
+    s64 var_cl;             // 8 bytes
+    u32 pid;                // 4 bytes
+    u32 current_runtime;    // 4 bytes
+    u32 sp_till_deadline;   // 4 bytes
+    u32 sp_per_tp;          // 4 bytes
 
-	unsigned short	queue_length;	// 2 bytes
+    unsigned short  queue_length;   // 2 bytes
 
-	//In a 2MB page, can have at most 2^15 elements of size 64B
-	//The index of the next valid structure can be stored in a
-	//short
-	unsigned short	next; 	// 2 bytes
-	unsigned short	prev;	// 2 bytes
+    //In a 2MB page, can have at most 2^15 elements of size 64B
+    //The index of the next valid structure can be stored in a
+    //short
+    unsigned short  next;   // 2 bytes
+    unsigned short  prev;   // 2 bytes
 
     unsigned char  _padding[2];//2 bytes
 

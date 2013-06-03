@@ -11,7 +11,7 @@ Various global variables and functions
 
 ***********************************************************************/
 
-struct	kmem_cache *SRT_struct_slab_cache = NULL;
+struct  kmem_cache *SRT_struct_slab_cache = NULL;
 
 /**********************************************************************
 Functions for initializing various data structures
@@ -19,7 +19,7 @@ Functions for initializing various data structures
 
 static void free_SRT_struct(struct SRT_struct *freeable)
 {
-	free_loaddata(freeable->loaddata);
+    free_loaddata(freeable->loaddata);
 
     /*FIXME*/
     printk(KERN_INFO    "free_SRT_struct called by task (%d), "
@@ -33,52 +33,52 @@ static void free_SRT_struct(struct SRT_struct *freeable)
                         freeable->summary.consumed_budget,
                         freeable->summary.total_misses);
 
-	kmem_cache_free(SRT_struct_slab_cache, freeable);
+    kmem_cache_free(SRT_struct_slab_cache, freeable);
 
-	decrement_SRT_count();
+    decrement_SRT_count();
 }
 
 struct SRT_struct *allocate_SRT_struct(void)
 {
-	struct SRT_struct *initable;
-	struct SRT_timing_struct *ptiming_struct;
+    struct SRT_struct *initable;
+    struct SRT_timing_struct *ptiming_struct;
 
-	initable= kmem_cache_alloc(SRT_struct_slab_cache, GFP_KERNEL);
-	if(initable == NULL)
-	{
-		printk(KERN_INFO "Failed to allocate memory for jb_mgt_struct_t in jb_mgt_open!\n");
-		return NULL;
-	}
+    initable= kmem_cache_alloc(SRT_struct_slab_cache, GFP_KERNEL);
+    if(initable == NULL)
+    {
+        printk(KERN_INFO "Failed to allocate memory for jb_mgt_struct_t in jb_mgt_open!\n");
+        return NULL;
+    }
 
     /*zero out the summary structure*/
     initable->summary = (struct SRT_summary_s){0, 0, 0, 0};
 
-	initable->loaddata = alloc_loaddata();
-	if(initable->loaddata == NULL)
-	{
-		kmem_cache_free(SRT_struct_slab_cache, initable);
-		return NULL;
-	}
+    initable->loaddata = alloc_loaddata();
+    if(initable->loaddata == NULL)
+    {
+        kmem_cache_free(SRT_struct_slab_cache, initable);
+        return NULL;
+    }
 
-	(initable->loaddata)->pid = current->pid;
+    (initable->loaddata)->pid = current->pid;
 
-	initable->allocation_index = initable->loaddata - loaddata_array;
-	allocation_array[initable->allocation_index] = 0;
+    initable->allocation_index = initable->loaddata - loaddata_array;
+    allocation_array[initable->allocation_index] = 0;
 
-	ptiming_struct 	= &(initable->timing_struct);
-	INIT_TIMING_STRUCT(ptiming_struct);
+    ptiming_struct  = &(initable->timing_struct);
+    INIT_TIMING_STRUCT(ptiming_struct);
 
-	initable->task	= current;
+    initable->task  = current;
 
-	initable->queue_length = 0;
+    initable->queue_length = 0;
 
-	initable->overuse_count = 0;
+    initable->overuse_count = 0;
 
-	initable->state 	= SRT_OPEN;
+    initable->state = SRT_OPEN;
 
-	increment_SRT_count();
+    increment_SRT_count();
 
-	return initable;
+    return initable;
 }
 
 /**********************************************************************
@@ -98,39 +98,39 @@ int jb_mgt_release(struct inode *inode, struct file *filp);
 char*  jb_mgt_file_name = "sched_rt_jb_mgt";
 struct proc_dir_entry* p_jb_mgt_file;
 struct file_operations jb_mgt_fops = {
-	.owner		=	THIS_MODULE,
-	.read 		=	jb_mgt_read,
-	.write      =   jb_mgt_write,
-	.open 		=	jb_mgt_open,
-	.release	=	jb_mgt_release	
+    .owner  =   THIS_MODULE,
+    .read   =   jb_mgt_read,
+    .write  =   jb_mgt_write,
+    .open   =   jb_mgt_open,
+    .release=   jb_mgt_release
 };
 
 int jb_mgt_open(struct inode *inode, struct file *filp)
 {
-	int ret = 0;
+    int ret = 0;
 
-	//initialize an allocator cache for the pbs_srt_struct
-	printk(KERN_INFO "jb_mgt_open called by process %d.\n", current->pid);
+    //initialize an allocator cache for the pbs_srt_struct
+    printk(KERN_INFO "jb_mgt_open called by process %d.\n", current->pid);
 
-	if(allocator_state != ALLOCATOR_LOOP)
-		return -EBUSY;
+    if(allocator_state != ALLOCATOR_LOOP)
+        return -EBUSY;
 
-	// Allocate the per job structure
-	filp->private_data = allocate_SRT_struct();
-	if(filp->private_data == NULL)
-	{
-		ret = -ENOMEM;
-	}
+    // Allocate the per job structure
+    filp->private_data = allocate_SRT_struct();
+    if(filp->private_data == NULL)
+    {
+        ret = -ENOMEM;
+    }
 
-	return ret;
+    return ret;
 }
 
 /*Return the number of PBS tasks, for which information is returned*/
 ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *offset)
 {
-	struct SRT_struct *SRT_struct;
+    struct SRT_struct *SRT_struct;
 
-	SRT_struct = (struct SRT_struct*)(filp->private_data);
+    SRT_struct = (struct SRT_struct*)(filp->private_data);
 
     pba_nextjob2(SRT_struct);
 
@@ -138,11 +138,11 @@ ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *o
             sizeof(struct SRT_job_log) : count;
     
     if(copy_to_user(dst, &(SRT_struct->log), count))
-	{
-		count = -EFAULT;
-	}
+    {
+        count = -EFAULT;
+    }
 
-	return count;
+    return count;
 }
 
 ssize_t jb_mgt_write(   struct file *filep, 
@@ -153,10 +153,10 @@ ssize_t jb_mgt_write(   struct file *filep,
     job_mgt_cmd_t cmd;
     ssize_t ret = count;
     
-	struct SRT_struct *SRT_struct = (struct SRT_struct*)(filep->private_data);
-	struct SRT_summary __user *summary_p = NULL;
-	
-	u64 task_period;
+    struct SRT_struct *SRT_struct = (struct SRT_struct*)(filep->private_data);
+    struct SRT_summary __user *summary_p = NULL;
+    
+    u64 task_period;
     u64 sp_per_tp; /*reservation periods in a task period*/
     
     if(sizeof(job_mgt_cmd_t) != count)
@@ -206,20 +206,20 @@ ssize_t jb_mgt_write(   struct file *filep,
             }
                 
             /*Check that the task period is sufficiently small*/
-			if( (sp_per_tp & ((s64)(-1) << 32)) != 0)
-			{
+            if( (sp_per_tp & ((s64)(-1) << 32)) != 0)
+            {
                 printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
                                     "command for the task period by process %d. "
                                     "The passed value is too large.", 
                                     current->pid);
-			    ret = -EINVAL;
-			    goto exit0;
-			}
-			
-			SRT_struct->timing_struct.task_period.tv64 = task_period;
-			(SRT_struct->loaddata)->sp_per_tp = sp_per_tp;
-			/*The conditoins and passed values are valid*/
-			SRT_struct->state = SRT_CONFIGURED;
+                ret = -EINVAL;
+                goto exit0;
+            }
+            
+            SRT_struct->timing_struct.task_period.tv64 = task_period;
+            (SRT_struct->loaddata)->sp_per_tp = sp_per_tp;
+            /*The conditoins and passed values are valid*/
+            SRT_struct->state = SRT_CONFIGURED;
             break;
         
         case PBS_JBMGT_CMD_START:
@@ -229,14 +229,14 @@ ssize_t jb_mgt_write(   struct file *filep,
             issued in the SRT_START state*/
             if(SRT_CONFIGURED != SRT_struct->state)
             {
-			    printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
-			                        "without setting up parameters by process %d.", 
-			                        current->pid);
+                printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
+                                    "without setting up parameters by process %d.", 
+                                    current->pid);
                 ret = -EINVAL;
                 goto exit0;
             }
-		    
-		    SRT_struct->state = SRT_STARTED;
+            
+            SRT_struct->state = SRT_STARTED;
             break;
             
         case PBS_JBMGT_CMD_NEXTJOB:
@@ -253,39 +253,39 @@ ssize_t jb_mgt_write(   struct file *filep,
                 printk(KERN_INFO    "The PBS_JBMGT_CMD_NEXTJOB command issued for the "
                                     "first time by process %d.", current->pid);
                 preempt_disable();
-			    ret = first_sleep_till_next_period(&(SRT_struct->timing_struct));
-			    preempt_enable();
-			    if(ret==0)
-			    {
-				    SRT_struct->state = SRT_LOOP;
-				    ret = count;
-			    }
-			    else
-			    {
-			        printk(KERN_INFO    "\"first_sleep_till_next_period\" failed for "
+                ret = first_sleep_till_next_period(&(SRT_struct->timing_struct));
+                preempt_enable();
+                if(ret==0)
+                {
+                    SRT_struct->state = SRT_LOOP;
+                    ret = count;
+                }
+                else
+                {
+                    printk(KERN_INFO    "\"first_sleep_till_next_period\" failed for "
                                         "process %d.", current->pid);
                     /*ret has already been set by the fialing function*/
                     goto exit0;
-			    }
+                }
             }
             else
             {
                 if(SRT_LOOP == SRT_struct->state)
                 {
-			        preempt_disable();
-			        ret = sleep_till_next_period(&(SRT_struct->timing_struct));
+                    preempt_disable();
+                    ret = sleep_till_next_period(&(SRT_struct->timing_struct));
                     preempt_enable();
                     if(ret==0)
-			        {
-			            ret = count;
-			        }
-    			    else
-			        {
-			            printk(KERN_INFO    "\"sleep_till_next_period\" failed for "
+                    {
+                        ret = count;
+                    }
+                    else
+                    {
+                        printk(KERN_INFO    "\"sleep_till_next_period\" failed for "
                                             "process %d.", current->pid);
                         /*ret has already been set by the fialing function*/
                         goto exit0;
-			        }
+                    }
                 }
                 else
                 {
@@ -302,13 +302,13 @@ ssize_t jb_mgt_write(   struct file *filep,
         
         case PBS_JBMGT_CMD_STOP:
             printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_STOP");
-	        if(SRT_LOOP == SRT_struct->state)
-	        {
-		        preempt_disable();
-		        //remove from the period timer list and stop budget enforcement
-		        remove_from_timing_queue(&(SRT_struct->timing_struct));
-		        SRT_struct->state = SRT_CLOSED;
-		        preempt_enable();
+            if(SRT_LOOP == SRT_struct->state)
+            {
+                preempt_disable();
+                //remove from the period timer list and stop budget enforcement
+                remove_from_timing_queue(&(SRT_struct->timing_struct));
+                SRT_struct->state = SRT_CLOSED;
+                preempt_enable();
             }
             
             SRT_struct->state = SRT_CLOSED;
@@ -319,10 +319,10 @@ ssize_t jb_mgt_write(   struct file *filep,
             summary_p = (struct SRT_summary __user *)cmd.args[0];
             if( copy_to_user(   summary_p, &(SRT_struct->summary), 
                                 sizeof(struct SRT_summary_s)) )
-		    {
-			    ret = -EFAULT;
-			    goto exit0;
-		    }
+            {
+                ret = -EFAULT;
+                goto exit0;
+            }
             break;
             
         default:
@@ -338,30 +338,30 @@ exit0:
 
 int jb_mgt_release(struct inode *inode, struct file *filp)
 {
-	struct SRT_struct *freeable;
+    struct SRT_struct *freeable;
 
-	freeable = filp->private_data;
+    freeable = filp->private_data;
 
-	printk(KERN_EMERG "jb_mgt_release called by process %d.\n", current->pid);
+    printk(KERN_EMERG "jb_mgt_release called by process %d.\n", current->pid);
 
-	switch(freeable->state)
-	{
-		case SRT_LOOP:
+    switch(freeable->state)
+    {
+        case SRT_LOOP:
 
-			preempt_disable();
-			//remove from the period timer list
-			remove_from_timing_queue(&(freeable->timing_struct));
-			freeable->state = SRT_CLOSED;
-			preempt_enable();
+            preempt_disable();
+            //remove from the period timer list
+            remove_from_timing_queue(&(freeable->timing_struct));
+            freeable->state = SRT_CLOSED;
+            preempt_enable();
 
-		case SRT_STARTED:
-		case SRT_CONFIGURED:
-		case SRT_OPEN:
-		case SRT_CLOSED:
-			free_SRT_struct(freeable);
-	}
+        case SRT_STARTED:
+        case SRT_CONFIGURED:
+        case SRT_OPEN:
+        case SRT_CLOSED:
+            free_SRT_struct(freeable);
+    }
 
-	return 0;
+    return 0;
 }
 
 /**********************************************************************
@@ -372,37 +372,37 @@ int jb_mgt_release(struct inode *inode, struct file *filp)
 
 int init_jb_mgt(void)
 {
-	int returnable = 0;
+    int returnable = 0;
 
-	/*Create the file in the root of the profcs directory, initially with no permissions for others*/
-	p_jb_mgt_file = create_proc_entry(jb_mgt_file_name, 0600, NULL);
-	if(p_jb_mgt_file == NULL)
-	{
-		returnable = -ENOMEM;
-		goto error;
-	}
-	p_jb_mgt_file->data = NULL;
-	p_jb_mgt_file->proc_fops = &jb_mgt_fops;
-	p_jb_mgt_file->mode = 0666;
+    /*Create the file in the root of the profcs directory, initially with no permissions for others*/
+    p_jb_mgt_file = create_proc_entry(jb_mgt_file_name, 0600, NULL);
+    if(p_jb_mgt_file == NULL)
+    {
+        returnable = -ENOMEM;
+        goto error;
+    }
+    p_jb_mgt_file->data = NULL;
+    p_jb_mgt_file->proc_fops = &jb_mgt_fops;
+    p_jb_mgt_file->mode = 0666;
 
-	/*Setup a lookaside cache for the sleep_queue_entry_t*/
-	SRT_struct_slab_cache = KMEM_CACHE(SRT_struct, SLAB_HWCACHE_ALIGN);
-	if(SRT_struct_slab_cache == NULL)
-		returnable = -ENOMEM;
+    /*Setup a lookaside cache for the sleep_queue_entry_t*/
+    SRT_struct_slab_cache = KMEM_CACHE(SRT_struct, SLAB_HWCACHE_ALIGN);
+    if(SRT_struct_slab_cache == NULL)
+        returnable = -ENOMEM;
 
-	reset_SRT_count();
+    reset_SRT_count();
 error:
-	return returnable;
+    return returnable;
 }
 
 int uninit_jb_mgt(void)
 {
-	int returnable = 0;
-	remove_proc_entry(jb_mgt_file_name, NULL);
+    int returnable = 0;
+    remove_proc_entry(jb_mgt_file_name, NULL);
 
-	/*Release the slab cache allocator*/
-	kmem_cache_destroy(SRT_struct_slab_cache);
+    /*Release the slab cache allocator*/
+    kmem_cache_destroy(SRT_struct_slab_cache);
 
-	return returnable;
+    return returnable;
 }
 
