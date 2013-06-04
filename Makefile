@@ -12,7 +12,7 @@ setup_expt: all
 	
 clean:
 	$(MAKE) -C poll_pbs_actv/ clean
-	$(MAKE) -C pbsSRT_PeSoRTA/
+	$(MAKE) -C pbsSRT_PeSoRTA/ clean
 	$(MAKE) -C sqrwavSRT/ clean
 	$(MAKE) -C pbsAllocator/ clean
 	$(MAKE) -C pbs_module/ clean

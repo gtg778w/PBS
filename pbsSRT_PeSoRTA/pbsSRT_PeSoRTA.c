@@ -275,20 +275,6 @@ int main (int argc, char * const * argv)
         estimated_mean_exectime = (period >> 2); //0.25
     }
 
-    /*Setup the workload*/
-    ret = setup_workload(   workload_configname,
-                            workload_root_directory,
-                            &fd_cwd, &workload_state, &possiblejobs);
-    if(0 != ret)
-    {
-        fprintf(stderr, "main: setup_workload failed\n");
-        goto exit0;
-    }
-
-    /*Ensure that max jobs is no greater than possiblejobs*/
-    maxjobs =   ((possiblejobs > 0) && (possiblejobs < maxjobs))? 
-                possiblejobs : maxjobs;
-
     /*Setup the predictor*/
     ret = pbsSRT_getPredictor(&predictor, predictor_name);
     if(-1 == ret)
@@ -296,14 +282,40 @@ int main (int argc, char * const * argv)
         fprintf(stderr, "main: pbsSRT_getPredictor failed with argument \"%s\"\n",
                         predictor_name);
         ret = -1;
+        goto exit0;
+    }
+    
+    /*Setup the scheduler*/
+    ret = pbsSRT_setup( period, estimated_mean_exectime, alpha, &predictor, &handle, 
+                       loglevel, maxjobs, logfilename);
+    if(ret)
+    {
+        fprintf(stderr, "main: pbsSRT_setup failed!\n");
+        ret = -1;
         goto exit1;
     }
+    
+    /*Setup the workload*/
+    ret = setup_workload(   workload_configname,
+                            workload_root_directory,
+                            &fd_cwd, &workload_state, &possiblejobs);
+    if(0 != ret)
+    {
+        fprintf(stderr, "main: setup_workload failed\n");
+        workload_state = NULL;
+        goto exit2;
+    }
+
+    /*Ensure that max jobs is no greater than possiblejobs*/
+    maxjobs =   ((possiblejobs > 0) && (possiblejobs < maxjobs))? 
+                possiblejobs : maxjobs;
+
     
     /*Print the configuration parameters and check that the user wants to continue*/
     printf("\nWorkload parameters:\n");
     printf("\tworkload name:\t\t%s\n", workload_name());
-    printf("\tworkload root directory:\t%s", workload_root_directory);
-    printf("\tconfiguration file name:\t%s", workload_configname);
+    printf("\tworkload root directory:\t%s\n", workload_root_directory);
+    printf("\tconfiguration file name:\t%s\n", workload_configname);
     printf("\tmaximum jobs:\t\t%lu\n", maxjobs);
 
     printf("\nSchedulng Parameters:\n");
@@ -327,26 +339,17 @@ int main (int argc, char * const * argv)
         }
     }
 
-    //setup the scheduler
-    ret = pbsSRT_setup( period, estimated_mean_exectime, alpha, &predictor, &handle, 
-                       loglevel, maxjobs, logfilename);
-    if(ret)
-    {
-        fprintf(stderr, "main: pbsSRT_setup failed!\n");
-        ret = -1;
-        goto exit2;
-    }
-
     //lock memory
     ret = mlockall(MCL_CURRENT);
     if(ret)
     {
         perror("main: mlockall failed");
         ret = -1;
-        goto exit3;
+        goto exit2;
     }
 
-    printf("Running ... ");
+    printf("Running ... \n");
+    fflush(stdout);
 
     /*Sleep until the next scheduling-period boundary,
     the first task-period boundary*/
@@ -355,7 +358,7 @@ int main (int argc, char * const * argv)
     {
         fprintf(stderr, "main: pbsSRT_sleepTillFirstJob failed!\n");
         ret = -1;
-        goto exit3;
+        goto exit2;
     }
     
     /*The main job loop*/
@@ -375,19 +378,26 @@ int main (int argc, char * const * argv)
         {
             fprintf(stderr, "main: pbsSRT_sleepTillNextJob failed for job %li.\n", j);
             ret = -1;
-            goto exit3;
+            goto exit2;
         }
     }
-    
-exit3:
+
+exit2:
     /*Notify the PBSS module of the end of the SRT task*/
     pbsSRT_close(&handle);
-exit2:
+    printf("Closing ... \n");
+    
+    /*Freeing the workload state is done out of order since the pbsSRT handle should
+    really be closed first*/
+    if(NULL != workload_state)
+    {
+        /*Free the workload*/
+        workload_uninit(workload_state);
+    }
+    
+exit1:
     /*Free the predictor*/
     pbsSRT_freePredictor((&predictor));
-exit1:    
-    /*Free the workload*/
-    workload_uninit(workload_state);
     
 exit0:
     if(0 != ret)
