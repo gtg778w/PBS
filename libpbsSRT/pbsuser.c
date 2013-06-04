@@ -41,7 +41,7 @@ typedef int32_t  s32;
 
 #include "pbsuser.h"
 
-int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth, 
+int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime, 
                     double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
@@ -159,7 +159,8 @@ int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth,
     }
     
     handle->period          = period;
-    handle->start_bandwidth = start_bandwidth;
+    handle->estimated_mean_exectime 
+                            = estimated_mean_exectime;
     handle->alpha_squared   = alpha * alpha;
 
     cmd.cmd = PBS_JBMGT_CMD_START;
@@ -210,9 +211,9 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     /*Setup the NEXTJOB command with the predicted execution time
     specified in command-line arguments and 0 variance*/
     cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;    
-    cmd.args[0] = handle->start_bandwidth;
+    cmd.args[0] = handle->estimated_mean_exectime;
     cmd.args[1] = 0;
-    cmd.args[2] = handle->start_bandwidth;
+    cmd.args[2] = handle->estimated_mean_exectime;
     cmd.args[3] = 0;
     
     /*Issue the NEXTJOB command*/
@@ -281,9 +282,9 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     {
         /*If the predictor is not ready to produce valid output (still warming up)
         use the budget values specified in the command-line arguments*/
-        u_c0    = handle->start_bandwidth;
+        u_c0    = handle->estimated_mean_exectime;
         std_c0  = 0;
-        u_cl    = handle->start_bandwidth;
+        u_cl    = handle->estimated_mean_exectime;
         std_cl  = 0;
     }
     
@@ -350,7 +351,7 @@ void pbsSRT_close(SRT_handle *handle)
         fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, "
                                     "0, 0, 0\n\n", getpid(),
                                     (unsigned long long)handle->period,
-                                    (unsigned long long)handle->start_bandwidth,
+                                    (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,
                                     (unsigned long long)summary.cumulative_budget,
                                     (unsigned long long)summary.cumulative_budget_sat,

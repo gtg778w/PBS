@@ -20,7 +20,7 @@ typedef struct SRT_handle_s
     int                 procfile;
     pbsSRT_predictor_t  *predictor;
     uint64_t            period;
-    uint64_t            start_bandwidth;
+    uint64_t            estimated_mean_exectime;
     double              alpha_squared;
 
     FILE                *log_file;
@@ -36,7 +36,7 @@ typedef struct SRT_handle_s
 
 } SRT_handle;
 
-int pbsSRT_setup(   uint64_t period, uint64_t start_bandwidth, 
+int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime, 
                     double alpha,
                     pbsSRT_predictor_t *predictor,
                     SRT_handle *handle, 
