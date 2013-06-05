@@ -28,6 +28,15 @@ struct perf_event *event_power;
 u64 count_power;
 */
 
+static long long read_msr(unsigned int ecx) {
+    unsigned int edx = 0, eax = 0;
+    unsigned long long result = 0;
+    __asm__ __volatile__("rdmsr" : "=a"(eax), "=d"(edx) : "c"(ecx));
+    result = eax | (unsigned long long)edx << 0x20;
+    printk(KERN_ALERT "read_msr() read 0x%016llx (0x%08x:0x%08x) from MSR 0x%08x\n", result, edx, eax, ecx);
+    return result;
+}
+
 static int __init start_count(void) {
     /*int fd;*/
     long long i;
@@ -54,8 +63,10 @@ static int __init start_count(void) {
     pe_inst.config = PERF_COUNT_HW_INSTRUCTIONS;
     /* should count be enabled when started? */
     pe_inst.disabled = 0;
-    pe_inst.exclude_kernel = 1; /* should it be? */
+    pe_inst.exclude_kernel = 0; /* should it be? */
+    pe_inst.exclude_user = 1;
     pe_inst.exclude_hv = 1;
+    pe_inst.pinned = 1;
     
     /*printk(KERN_ALERT "currently running on %d", smp_processor_id());*/
     event_inst = perf_event_create_kernel_counter(&pe_inst, 0, NULL, NULL, NULL);
@@ -72,7 +83,13 @@ static int __init start_count(void) {
     
     printk(KERN_ALERT "c= %lld inst= %lld\n", c, count_inst);
 
-    result = read_msr(ecx);
+    energy = read_msr(ecx);
+    energy = energy * 15.3;
+    energy = energy / 1000000;
+    printk(KERN_ALERT "energy: %lld J\n", energy);
+    ecx = 0x606;
+    energy = read_msr(ecx);
+
 
 /*
     memset(&pe_power, 0, sizeof(struct perf_event_attr));
@@ -93,14 +110,6 @@ static void __exit end_count(void) {
     printk(KERN_ALERT "perf_event_test removed\n");
 }
 
-static long long read_msr(unsigned int ecx) {
-    unsigned int edx = 0, eax = 0;
-    unsigned long long result = 0;
-    __asm__ __volatile__("rdmsr" : "=a"(eax), "=d"(edx) : "c"(ecx));
-    result = eax | (unsigned long long)edx << 0x20;
-    dprintk(KERN_ALERT "read_msr() read 0x%016llx (0x%08x:0x%08x) from MSR 0x%08x\n", result, edx, eax, ecx)
-    return result;
-}
 
 module_init(start_count);
 module_exit(end_count);
