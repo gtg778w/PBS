@@ -1,16 +1,21 @@
 #define the build commands
 CC=gcc
 CFLAGS=-Wall
-LIBFLAGS=-lrt -lm
+LIBFLAGS=-lpbsSRT -lrt -lm
 
 BINDIR=../bin
 SRCDIR=./
+LIBDIR=../libpbsSRT
 
 all: $(BINDIR)/sqrwavSRT
 
-$(BINDIR)/sqrwavSRT: $(SRCDIR)/sqrwav_SRT.c $(SRCDIR)/pbsuser.c $(SRCDIR)/loadgen.h $(SRCDIR)/pbsuser.h $(SRCDIR)/sqrwav.h
-	$(CC) $(CFLAGS) -o $(BINDIR)/sqrwavSRT $(SRCDIR)/sqrwav_SRT.c $(SRCDIR)/pbsuser.c $(LIBFLAGS)
+libpbsSRT.a:
+	$(MAKE) -C $(LIBDIR)
+
+$(BINDIR)/sqrwavSRT: $(SRCDIR)/sqrwav_SRT.c $(SRCDIR)/loadgen.h $(SRCDIR)/sqrwav.h libpbsSRT.a
+	$(CC) $(CFLAGS) -L $(LIBDIR) -I $(LIBDIR) -o $(BINDIR)/sqrwavSRT $(SRCDIR)/sqrwav_SRT.c $(LIBFLAGS)
 
 clean:
 	rm -rf $(BINDIR)/sqrwavSRT
-
+	$(MAKE) -C $(LIBDIR) clean
+	

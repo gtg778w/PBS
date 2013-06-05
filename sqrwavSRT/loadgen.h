@@ -12,15 +12,15 @@ static double ipms = 1000000.0;
 
 static int work_function(long count)
 {
-	int i;
-	int32_t a=134775813, c=1, x=0;
+    int i;
+    int32_t a=134775813, c=1, x=0;
 
-	for(i = 0; i < count; i++)
-	{
-		x = a*x+c;
-	}
+    for(i = 0; i < count; i++)
+    {
+        x = a*x+c;
+    }
 
-	return x;
+    return x;
 }
 
 #define timed_work_function(ms)\

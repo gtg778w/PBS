@@ -25,12 +25,11 @@ gcc -O3 -o sqrwavSRT  sqrwav_SRT.c pbsuser.c
 #include "loadgen.h"
 
 /*****************************************************************************/
-//				Workload generation related Code
+//                Workload generation related Code
 /*************************************************************************/
 
 uint64_t job(struct sqrwav_struct *sqrwav_p)
 {
-    uint64_t i;
     uint64_t job_length;
     static uint64_t state = 0;
 
@@ -42,7 +41,7 @@ uint64_t job(struct sqrwav_struct *sqrwav_p)
 }
 
 /*****************************************************************************/
-//				main function
+//                main function
 /*************************************************************************/
 
 char *usage_string = "[options]\n"\
@@ -56,34 +55,37 @@ char *usage_string = "[options]\n"\
         "\n"\
         "-f: do not propmpt before proceeding\n"\
         "\n"\
+        "-A: prediction algorithm (\"mabank\" by default)"
         "-p: scheduling period\n"\
-        "-b: starting scheduling bandwidth\n"\
-        "-l: job history length\n"\
-        "-L: name of log file\n\n";
+        "-b: initial exec-time prediction\n"\
+        "-a: alpha parameter\n"\
+        "-L: logging level\n"\
+        "-R: name of log file (\"log.csv\" by default)\n\n";
 
 char* optstring
-    = "j:P:D:d:M:m:N:p:b:l:L:f";
+    = "j:P:D:d:M:m:N:A:p:b:a:L:R:f";
 
 int main (int argc, char * const * argv)
 {
-	int ret, dummy_state;
+    int ret, dummy_state;
 
-	//variables for the scheduler
-	unsigned long maxjobs = 10000;
+    //variables for the scheduler
+    unsigned long maxjobs = 10000;
     unsigned long j;
 
-    //real-time attribute related variables
-	unsigned char rflag = 0;
-    pid_t my_pid;
-    int max_priority;
-    struct sched_param sched_param;
-
     //pbs related variables
-	SRT_handle handle;
-	unsigned long period = 40000, bandwidth, hlength = 0;
-   	char* logfilename = NULL;
-	unsigned char pflag = 0, bflag = 0, lflag = 0, jflag = 0;
-    unsigned char fflag = 0, Lflag = 0;
+    SRT_handle handle;
+    unsigned long period = 40000, bandwidth;
+    double alpha = 1.0;
+    unsigned char bflag = 0;
+    unsigned char fflag = 0;
+    //logging related variables
+    int loglevel = 0;
+    char* logfilename = "log.csv";
+
+    //execution-time predictor related variables
+    pbsSRT_predictor_t predictor;
+    char *predictor_name = "template";
 
     //square-wave generator
     struct      sqrwav_struct sqrwav;
@@ -94,55 +96,54 @@ int main (int argc, char * const * argv)
     sqrwav.noise_ratio = 0.2;
     sqrwav.index = 0;
     sqrwav.rangen_state = 0;
-	uint64_t	ns_start, ns_end, ns_diff;
 
-	//process input arguments
-	while ((ret = getopt(argc, argv, optstring)) != -1)
-	{
-		switch(ret)
-		{
-			case 'j':
-				errno = 0;
-				maxjobs = strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the j option");
-					exit(EXIT_FAILURE);
-				}
-				break;
-
-            case 'r':
-                rflag = 1;
+    //process input arguments
+    while ((ret = getopt(argc, argv, optstring)) != -1)
+    {
+        switch(ret)
+        {
+            case 'j':
+                errno = 0;
+                maxjobs = strtoul(optarg, NULL, 10);
+                if(errno)
+                {
+                    perror("Failed to parse the j option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'P':
                 errno = 0;
                 sqrwav.period = (uint64_t)strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the P option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the P option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'D':
                 errno = 0;
                 sqrwav.duty_cycle = (double)strtod(optarg, NULL);
-				if(errno)
-				{
-					perror("Failed to parse the D option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the D option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'd':
                 errno = 0;
                 sqrwav.index = (uint64_t)strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the d option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the d option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
                 errno = 0;
 
@@ -150,119 +151,152 @@ int main (int argc, char * const * argv)
                 errno = 0;
                 sqrwav.maximum_nominal_value 
                     = (uint64_t)strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the M option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the M option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'm':
                 errno = 0;
                 sqrwav.minimum_nominal_value 
                     = (uint64_t)strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the m option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the m option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'N':
                 errno = 0;
                 sqrwav.noise_ratio = strtod(optarg, NULL);
-				if(errno)
-				{
-					perror("Failed to parse the N option");
-					exit(EXIT_FAILURE);
-				}
+                if(errno)
+                {
+                    perror("Failed to parse the N option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
+                break;
+
+            case 'A':
+                predictor_name = optarg;
                 break;
 
             case 'p':
                 errno = 0;
-				period = strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the p option");
-					exit(EXIT_FAILURE);
-				}
+                period = strtoul(optarg, NULL, 10);
+                if(errno)
+                {
+                    perror("Failed to parse the p option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
 
                 if(period < 10)
-		        {
-			        fprintf(stderr, "The period is too small! got %lu\n", 
+                {
+                    fprintf(stderr, "The period is too small! got %lu\n", 
                         period);
-			        return -EINVAL;
-		        }
+                    ret = -EINVAL;
+                    goto exit0;
+                }
 
-				pflag = 1;
                 break;
                 
             case 'b':
                 errno = 0;
-				bandwidth = strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the b option");
-					exit(EXIT_FAILURE);
-				}
-				bflag = 1;
+                bandwidth = strtoul(optarg, NULL, 10);
+                if(errno)
+                {
+                    perror("Failed to parse the b option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
+                bflag = 1;
                 break;
 
-            case 'l':
+            case 'a':
                 errno = 0;
-				hlength = strtoul(optarg, NULL, 10);
-				if(errno)
-				{
-					perror("Failed to parse the p option");
-					exit(EXIT_FAILURE);
-				}
+                alpha = strtod(optarg, NULL);
+                if(errno)
+                {
+                    perror("Failed to parse the a option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
 
-                if(hlength > 120)
-	            {
-		            fprintf(stderr, "The history length can be at most 120! got %lu\n", hlength);
-		            return -EINVAL;
-	            }
-				lflag = 1;
+                if(alpha < 0)
+                {
+                    fprintf(stderr, "The alpha parameter must be non-negative. "
+                                    "Prased -a %f.\n", alpha);
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
 
             case 'L':
-                Lflag = 1;
-				logfilename = optarg;
+                errno = 0;
+                loglevel = strtol(optarg, NULL, 0);
+                if(errno)
+                {
+                    perror("Failed to parse the L option");
+                    ret = -EINVAL;
+                    goto exit0;
+                }
+                
+                if((loglevel < pbsSRT_LOGLEVEL_MIN) || (loglevel > pbsSRT_LOGLEVEL_MAX))
+                {
+                    fprintf(stderr, "The log level option (-L) , must have an integer "
+                                    "argument between %i and %i inclusive.\n",
+                                    pbsSRT_LOGLEVEL_MIN, pbsSRT_LOGLEVEL_MAX);
+                    ret = -EINVAL;
+                    goto exit0;
+                }
                 break;
-
+            
+            case 'R':
+                logfilename = optarg;
+                break;
+                
             case 'f':
                 fflag = 1;
                 break;
 
-			default:
-				fprintf(stderr, "\nUsage: %s %s\n", argv[0], usage_string);
-				return -EINVAL;
-		}
-	}
+            default:
+                fprintf(stderr, "\nUsage: %s %s\n", argv[0], usage_string);
+                ret = -EINVAL;
+                goto exit0;
+        }
+    }
 
-	if(optind != argc)
-	{
-		fprintf(stderr, "Usage %s %s\n", argv[0], usage_string);
-		return -EINVAL;
-	}
+    if(optind != argc)
+    {
+        fprintf(stderr, "Usage %s %s\n", argv[0], usage_string);
+        ret = -EINVAL;
+        goto exit0;
+    }
 
-	if(bflag)
-	{
-		if((bandwidth > period) || (bandwidth == 0))
-		{
-			fprintf(stderr, "The bandwidth must be strictly positive and less than the period! got %lu\n", bandwidth);
-			return -EINVAL;
-		}
-	}
-	else
-	{
-		bandwidth = (period >> 2); //0.25
-	}
+    if(bflag)
+    {
+        if((bandwidth > period) || (bandwidth == 0))
+        {
+            fprintf(stderr, "The bandwidth must be strictly positive and less than the period! got %lu\n", bandwidth);
+            ret = -EINVAL;
+            goto exit0;
+        }
+    }
+    else
+    {
+        bandwidth = (period >> 2); //0.25
+    }
 
-	//check that the user wants to continue
-	printf("\n\nGot the following options:\n");
+    //check that the user wants to continue
+    printf("\n\nGot the following options:\n");
 
-    printf("\t\njobs:\t%lu\n", maxjobs);		 
+    printf("\t\njobs:\t%lu\n", maxjobs);
 
     printf("\nSquare Wave Parameters:\n");
     printf("\tsquare-wave period:\t%lu jobs\n", sqrwav.period);
@@ -275,64 +309,84 @@ int main (int argc, char * const * argv)
     printf("\tinitial index:\t\t%lu\n", sqrwav.index);
 
     printf("\nSchedulng Parameters:\n");
-	printf("\tscheduling period:\t%luus\n", period);
+    printf("\tscheduling period:\t%luus\n", period);
     printf("\tbandwidth:\t\t%lu\n", bandwidth);
-    printf("\thlength:\t\t%lu\n", hlength);
-	if(Lflag == 1)
-	{
-		printf("\tLogging Enabled:\t%s\n\n", logfilename);
-	}
+    printf("\talpha:\t\t%f\n", alpha);
 
-	if(fflag == 0)
-	{
-		if(fgetc(stdin) == (int)'q')
-		{
-			printf("Exiting...\n");
-			goto clean_close;
-		}
-	}
-
-	//setup the scheduler
-	ret = pbs_SRT_setup(period, bandwidth, hlength, &handle, Lflag, 10000, logfilename);
-	if(ret)
-	{
-		fprintf(stderr, "Failed to setup scheduler!\n");
-		return ret;
-	}
-
-	//lock memory
-	ret = mlockall(MCL_CURRENT);
-	if(ret)
-	{
-		fprintf(stderr, "Failed to lock memory!\n");
-		return ret;
-	}
-
-	printf("Running ... ");
-
-
-	//the main job loop
-	for(j = 0; j < maxjobs; j++)
-	{        
-   		ret = pbs_begin_SRT_job(&handle);
-		if(ret)
-		{
-			break;
-		}
-
-		dummy_state ^= (int)job(&sqrwav);
-	}
-
-    if(ret == 0)
+    printf("\tLogging level:\t%i\n", loglevel);
+    printf("\tLog file:\t\t%s\n\n", logfilename);
+    
+    if(fflag == 0)
     {
-        ret = pbs_begin_SRT_job(&handle);
+        if(fgetc(stdin) == (int)'q')
+        {
+            printf("Exiting...\n");
+            ret = 0;
+            goto exit0;
+        }
     }
 
+    //setup the predictor
+    ret = pbsSRT_getPredictor(&predictor, predictor_name);
+    if(-1 == ret)
+    {
+        fprintf(stderr, "pbsSRT_getPredictor with argument \"%s\" failed in main",
+                        predictor_name);
+        ret = -1;
+        goto exit0;
+    }
 
-clean_close:
-	//close cleanly
-	pbs_SRT_close(&handle);
+    //setup the scheduler
+    ret = pbsSRT_setup(period, bandwidth, alpha, &predictor, &handle, 
+                       loglevel, maxjobs, logfilename);
+    if(ret)
+    {
+        fprintf(stderr, "Failed to setup scheduler!\n");
+        ret = -1;
+        goto exit1;
+    }
+
+    //lock memory
+    ret = mlockall(MCL_CURRENT);
+    if(ret)
+    {
+        fprintf(stderr, "Failed to lock memory!\n");
+        ret = -1;
+        goto exit1;
+    }
+
+    printf("Running ... ");
+
+    //Sleep until the next scheduling-period boundary
+    ret = pbsSRT_sleepTillFirstJob(&handle);
+    if(ret)
+    {
+        fprintf(stderr, "main: pbsSRT_sleepTillFirstJob failed!\n");
+        ret = -1;
+        goto exit1;
+    }
+    
+    //The main job loop
+    for(j = 0; j < maxjobs; j++)
+    {
+        //The main workload for the job
+        dummy_state ^= (int)job(&sqrwav);
+        
+        //Sleep until the next task-period boundary
+        ret = pbsSRT_sleepTillNextJob(&handle);
+        if(ret)
+        {
+            fprintf(stderr, "main: pbsSRT_sleepTillNextJob failed!\n");
+            ret = -1;
+            goto exit1;
+        }
+    }
+    
+exit1:
+    //Notify the end of the SRT task
+    pbsSRT_close(&handle);
     printf("\rCompleted ... %i\n", dummy_state);
-	return 0;
+exit0:
+    return 0;
 }
 

@@ -33,50 +33,50 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 void cleanup_pbs_module(void)
 {
-	int returnable = 0;
+    int returnable = 0;
 
-	returnable = uninit_bw_mgt();
-	if(returnable < 0)
-		goto error;
+    returnable = uninit_bw_mgt();
+    if(returnable < 0)
+        goto error;
 
-	returnable = uninit_jb_mgt();
+    returnable = uninit_jb_mgt();
 
 error:
-	0;
-	/*FIX ME*/
-	/*Report the errors!*/
+    0;
+    /*FIX ME*/
+    /*Report the errors!*/
 }
 
 int __init init_pbs_module(void)
 {
-	int returnable = 0;
+    int returnable = 0;
 
 #ifdef CONFIG_SMP
-	printk(KERN_INFO "This is an SMP kernel!\n");
+    printk(KERN_INFO "This is an SMP kernel!\n");
 #endif
 #ifndef CONFIG_SCHED_HRTICK
-	printk(KERN_INFO "HRTICK is disabled!\n");
+    printk(KERN_INFO "HRTICK is disabled!\n");
 #endif
 #ifndef CONFIG_PREEMPT_NOTIFIERS
-	printk(KERN_INFO "PREEMPT_NOTIFIERS is disabled!\n");
+    printk(KERN_INFO "PREEMPT_NOTIFIERS is disabled!\n");
 #endif
 
     returnable = setup_sched_clock();
     if(returnable < 0)
         goto error;
 
-	returnable = init_bw_mgt();
-	if(returnable < 0)
-		goto error;
+    returnable = init_bw_mgt();
+    if(returnable < 0)
+        goto error;
 
-	returnable = init_jb_mgt();
-	if(returnable < 0)
-	{
-		uninit_bw_mgt();
-	}
+    returnable = init_jb_mgt();
+    if(returnable < 0)
+    {
+        uninit_bw_mgt();
+    }
 
 error:
-	return returnable;
+    return returnable;
 }
 
 module_init(init_pbs_module);
