@@ -57,10 +57,7 @@ static int __init start_count(void) {
     pe_inst.exclude_kernel = 1; /* should it be? */
     pe_inst.exclude_hv = 1;
     
-<<<<<<< HEAD
-=======
     /*printk(KERN_ALERT "currently running on %d", smp_processor_id());*/
->>>>>>> b0316723da980460950721dcb4141a4866501612
     event_inst = perf_event_create_kernel_counter(&pe_inst, 0, NULL, NULL, NULL);
 
     sum = c;
