@@ -49,7 +49,7 @@ static int __init start_count(void) {
     pe_inst.exclude_kernel = 0; /* should it be? */
     pe_inst.exclude_hv = 1;
     
-    event_inst = perf_event_create_kernel_counter(&pe_inst, 1, NULL, NULL, NULL);
+    event_inst = perf_event_create_kernel_counter(&pe_inst, 0, NULL, NULL, NULL);
 
     for (i = 0; i < c; i++) {
 	c--;
