@@ -308,7 +308,6 @@ int bw_mgt_release(struct inode *inode, struct file *filp)
             {
                 printk(KERN_INFO "Exiting with %i tasks in system.\n", local_count);
             }
-
             
             break;
     }

@@ -38,7 +38,7 @@ write
 
 void allocator_loop_wlogging(int proc_file)
 {
-    bw_mgt_cmd_t cmd;
+    bw_mgt_cmd_t cmd = {0, {0, 0}};
     
     long long sp_count = 0;
 
@@ -49,7 +49,7 @@ void allocator_loop_wlogging(int proc_file)
 
     uint64_t budget;
 
-    while(sp_count < sp_limit)
+    for(sp_count = 0; sp_count < sp_limit; sp_count++)
     {
     
         cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
@@ -61,7 +61,6 @@ void allocator_loop_wlogging(int proc_file)
             break;
         }
 
-        sp_count++;
         log_allocator_dat(sp_count);
 
         next = &(loaddata_array[loaddata_list_header->first]);
@@ -78,7 +77,6 @@ void allocator_loop_wlogging(int proc_file)
 
             next = &(loaddata_array[next->next]);
         }
-
     }
     
 }
