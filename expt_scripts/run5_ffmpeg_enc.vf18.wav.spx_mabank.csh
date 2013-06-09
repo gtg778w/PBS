@@ -8,8 +8,8 @@
         set LOGDIR=$argv[1]
         set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
     else if ( $#argv == 2 ) then
-        set LOGDIR=$argv[2]
-        set PeSoRTADIR=$argv[3]
+        set LOGDIR=$argv[1]
+        set PeSoRTADIR=$argv[2]
     else
         echo "Usage:"$argv[0]" [log directory] [PeSoRTA directory]"; exit 1
     endif
