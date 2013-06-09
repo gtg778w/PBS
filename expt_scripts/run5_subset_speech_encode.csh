@@ -1,7 +1,7 @@
 #! /bin/csh
 
     set LOGDIR="~/Desktop/log/"
-    set PeSoRTADIR="../PeSORTA"
+    set PeSoRTADIR="../PeSoRTA"
 
     echo "This complete script has an estimated duration of 12:15:02"
 
