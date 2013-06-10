@@ -44,6 +44,8 @@ int __init init_cpufreq_test(void)
     int cpu;
     int f;
 
+    unsigned int cur_freq;
+
     struct cpufreq_frequency_table *freq_table;
 
 #ifdef CONFIG_SMP
@@ -57,6 +59,7 @@ int __init init_cpufreq_test(void)
     for_each_online_cpu(cpu) 
     {
         printk(KERN_INFO "cpufreq_test: cpu %i", cpu);
+        printk(KERN_INFO "\tAvailable frequencies:");
         freq_table = cpufreq_frequency_get_table(cpu);
         if(NULL == freq_table)
         {
@@ -66,11 +69,14 @@ int __init init_cpufreq_test(void)
         {
             for (f = 0; freq_table[f].frequency != CPUFREQ_TABLE_END; f++) 
             {
-                printk(KERN_INFO "\t %i", freq_table[f].frequency);
+                printk(KERN_INFO "\t\t%i", freq_table[f].frequency);
             }
         }
         
-    }   
+        cur_freq = cpufreq_quick_get(cpu);
+        printk(KERN_INFO "\tcurrent CPU frequency:");
+        printk(KERN_INFO "\t\t%u", cur_freq);
+    }
     
     return returnable;
 }
