@@ -36,6 +36,8 @@ module_param
     struct notifier_block
 */
 
+#include "LAMbS_molookup.h"
+
 MODULE_AUTHOR("Safayet N Ahmed");
 MODULE_LICENSE("Dual BSD/GPL");
 
@@ -107,13 +109,7 @@ void cleanup_cpufreq_test(void)
 
 int __init init_cpufreq_test(void)
 {
-    int cpu;
-    int f;
     int ret = 0;
-
-    unsigned int cur_freq;
-
-    struct cpufreq_frequency_table *freq_table;
 
 #ifdef CONFIG_SMP
     printk(KERN_INFO "This is an SMP kernel!\n");
@@ -122,27 +118,19 @@ int __init init_cpufreq_test(void)
     printk(KERN_INFO "PREEMPT_NOTIFIERS is disabled!\n");
 #endif
 
-    
-    for_each_online_cpu(cpu) 
+    ret = LAMbS_molookup_init();
+    if(0 != ret)
     {
-        printk(KERN_INFO "cpufreq_test: cpu %i", cpu);
-        printk(KERN_INFO "\tAvailable frequencies:");
-        freq_table = cpufreq_frequency_get_table(cpu);
-        if(NULL == freq_table)
+        printk(KERN_INFO "init_cpufreq_test: LAMbS_molookup_init failed!");
+    }
+    else
+    {
+        ret = LAMbS_molookup_test();
+        if(ret == -1)
         {
-            printk(KERN_INFO "\t NULL");
+            printk(KERN_INFO "init_cpufreq_test: LAMbS_molookup_test failed!");
         }
-        else
-        {
-            for (f = 0; freq_table[f].frequency != CPUFREQ_TABLE_END; f++) 
-            {
-                printk(KERN_INFO "\t\t%i", freq_table[f].frequency);
-            }
-        }
-        
-        cur_freq = cpufreq_quick_get(cpu);
-        printk(KERN_INFO "\tcurrent CPU frequency:");
-        printk(KERN_INFO "\t\t%u", cur_freq);
+        LAMbS_molookup_free();
     }
 
     ret = cpufreq_register_notifier(&cpufreq_test_trans_notifier_block,
