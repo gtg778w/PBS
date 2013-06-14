@@ -2,7 +2,7 @@ ifneq ($(KERNELRELEASE),)
 # call from kernel build system
 
 obj-m	:= cpufreq_test.o
-cpufreq_test-objs := module_main.o LAMbS_molookup.o
+cpufreq_test-objs := module_main.o LAMbS_mo.o LAMbS_molookup.o LAMbS_mostat.o
 
 else
 

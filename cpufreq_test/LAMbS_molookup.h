@@ -1,3 +1,5 @@
+#ifndef LAMBS_MOLOOKUP_HEADER
+#define LAMBS_MOLOOKUP_HEADER
 
 #define LAMbS_molookup_HASHMOD (257)
 #define LAMbS_molookup_HASHSIZE LAMbS_molookup_HASHMOD
@@ -9,6 +11,9 @@ extern int LAMbS_mo[LAMbS_molookup_HASHSIZE];
 
 /*The size of the MO table*/
 extern int LAMbS_mo_count;
+
+/*The maximum number of modes of operation that can be handled*/
+#define LAMbS_mo_MAXCOUNT (LAMbS_molookup_HASHSIZE)
 
 /*Maps hash values to indices in the MO table*/
 extern int LAMbS_molookup_hashtable[LAMbS_molookup_HASHSIZE];
@@ -59,5 +64,7 @@ int LAMbS_molookup_init(void);
 void LAMbS_molookup_free(void);
 
 /*Test the MO lookup mechanism*/
-int LAMbS_molookup_test(void);
+int LAMbS_molookup_test(int verbose);
+
+#endif
 

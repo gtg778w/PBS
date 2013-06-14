@@ -1,59 +1,108 @@
+#include <linux/irqflags.h>
+/*
+local_irq_save
+local_irq_restore
+*/
 
-struct mostat_s
+#include <linux/sched.h>
+/*
+sched_clock
+*/
+
+#include <linux/cpufreq.h>
+/*
+    cpufreq_quick_get
+*/
+
+#include <linux/smp.h>
+/*
+    smp_processor_id
+*/ 
+
+#include "LAMbS_molookup.h"
+
+#include "LAMbS_mostat.h"
+
+/*A separate mostat_s structure is defined per cpu*/
+struct mostat_s mostat;
+
+void LAMbS_mostat_transition_dummy(int old_moi, int new_moi){}
+
+void LAMbS_mostat_transition(int old_moi, int new_moi)
 {
-    u64 last_transition_time;
-    int last_mo;
-    int mo_count;
-    /*The following field is a variable length array*/
-    u64 stat[1];
-};
-
-/*A separate mo_stat_s structure is defined per cpu*/
-struct mostat_s *mostat_p;
-
-void LAMbS_mostat_transition(int cpu, int old_mo, int new_mo)
-{
-    mo_stat_s *mostat;
-}
-
-int LAMbS_mostat_read(int cpu, u64* mo_stat_read)
-{
+    unsigned long irq_flags;
+    u64 now;
+    u64 time_since_last_transition;
     
+    /*Saving and disabling interrupts around critical section*/
+    local_irq_save(irq_flags);    
+    
+        /*Compute time spent in the previous state*/
+        now = sched_clock();
+        time_since_last_transition = now - mostat.last_transition_time;
+        mostat.last_transition_time= now;
+        
+        /*Accumulate the time spent in the previous state*/
+        mostat.stat[old_moi] += time_since_last_transition;
+        
+        /*Update the current state*/
+        mostat.last_moi = new_moi;
+        
+    /*Saving and disabling interrupts around critical section*/
+    local_irq_save(irq_flags);
 }
 
-int LAMbS_mostat_init()
+void (*LAMbS_mostat_transition_p)(int old_moi, int new_moi) = 
+    LAMbS_mostat_transition_dummy;
+
+/*It is assumed that the molookup mechanism and the frequency transition notifiers are 
+setup before this function is called*/
+int LAMbS_mostat_init(void)
 {
     int ret = 0;
+    int cpu;
+    int moi;
     int mo;
+    u64 now;
     
-    /*Based on the number of modes of operation, determine the size of the mostat_s
-    structure*/
-    int mostat_size = sizeof(mo_stat_s) + sizeof(u64)*mocount;
+    unsigned long irq_flags;
     
-    /*Allocate the structure*/
-    mostat_p = (struct mostat_s*)kmalloc(mostat_size, GFP_KERNEL);                                         
-    if(NULL == percpu_mostat_p)
-    {
-        ret = -1;
-        goto exit0
-    }
-    
-    /*initialize the mo_stat structure*/
-    mostat_p->mocount = 0;
     /*zero out the time spent in each mo*/
-    for(mo = 0; mo < mocount; mo++)
+    for(moi = 0; moi < LAMbS_mo_MAXCOUNT; moi++)
     {
-        mostat_p->stat[mo] = 0;
+        mostat.stat[moi] = 0;
     }
     
+    /*Saving and disabling interrupts around critical section*/
+    local_irq_save(irq_flags);
     
+        /*Get the index of the current mode of operation on this CPU*/
+        cpu = smp_processor_id();
+        mo = cpufreq_quick_get(cpu);
+        moi= LAMbS_molookup(mo);
+        /*Check that a valid moi was returned*/
+        if(moi >= 0)
+        {
+            now = sched_clock();
+            mostat.last_transition_time = now;
+            mostat.last_moi = moi;
+            
+            /*Setup the propper mostat callback function for
+            transition in modes of operation*/
+            LAMbS_mostat_transition_p = LAMbS_mostat_transition;
+        }else
+        {
+            ret = -1;
+        }
     
-exit0:
+    /*Restoring interrupts after critical section*/
+    local_irq_restore(irq_flags);
+    
     return ret;
 }
 
-void LAMbS_mostat_free()
+void LAMbS_mostat_free(void)
 {
-    
+    LAMbS_mostat_transition_p = LAMbS_mostat_transition_dummy;
 }
 

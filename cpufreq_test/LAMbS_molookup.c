@@ -130,25 +130,37 @@ void LAMbS_molookup_free(void)
     LAMbS_mo_count = 0;
 }
 
-int LAMbS_molookup_test(void)
+int LAMbS_molookup_test(int verbose)
 {
     int ret = 0;
     int moi, mo, mo_lookup;
     
-    printk(KERN_INFO "LAMbS_mollokup: %i modes of operation", LAMbS_mo_count);
-    printk(KERN_INFO "{");
+    if(0 != verbose)
+    {
+        printk(KERN_INFO "LAMbS_mollokup: %i modes of operation", LAMbS_mo_count);
+        printk(KERN_INFO "{");
+    }
+    
     for(moi = 0; moi < LAMbS_mo_count; moi++)
     {
         mo = LAMbS_mo[moi];
         mo_lookup = LAMbS_molookup(mo);
-        printk(KERN_INFO "\t%i) %i, %i", moi, mo, mo_lookup);
         
+        if(0 != verbose)
+        {
+            printk(KERN_INFO "\t%i) %i, %i", moi, mo, mo_lookup);
+        }
+            
         if(moi != mo_lookup)
         {
             ret = -1;
         }
     }
-    printk(KERN_INFO "}");
+    
+    if(0 != verbose)
+    {
+        printk(KERN_INFO "}");
+    }
     
     return ret;
 }
