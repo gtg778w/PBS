@@ -57,17 +57,28 @@ typedef struct _SRT_loaddata
 
 typedef struct _loaddata_list_header
 {
-    u64         prev_sp_boundary;   //8
-    u64         scheduling_period;  //8
+    u64 prev_sp_boundary;       //8
+    u64 scheduling_period;      //8
 
-    u64         max_allocator_runtime;  //8
-    u64         last_allocator_runtime; //8
+    u64 max_allocator_runtime;  //8
+    u64 last_allocator_runtime; //8
 
-    unsigned short  SRT_count;      //2
-    unsigned short  first;          //2
-    //sum so far = 20 bytes
-    unsigned char   _padding[44];   //44 bytes to make the structure 64 bytes
+    u64 energy_last_sp;         //8
+    u64 energy_total;           //8
+    u64 icount_last_sp;         //8
+
+    u16 SRT_count;              //2
+    u16 first;                  //2
+    
+    /*The number of modes of operation (frequencies) in the system*/
+    u16 mo_count;               //2
+    
+    //62 bytes so far. Add 2 bytes of padding to make it 64 bytes.
+    u8  padding[2];             //2 bytes to make the structure 64 bytes
+    
+    /*Time spent in each mode of operation.*/
+    /*Tail grown array of variable size since mo_count is unknown ahead of time*/
+    u64 mostat_last_sp[1]
 } loaddata_list_header_t;
-
 
 #endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/

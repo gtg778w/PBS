@@ -92,7 +92,7 @@ int init_loaddataList(void)
     loaddata_list_header->SRT_count = 0;
     loaddata_list_header->first = 0;
     
-
+    /*FIXME: the following line decides the first element in the free list*/
     loaddata_freelist = &(loaddata_array[1]);
     for(    loaddata_index = 1; 
             loaddata_index < (LOADDATALIST_SIZE/sizeof(SRT_loaddata_t)); 
