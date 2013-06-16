@@ -63,16 +63,29 @@ typedef struct _loaddata_list_header
     u64 max_allocator_runtime;  //8
     u64 last_allocator_runtime; //8
 
+    u64 energy_last_sp;         //8
+    u64 energy_total;           //8
+    u64 icount_last_sp;         //8
+
     u16 SRT_count;              //2
     u16 first;                  //2
     
-    //36 bytes so far.
-    u8  padding[28];            //28 bytes to make the structure 64 bytes
+    /*The number of modes of operation (frequencies) in the system*/
+    u16 mo_count;               //2
     
+    //62 bytes so far. Add 2 bytes of padding to make it 64 bytes.
+    u8  padding[2];             //2 bytes to make the structure 64 bytes
+    
+    /*Time spent in each mode of operation.*/
+    /*Tail grown array of variable size since mo_count is unknown ahead of time*/
+    u64 mostat_last_sp[1];
 } loaddata_list_header_t;
 
-/*This is defined as a macro to allow for a tail-grown array inside the structure,
-later in the development*/
-#define sizeof_loaddata_header() (sizeof(loaddata_list_header_t))
+
+/*This is defined as a macro to allow for the tail-grown array inside the structure.
+The macro has to be fixed to take into account the actual size of the tail grown array*/
+#define mo_count() (1)
+#define sizeof_loaddata_header()    (   sizeof(loaddata_list_header_t) +    \
+                                        (sizeof(u64)*(mo_count()-1)))
 
 #endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/
