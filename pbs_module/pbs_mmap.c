@@ -76,6 +76,8 @@ struct mutex    freelist_lock;
 
 int init_loaddataList(void)
 {
+    unsigned long loaddata_headersize;
+    unsigned long loaddata_list_entrysize;
     int loaddata_index;
 
     if(loaddata_array == NULL)
@@ -92,10 +94,23 @@ int init_loaddataList(void)
     loaddata_list_header->SRT_count = 0;
     loaddata_list_header->first = 0;
     
-    /*FIXME: the following line decides the first element in the free list*/
-    loaddata_freelist = &(loaddata_array[1]);
-    for(    loaddata_index = 1; 
-            loaddata_index < (LOADDATALIST_SIZE/sizeof(SRT_loaddata_t)); 
+    /*The following lines decides the first element in the free list*/
+    /*Get the size of the header*/
+    loaddata_headersize = sizeof_loaddata_header();
+    /*Get the size of an array element*/
+    loaddata_list_entrysize =   (unsigned long)&(loaddata_array[1]) - 
+                                (unsigned long)&(loaddata_array[0]);
+    
+    /*Round up the size of the header to the nearest size of the array element and 
+    determine the corresponding array index, the index of the first free loaddata
+    entry*/
+    loaddata_index = (loaddata_headersize + loaddata_list_entrysize - 1) /
+                        loaddata_list_entrysize;
+    
+    loaddata_freelist = &(loaddata_array[loaddata_index]);
+        
+    for(    ; 
+            loaddata_index < (LOADDATALIST_SIZE/loaddata_list_entrysize); 
             loaddata_index++)
     {
         loaddata_array[loaddata_index].job_release_time = 0;
