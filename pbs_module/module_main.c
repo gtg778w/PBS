@@ -19,6 +19,8 @@ module_exit
 /*
 module_param
 */
+
+#include "LAMbS.h"
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 #include "pba.h"
@@ -35,6 +37,8 @@ void cleanup_pbs_module(void)
     uninit_jb_mgt();
 
     uninit_bw_mgt();
+
+    LAMbS_uninit();
 }
 
 int __init init_pbs_module(void)
@@ -53,24 +57,33 @@ int __init init_pbs_module(void)
 
     setup_sched_clock();
 
+    ret = LAMbS_init();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "init_pbs_module: LAMbS_init failed");
+        goto error0;
+    }
+    
     ret = init_bw_mgt();
     if(0 != ret)
     {
         printk(KERN_INFO "init_pbs_module: init_bw_mgt failed");
-        goto error0;
+        goto error1;
     }
 
     ret = init_jb_mgt();
     if(0 != ret)
     {
         printk(KERN_INFO "init_pbs_module: init_jb_mgt failed");
-        goto error1;
+        goto error2;
     }
 
     return 0;
 
-error1:
+error2:
     uninit_bw_mgt();
+error1:
+    LAMbS_uninit();
 error0:
     return ret;
 }

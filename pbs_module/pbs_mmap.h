@@ -31,10 +31,16 @@ mutex related code
 loaddata structures
 */
 
+#include "LAMbS_molookup.h"
+/*
+LAMbS_mo_count
+*/
+
 /*the loaddata header size is defined as a macro to allow for the tail-grown array 
-inside the structure.*/
+inside the structure. This macro is only available to the kernel, because it makes
+use of the LAMbS_mo_count global variable*/
 #define sizeof_loaddata_header()    (   sizeof(loaddata_list_header_t) +    \
-                                        (sizeof(u64)*(1-1)))
+                                        (sizeof(u64)*(LAMbS_mo_count-1)))
 
 extern SRT_loaddata_t   *loaddata_array;
 extern u64              *allocation_array;
