@@ -81,11 +81,4 @@ typedef struct _loaddata_list_header
     u64 mostat_last_sp[1];
 } loaddata_list_header_t;
 
-
-/*This is defined as a macro to allow for the tail-grown array inside the structure.
-The macro has to be fixed to take into account the actual size of the tail grown array*/
-#define mo_count() (1)
-#define sizeof_loaddata_header()    (   sizeof(loaddata_list_header_t) +    \
-                                        (sizeof(u64)*(mo_count()-1)))
-
 #endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/

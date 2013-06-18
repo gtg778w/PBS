@@ -372,37 +372,49 @@ int jb_mgt_release(struct inode *inode, struct file *filp)
 
 int init_jb_mgt(void)
 {
-    int returnable = 0;
+    int ret;
 
-    /*Create the file in the root of the profcs directory, initially with no permissions for others*/
+    /*There are currently no SRT tasks in the system. Reset the counter*/
+    reset_SRT_count();
+
+    /*Setup a lookaside cache for the SRT_struct*/
+    SRT_struct_slab_cache = KMEM_CACHE(SRT_struct, SLAB_HWCACHE_ALIGN);
+    if(SRT_struct_slab_cache == NULL)
+    {
+        printk(KERN_INFO "init_jb_mgt: KMEM_CACHE failed");
+        ret = -ENOMEM;
+        goto error0;
+    }
+    
+    /*Create the file in the root of the profcs directory, 
+    initially with no permissions for others*/
     p_jb_mgt_file = create_proc_entry(jb_mgt_file_name, 0600, NULL);
     if(p_jb_mgt_file == NULL)
     {
-        returnable = -ENOMEM;
-        goto error;
+        printk(KERN_INFO "init_jb_mgt: create_proc_entry failed");
+        ret = -ENOMEM;
+        goto error1;
     }
+    /*Set the propper file operations and permissions*/
     p_jb_mgt_file->data = NULL;
     p_jb_mgt_file->proc_fops = &jb_mgt_fops;
     p_jb_mgt_file->mode = 0666;
 
-    /*Setup a lookaside cache for the sleep_queue_entry_t*/
-    SRT_struct_slab_cache = KMEM_CACHE(SRT_struct, SLAB_HWCACHE_ALIGN);
-    if(SRT_struct_slab_cache == NULL)
-        returnable = -ENOMEM;
-
-    reset_SRT_count();
-error:
-    return returnable;
+    return 0;
+    
+error1:
+    /*Release the slab cache allocator*/
+    kmem_cache_destroy(SRT_struct_slab_cache);
+error0:
+    return ret;
 }
 
-int uninit_jb_mgt(void)
+void uninit_jb_mgt(void)
 {
-    int returnable = 0;
+    /*Remove the proc_file entry*/
     remove_proc_entry(jb_mgt_file_name, NULL);
 
     /*Release the slab cache allocator*/
     kmem_cache_destroy(SRT_struct_slab_cache);
-
-    return returnable;
 }
 

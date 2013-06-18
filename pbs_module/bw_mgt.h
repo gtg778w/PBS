@@ -78,6 +78,6 @@ void increment_SRT_count(void);
 void decrement_SRT_count(void);
 
 int init_bw_mgt(void);
-int uninit_bw_mgt(void);
+void uninit_bw_mgt(void);
 
 #endif

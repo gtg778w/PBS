@@ -145,9 +145,8 @@ struct SRT_struct
 
 enum {SRT_OPEN, SRT_CONFIGURED, SRT_STARTED, SRT_LOOP, SRT_CLOSED};
 
-void init2_jb_mgt(void);
 int init_jb_mgt(void);
-int uninit_jb_mgt(void);
+void uninit_jb_mgt(void);
 
 #endif
 

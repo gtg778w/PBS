@@ -31,10 +31,9 @@ u64 pbs_clock(void)
 
 //this function is assigned a "weak" symbol to allow calling functions to
 //link to the kernel's built in implementation, if the symbol is exported
-int setup_sched_clock(void)
+void setup_sched_clock(void)
 {
     u64 now;
-    int returnable = 0;
 
     if(sched_clock)
     {
@@ -49,8 +48,6 @@ int setup_sched_clock(void)
     //this is just a safety check to make sure things won't crash later
     now = pbs_clock();
     printk(KERN_INFO "time during sched_clock setup: %llu", now);
-
-    return returnable;
 }
 
 u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)

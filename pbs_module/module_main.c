@@ -19,7 +19,6 @@ module_exit
 /*
 module_param
 */
-
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 #include "pba.h"
@@ -33,23 +32,14 @@ MODULE_LICENSE("Dual BSD/GPL");
 
 void cleanup_pbs_module(void)
 {
-    int returnable = 0;
+    uninit_jb_mgt();
 
-    returnable = uninit_bw_mgt();
-    if(returnable < 0)
-        goto error;
-
-    returnable = uninit_jb_mgt();
-
-error:
-    0;
-    /*FIX ME*/
-    /*Report the errors!*/
+    uninit_bw_mgt();
 }
 
 int __init init_pbs_module(void)
 {
-    int returnable = 0;
+    int ret;
 
 #ifdef CONFIG_SMP
     printk(KERN_INFO "This is an SMP kernel!\n");
@@ -61,22 +51,28 @@ int __init init_pbs_module(void)
     printk(KERN_INFO "PREEMPT_NOTIFIERS is disabled!\n");
 #endif
 
-    returnable = setup_sched_clock();
-    if(returnable < 0)
-        goto error;
+    setup_sched_clock();
 
-    returnable = init_bw_mgt();
-    if(returnable < 0)
-        goto error;
-
-    returnable = init_jb_mgt();
-    if(returnable < 0)
+    ret = init_bw_mgt();
+    if(0 != ret)
     {
-        uninit_bw_mgt();
+        printk(KERN_INFO "init_pbs_module: init_bw_mgt failed");
+        goto error0;
     }
 
-error:
-    return returnable;
+    ret = init_jb_mgt();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "init_pbs_module: init_jb_mgt failed");
+        goto error1;
+    }
+
+    return 0;
+
+error1:
+    uninit_bw_mgt();
+error0:
+    return ret;
 }
 
 module_init(init_pbs_module);

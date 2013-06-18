@@ -76,13 +76,18 @@ struct mutex    freelist_lock;
 
 int init_loaddataList(void)
 {
+    int ret;
+    
     unsigned long loaddata_headersize;
     unsigned long loaddata_list_entrysize;
     int loaddata_index;
 
     if(loaddata_array == NULL)
-        return -EBUSY;
-
+    {
+        ret = -EBUSY;
+        goto error0;
+    }
+    
     loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
 
     loaddata_list_header->prev_sp_boundary  = 0;
@@ -125,64 +130,84 @@ int init_loaddataList(void)
     loaddata_array[(LOADDATALIST_SIZE/sizeof(SRT_loaddata_t))-1].next = 0;
 
     return 0;
+    
+error0:
+    return ret;
 }
 
 int allocate_mapping_pages(void)
 {
-    int returnable;
+    int ret;
 
     //allocate pages (not in high memory)
     allocation_pages = alloc_pages((__GFP_WAIT | __GFP_REPEAT |  __GFP_ZERO), ALLOC_ORDER);
-    if(allocation_pages == NULL)
-        return -ENOMEM;
+    if(NULL == allocation_pages)
+    {
+        printk(KERN_INFO "allocate_mapping_pages: alloc_pages failed for "
+                        "allocation_pages");
+        ret = -ENOMEM;
+        goto error0;
+    }
 
-    if(page_address(allocation_pages) == NULL)
+    if(NULL == page_address(allocation_pages))
     {
         //the allocated memory is in high memory, which is bad for us
-        printk(KERN_INFO "The allocated memory is in high memory!\n");
-        returnable = -ENOMEM;
-        goto error_free_ap;
+        printk(KERN_INFO "allocate_mapping_pages: The allocation_pages are in high "
+                        "memory!\n");
+        ret = -ENOMEM;
+        goto error1;
     }
 
     allocation_array = (u64*)page_address(allocation_pages);
 
     loaddata_pages = alloc_pages((__GFP_WAIT | __GFP_REPEAT), LOADDATALIST_ORDER);
-    if(loaddata_pages == NULL)
+    if(NULL == loaddata_pages)
     {
-        returnable = -ENOMEM;
-        goto error_free_ap;
+        printk(KERN_INFO "allocate_mapping_pages: alloc_pages failed for loaddata_pages");
+        ret = -ENOMEM;
+        goto error1;
     }
 
-    if(page_address(loaddata_pages) == NULL)
+    if(NULL == page_address(loaddata_pages))
     {
         //the allocated memory is in high memory, which is bad for us
-        printk(KERN_INFO "The allocated memory is in high memory!\n");
-        returnable = -ENOMEM;
-        goto error_free_hp;
+        printk(KERN_INFO "allocate_mapping_pages: The loaddata_pages are in high "
+                        "memory!\n");
+        ret = -ENOMEM;
+        goto error2;
     }
 
     loaddata_array = (SRT_loaddata_t*)page_address(loaddata_pages);
-
-    printk(KERN_INFO "pages allocated!\n");
 
     //initialize the locks
     mutex_init(&freelist_lock);
 
     //call function to initialize loaddata list;
-    return init_loaddataList();
+    ret = init_loaddataList();
+    if(0 != ret)    
+    {
+        printk(KERN_INFO "allocate_mapping_pages: init_loaddataList failed");
+        goto error2;
+    }
 
-error_free_hp:
+    printk(KERN_INFO "allocate_mapping_pages: pages allocated!\n");
+    
+    return 0;
+    
+error2:
+    loaddata_array = NULL;
     __free_pages(loaddata_pages, LOADDATALIST_ORDER);
     loaddata_pages = NULL;
     loaddata_list_header = NULL;
     loaddata_array = NULL;
 
-error_free_ap:
+error1:
+    allocation_array = NULL;
     __free_pages(allocation_pages, ALLOC_ORDER);
     allocation_pages = NULL;
 
-    return returnable;
-
+error0:
+    return ret;
 }
 
 void free_mapping_pages(void)
@@ -191,10 +216,14 @@ void free_mapping_pages(void)
     //do_munmap
 
     preempt_disable();
-
+    
+    loaddata_array = NULL;
     __free_pages(loaddata_pages, LOADDATALIST_ORDER);
     loaddata_pages = NULL;
+    loaddata_list_header = NULL;
+    loaddata_array = NULL;
 
+    allocation_array = NULL;
     __free_pages(allocation_pages, ALLOC_ORDER);
     allocation_pages = NULL;
     

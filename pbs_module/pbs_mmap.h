@@ -27,6 +27,14 @@ mutex related code
 */
 
 #include "pbsAllocator_cmd.h"
+/*
+loaddata structures
+*/
+
+/*the loaddata header size is defined as a macro to allow for the tail-grown array 
+inside the structure.*/
+#define sizeof_loaddata_header()    (   sizeof(loaddata_list_header_t) +    \
+                                        (sizeof(u64)*(1-1)))
 
 extern SRT_loaddata_t   *loaddata_array;
 extern u64              *allocation_array;

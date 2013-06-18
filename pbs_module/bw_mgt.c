@@ -384,48 +384,54 @@ void uninit_pbs_actv(void);
 
 int init_bw_mgt(void)
 {
-    int returnable = 0;
+    int ret = 0;
 
     /*Allocate pages for mapping*/
-    if(allocate_mapping_pages() != 0)
+    ret = allocate_mapping_pages();
+    if(0 != ret)
     {
-        returnable = -ENOMEM;
-        goto error;
+        printk(KERN_INFO "init_bw_mgt: allocate_mapping_pages failed");
+        goto error0;
     }
 
-    returnable = init_pbs_actv();
-    if(returnable != 0)
+    /*Initialize the sched_pbs_actv mechanism*/
+    ret = init_pbs_actv();
+    if(0 != ret)
     {
-        printk(KERN_INFO "Failed to initialize \"sched_pbs_actv\"!\n");
-        return returnable;
+        printk(KERN_INFO "init_bw_mgt: init_pbs_actv failed");
+        goto error1;
     }
 
     /*Create the file in the root of the profcs directory, initially with no permissions for others*/
     p_bw_mgt_file = create_proc_entry(bw_mgt_file_name, 0600, NULL);
     if(p_bw_mgt_file == NULL)
     {
-        returnable = -ENOMEM;
-        goto error;
+        printk(KERN_INFO "init_bw_mgt: create_proc_entry failed");
+        ret = -ENOMEM;
+        goto error2;
     }
     p_bw_mgt_file->data = NULL;
     p_bw_mgt_file->proc_fops = &bw_mgt_fops;
     p_bw_mgt_file->mode = 0666;
 
     allocator_state = MODULE_LOADED;
-error:
-    return returnable;
+
+    return 0;
+
+error2:
+    uninit_pbs_actv();
+error1:
+    free_mapping_pages();
+error0:
+    return ret;
 }
 
-int uninit_bw_mgt(void)
+void uninit_bw_mgt(void)
 {
-    int returnable = 0;
-
-    free_mapping_pages();
-
     remove_proc_entry(bw_mgt_file_name, NULL);
 
     uninit_pbs_actv();
-
-    return returnable;
+    
+    free_mapping_pages();
 }
 
