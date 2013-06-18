@@ -189,7 +189,7 @@ void LAMbS_mostat_get(LAMbS_mostat_t* mostat)
     local_irq_restore(irq_flags);
 }
 
-void LAMbS_mostat_getElapsed(LAMbS_mostat_t* mostat, u64 *elapsed)
+void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat)
 {
     unsigned long irq_flags;
     int moi;
@@ -203,7 +203,7 @@ void LAMbS_mostat_getElapsed(LAMbS_mostat_t* mostat, u64 *elapsed)
         /*compute the change in the stat table and update the stat table*/
         for(moi = 0; moi < LAMbS_mo_count; moi++)
         {
-            elapsed[moi] = _mostat.stat[moi] - mostat->stat[moi];
+            delta_mostat[moi] = _mostat.stat[moi] - mostat->stat[moi];
             mostat->stat[moi] = _mostat.stat[moi];
         }
     

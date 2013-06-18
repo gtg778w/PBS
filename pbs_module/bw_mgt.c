@@ -21,6 +21,7 @@ unsigned char    allocator_state = MODULE_LOADED;
 /*The number of SRT tasks active in the system*/
 static atomic_t SRT_count;
 
+
 /**********************************************************************
 
 Function headers and structure deffinitions for the sched_bw_mgt file.
@@ -196,6 +197,9 @@ ssize_t bw_mgt_write(   struct file *filep,
                 allocator_state = ALLOCATOR_LOOP;
 
                 allocator_sleep();
+                
+                //This is the start of the first scheduling period
+                first_sched_period_tick();
             }
             else
             {
@@ -215,7 +219,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                         goto exit0;
                     }
 
-                    //wakeup all appropriate SRT tasks and refresh their bandwidths
+                    //This is the start of the next scheduling period
                     sched_period_tick();
 
                 }

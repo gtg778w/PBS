@@ -1,10 +1,7 @@
 #ifndef LAMBS_MOSTAT_HEADER
 #define LAMBS_MOSTAT_HEADER
 
-#include <asm-generic/int-ll64.h>
-/*
-u64
-*/
+#include <linux/kernel.h>
 
 #include "LAMbS_molookup.h"
 
@@ -23,6 +20,6 @@ typedef struct LAMbS_mostat_s
 LAMbS_mostat_t* LAMbS_mostat_alloc(void);
 void LAMbS_mostat_free(LAMbS_mostat_t* mostat);
 void LAMbS_mostat_get(LAMbS_mostat_t* mostat);
-void LAMbS_mostat_getElapsed(LAMbS_mostat_t* mostat, u64 *elapsed);
+void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat);
 
 #endif

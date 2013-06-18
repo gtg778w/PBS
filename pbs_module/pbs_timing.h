@@ -62,7 +62,8 @@ void remove_from_timing_queue(struct SRT_timing_struct *tq_entry);
 int setup_allocator(s64 period, s64 runtime);
 int start_pbs_timing(void);
 void assign_bandwidths(void);
-void inline sched_period_tick(void);
+void first_sched_period_tick(void);
+void sched_period_tick(void);
 int stop_pbs_timing(char not_allocator);
 
 #endif //#ifdef PBS_TIMING_INCLUDE

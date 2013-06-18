@@ -7,6 +7,16 @@ init/uninit the pbs_hrtick_timer
 rt_runtime_update
 */
 
+#include "LAMbS.h"
+/*
+    measurement-related code for energy, icount, mostat
+*/
+
+#include "LAMbS_molookup.h"
+/*
+     LAMbS_mo_count
+*/
+
 /**********************************************************************
 
 Global variables and functions associated with the scheduling period timer.
@@ -124,7 +134,27 @@ do                                                      \
                                                         \
 }while(0)
 
-void inline sched_period_tick()
+void first_sched_period_tick(void)
+{
+    int moi;
+    
+    /*Take initial readings of absolute instruction count, energy, and time spent so far
+    in each mode of operation*/
+    LAMbS_measurements_init();
+    
+    /*Set initial measurements to 0*/
+    loaddata_list_header->icount_last_sp = 0;
+    loaddata_list_header->energy_last_sp = 0;
+    loaddata_list_header->energy_total = 0;
+    
+    /*Set the time spent in each mode of operation to 0*/
+    for(moi = 0; moi < LAMbS_mo_count; moi++)
+    {
+        loaddata_list_header->mostat_last_sp[moi] = 0;
+    }
+}
+
+void sched_period_tick(void)
 {
     struct list_head *pos, *prev, *next;
     struct SRT_timing_struct* wakeable;
@@ -187,15 +217,17 @@ void inline sched_period_tick()
         //move to the next task in the list
         pos = pos->next;
     }
+
+    /*Determine the number of instruction retired, energy consumed, and time spent in 
+    each mode of operation over the previous reservation period*/
+    LAMbS_measure_delta(&(loaddata_list_header->icount_last_sp),
+                        &(loaddata_list_header->energy_last_sp),
+                        loaddata_list_header->mostat_last_sp);
+                            
+    /*Accumulate the total amount of energy consumed*/
+    loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;
 }
 
-//bandwidth assignmentin the kernel
-//rt_runtime_us file's write function is cpu_rt_runtime_write
-//cpu_rt_runtime_write
-// sched_group_set_rt_runtime
-//  tg_set_bandwidth
-//   assigns the bandwidth after calling __rt_schedulable as a check
-//FIXME
 void assign_bandwidths(void)
 {
     struct list_head *pos;
