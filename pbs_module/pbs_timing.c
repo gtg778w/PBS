@@ -147,6 +147,7 @@ void first_sched_period_tick(void)
     loaddata_list_header->energy_last_sp = 0;
     loaddata_list_header->energy_total = 0;
     
+    loaddata_list_header->mo_count = LAMbS_mo_count;
     /*Set the time spent in each mode of operation to 0*/
     for(moi = 0; moi < LAMbS_mo_count; moi++)
     {
@@ -161,6 +162,12 @@ void sched_period_tick(void)
     struct SRT_struct *bwrefreshable;
 
     int sp_till_deadline, sp_per_tp;
+
+    /*Determine the number of instruction retired, energy consumed, and time spent in 
+    each mode of operation over the previous reservation period*/
+    LAMbS_measure_delta(&(loaddata_list_header->icount_last_sp),
+                        &(loaddata_list_header->energy_last_sp),
+                        loaddata_list_header->mostat_last_sp);
 
     //extract all tasks to be woken
     if(timing_queue_head.next == &timing_queue_head)
@@ -217,12 +224,6 @@ void sched_period_tick(void)
         //move to the next task in the list
         pos = pos->next;
     }
-
-    /*Determine the number of instruction retired, energy consumed, and time spent in 
-    each mode of operation over the previous reservation period*/
-    LAMbS_measure_delta(&(loaddata_list_header->icount_last_sp),
-                        &(loaddata_list_header->energy_last_sp),
-                        loaddata_list_header->mostat_last_sp);
                             
     /*Accumulate the total amount of energy consumed*/
     loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;

@@ -113,7 +113,7 @@ int init_loaddataList(void)
                         loaddata_list_entrysize;
     
     loaddata_freelist = &(loaddata_array[loaddata_index]);
-        
+    
     for(    ; 
             loaddata_index < (LOADDATALIST_SIZE/loaddata_list_entrysize); 
             loaddata_index++)
@@ -127,8 +127,10 @@ int init_loaddataList(void)
         loaddata_array[loaddata_index].next = (loaddata_index+1);
         loaddata_array[loaddata_index].prev = (loaddata_index-1);
     }
-    loaddata_array[(LOADDATALIST_SIZE/sizeof(SRT_loaddata_t))-1].next = 0;
-
+    
+    loaddata_freelist->prev = 0;
+    loaddata_array[(LOADDATALIST_SIZE/loaddata_list_entrysize)-1].next = 0;
+                        
     return 0;
     
 error0:
