@@ -73,7 +73,7 @@ void allocator_loop_wlogging(int proc_file)
             compute_budget(next, &budget);
             allocation_array[task_index] = budget;
             
-            log_SRT_sp_dat(task_index, sp_count, next, budget);
+            log_SRT_sp_dat(t, sp_count, next, budget);
 
             next = &(loaddata_array[next->next]);
         }

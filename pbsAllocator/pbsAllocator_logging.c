@@ -43,7 +43,8 @@ struct SRT_record
 };
 
 //the following variables are logging related
-struct SRT_record   *SRT_record[4];
+#define ALLOCATOR_RECORD_COUNT (4)
+struct SRT_record   *SRT_record[ALLOCATOR_RECORD_COUNT];
 uint64_t    *sp_start_times;
 int         *allocator_runtimes;
 int64_t     sp_limit;
@@ -80,7 +81,7 @@ int setup_log_memory(void)
     }
 
 
-    for(t = 1; t < 4; t++)
+    for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
     {
         SRT_record[t] = 
             (struct SRT_record*)malloc(sizeof(struct SRT_record)*sp_limit);
@@ -116,18 +117,21 @@ void log_SRT_sp_dat(int task_index,
                     SRT_loaddata_t  *SRT_loaddata_p,
                     uint64_t SRT_budget2)
 {
-    struct SRT_record * SRT_record_p = &((SRT_record[task_index])[sp_count]);
+    if(task_index < ALLOCATOR_RECORD_COUNT)
+    {
+        struct SRT_record * SRT_record_p = &((SRT_record[task_index])[sp_count]);
 
-    SRT_record_p->SRT_runtime       = SRT_loaddata_p->current_runtime;
-    SRT_record_p->SRT_qlength       = SRT_loaddata_p->queue_length;
-    SRT_record_p->sp_till_deadline  = SRT_loaddata_p->sp_till_deadline;
-    SRT_record_p->pid               = SRT_loaddata_p->pid;
-    SRT_record_p->job_release_time  = SRT_loaddata_p->job_release_time;
-    SRT_record_p->u_c0              = SRT_loaddata_p->u_c0;
-    SRT_record_p->var_c0            = SRT_loaddata_p->var_c0;
-    SRT_record_p->u_cl              = SRT_loaddata_p->u_cl;
-    SRT_record_p->var_cl            = SRT_loaddata_p->var_cl;
-    SRT_record_p->SRT_budget        = allocation_array[task_index];
+        SRT_record_p->SRT_runtime       = SRT_loaddata_p->current_runtime;
+        SRT_record_p->SRT_qlength       = SRT_loaddata_p->queue_length;
+        SRT_record_p->sp_till_deadline  = SRT_loaddata_p->sp_till_deadline;
+        SRT_record_p->pid               = SRT_loaddata_p->pid;
+        SRT_record_p->job_release_time  = SRT_loaddata_p->job_release_time;
+        SRT_record_p->u_c0              = SRT_loaddata_p->u_c0;
+        SRT_record_p->var_c0            = SRT_loaddata_p->var_c0;
+        SRT_record_p->u_cl              = SRT_loaddata_p->u_cl;
+        SRT_record_p->var_cl            = SRT_loaddata_p->var_cl;
+        SRT_record_p->SRT_budget        = allocation_array[task_index];
+    }
 }
 
 /************print and free memory for logging task computation times*********/
@@ -143,7 +147,7 @@ void free_log_memory(void)
                 (unsigned long long)sp_start_times[sp_count], 
                 allocator_runtimes[sp_count]);
 
-        for(t = 1; t < 4; t++)
+        for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
         {
             next_record = &((SRT_record[t])[sp_count]);
             printf("| %lu, %llu), %lu, [%lu, %u], {%llu, %lli, %lli, %lli}, (%lli) |",
@@ -163,7 +167,7 @@ void free_log_memory(void)
 
     munlockall();
 
-    for(t = 1; t < 4; t++)
+    for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
     {
         free(SRT_record[t]);
     }
