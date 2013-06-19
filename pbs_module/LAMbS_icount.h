@@ -1,11 +1,19 @@
 #ifndef LAMbS_ICOUNT_INCLUDE
 #define LAMbS_ICOUNT_INCLUDE
 #include <linux/kernel.h>
+#include <linux/perf_event.h>
+#include <asm/unistd.h>
 
 typedef struct LAMbS_icount_s
 {
     u64 icount;
+    /* do we want these? running is time running, enabled is time enabled*/ 
+    u64 running;
+    u64 enabled;
 } LAMbS_icount_t;
+
+extern struct perf_event_attr icount_attr;
+extern struct perf_event* icount_event;
 
 int LAMbS_icount_init(void);
 void LAMbS_icount_uninit(void);
