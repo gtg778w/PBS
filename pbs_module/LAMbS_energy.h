@@ -3,9 +3,12 @@
 
 #include <linux/kernel.h>
 
+#define MSR_PKG_ENERGY_STATUS 0x611
+
 typedef struct LAMbS_energy_s
 {
     u64 energy;    
+    u64 cur_energy;
 } LAMbS_energy_t;
 
 int LAMbS_energy_init(void);
