@@ -28,6 +28,12 @@ int LAMbS_icount_init(bool debug)
     icount_attr.exclude_hv = 1; /* for running in VMs */
     /* function(perf_event_attr, int cpu, task (process?), overflow handler, context) */
     icount_event = perf_event_create_kernel_counter(&icount_attr, 0, NULL, NULL, NULL);
+
+    if (!icount_event) {
+	printk(KERN_ERR "Cannot allocate instruction counter");
+	return -1; /* should this be something else? */
+    }
+
     if (count_kernel) {
 	memset(&icount_attr_kernel, 0, sizeof(struct perf_event_attr));
 	icount_attr_kernel.type = PERF_TYPE_HARDWARE;
@@ -43,25 +49,25 @@ int LAMbS_icount_init(bool debug)
 	if (!icount_event_kernel) {
 	    printk(KERN_ERR "Cannot allocated kernel instruction counter");
 	    LAMbS_icount_uninit();
-	    return -1;
+	    return -1; /*maybe actual error code? */
 	}
     }
 
-    if (!icount_event) {
-	printk(KERN_ERR "Cannot allocate instruction counter");
-	LAMbS_icount_uninit();
-	return -1; /* should this be something else? */
-    }
     
     return 0;
 }
 
 void LAMbS_icount_uninit()
 {
-    /* still not sure exactly what needs to be done to shut off these
-     * kernel counters. I don't want to break the code just yet by doing
-     * something I haven't tried. I'll add this soon, but it shouldn't really
-     * matter */
+    if(icount_event) {
+    	perf_event_release_kernel(icount_event);
+	printk(KERN_INFO "Instruction count register released (user).");
+    }
+
+    if(debug && icount_event_kernel) {
+	perf_event_release_kernel(icount_event);
+	printk(KERN_INFO "Instruction count register released (kernel).");
+    }
 }
 
 void LAMbS_icount_get(LAMbS_icount_t* icount)
