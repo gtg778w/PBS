@@ -13,6 +13,7 @@
 #include "LAMbS_energy.h"
 #include "LAMbS_mo.h"
 
+
 /**********************************************************************
 
 Measurement-related variables
@@ -23,11 +24,20 @@ LAMbS_mostat_t *global_mostat_p;
 LAMbS_icount_t global_icount;
 LAMbS_energy_t global_energy;
 
+/*********************************************************************
+ * debug? Count kernel instructions and maybe other things later 
+ *********************************************************************/
+bool debug;
+
+
 /**********************************************************************
 
 Measurement-related functions
 
 ***********************************************************************/
+
+
+
 
 int LAMbS_measurements_alloc(void)
 {
@@ -68,7 +78,7 @@ void LAMbS_measure_delta(   u64* delta_icount_p,
     LAMbS_icount_getDelta(&global_icount, delta_icount_p);
     
     /*Get the amount of energy consumed since the last call*/
-    LAMbS_icount_getDelta(&global_icount, delta_energy_p);
+    LAMbS_energy_getDelta(&global_energy, delta_energy_p);
 
     /*Get the amount of energy consumed since the last call*/
     LAMbS_mostat_getDelta(global_mostat_p, delta_mostat);
@@ -90,7 +100,7 @@ int LAMbS_init(void)
 {
     int ret;
     
-    ret = LAMbS_icount_init();
+    ret = LAMbS_icount_init(debug);
     if(0 != ret)
     {
         printk(KERN_INFO "LAMbS_init: LAMbS_icount_init failed");
