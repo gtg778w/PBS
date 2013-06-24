@@ -168,6 +168,9 @@ void sched_period_tick(void)
     LAMbS_measure_delta(&(loaddata_list_header->icount_last_sp),
                         &(loaddata_list_header->energy_last_sp),
                         loaddata_list_header->mostat_last_sp);
+                            
+    /*Accumulate the total amount of energy consumed*/
+    loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;
 
     //extract all tasks to be woken
     if(timing_queue_head.next == &timing_queue_head)
@@ -224,9 +227,7 @@ void sched_period_tick(void)
         //move to the next task in the list
         pos = pos->next;
     }
-                            
-    /*Accumulate the total amount of energy consumed*/
-    loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;
+
 }
 
 void assign_bandwidths(void)
