@@ -9,7 +9,7 @@ SRCDIR=./
 all: $(BINDIR)/poll_pbs_actv
 
 $(BINDIR)/poll_pbs_actv: $(SRCDIR)/poll_pbs_actv.c
-	$(CC) $(CFLAGS) -o $(BINDIR)/poll_pbs_actv $(SRCDIR)/poll_pbs_actv.c
+	$(CC) $(CFLAGS) -o $(BINDIR)/poll_pbs_actv $(SRCDIR)/poll_pbs_actv.c -lrt
 
 clean:
 	rm -rf $(BINDIR)/poll_pbs_actv

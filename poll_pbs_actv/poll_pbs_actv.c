@@ -1,17 +1,54 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
+/*
+read
+*/
+
+#include "loadgen.h"
+
 
 /*
     The purpose of this code is to pole sched_pbs_actv at a reasonably low rate
-    to see if the pbs_ul_allocator has stopped running.
+    to see if the pbs_ul_allocator has stopped running. Additionally, this task can also
+    serve as a really low priority background task.
 */
 
-int main(void)
+int main(int argc, char** argv)
 {
     int ret;
     FILE* file_p;
 
+    char *busyloop_enable_flag;
+    int busyloop_enable = 0;
+    
     unsigned char read_buffer[3] = {' ', '\n', '\0'};
+    
+    unsigned long workload_loopcount;
+    int32_t workload_state = 0;
+
+    /*Check command line arguments if application is setup to busy loop*/
+    if(argc > 1)
+    {
+        busyloop_enable_flag = argv[1];
+        if(strcmp(busyloop_enable_flag, "-I") == 0)
+        {
+            busyloop_enable = 1;
+        }
+        else
+        {
+            fprintf(stderr, "Usage: %s [-I]\n\t-I: busy loop when idle\n\n", argv[0]);
+        }
+    }
+
+    /*If the application is setup to busyloop, callibrate the busy loop*/
+    if(1 == busyloop_enable)
+    {
+        /*Callibrate the busy looping code*/
+        callibrate(20000000);
+        
+        workload_loopcount = ipms * 500;
+    }
 
     for(;;)
     {
@@ -56,7 +93,14 @@ int main(void)
         /*
             sleep for half a second
         */
-        usleep(500000);
+        if(0 != busyloop_enable)
+        {
+            workload_state = work_function(workload_loopcount, workload_state);
+        }
+        else
+        {
+            usleep(500000);
+        }
     }
 
     /*
