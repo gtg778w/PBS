@@ -302,9 +302,17 @@ int main(int argc, char** argv)
     proc_file = allocator_setup(scheduling_period, allocator_budget);
     if(proc_file < 0)
     {
-        fprintf(stderr, "allocator_setup failed!");
+        fprintf(stderr, "allocator_setup failed!\n");
         retval = proc_file;
         goto exit0;
+    }
+
+    //Setup the model adapters
+    retval = pbsAllocator_modeladapters_init();
+    if(0 != retval)
+    {
+        fprintf(stderr, "pbsAllocator_modeladapters_init failed!\n");
+        goto exit1;
     }
 
     if(Sflag == 0)
@@ -316,12 +324,17 @@ int main(int argc, char** argv)
         allocator_loop(proc_file);
     }
     
+exit1:
+    /*Indicate to the kernel module that the allocator is closing*/
     retval = allocator_close(proc_file);
     if(retval)
     {
         fprintf(stderr, "allocator_close failed!");
         goto exit0;
     }
+
+    /*free the modeladapters*/    
+    pbsAllocator_modeladapters_free();
 
     if(Sflag == 0)
     {

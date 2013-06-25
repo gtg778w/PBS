@@ -32,4 +32,8 @@ void free_log_memory(void);
 
 void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget);
 
+int pbsAllocator_modeladapters_init(void);
+void pbsAllocator_modeladapters_adapt(void);
+void pbsAllocator_modeladapters_free(void);
+
 #endif

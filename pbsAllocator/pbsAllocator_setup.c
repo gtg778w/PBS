@@ -96,6 +96,9 @@ int allocator_setup(uint64_t scheduling_period,
 
     loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
 
+    //setup the model adapters
+    
+
     //setup the allocations mapping
     allocation_array = mmap(NULL, ALLOC_SIZE, 
                             (PROT_READ | PROT_WRITE), MAP_SHARED, 

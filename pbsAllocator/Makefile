@@ -8,11 +8,12 @@ SRCDIR=./
 MODDIR=../pbs_module
 
 CSRC=$(SRCDIR)/pbsAllocator.c $(SRCDIR)/pbsAllocator_logging.c \
-$(SRCDIR)/pbsAllocator_setup.c $(SRCDIR)/pbsAllocator_budget.c 
+$(SRCDIR)/pbsAllocator_setup.c $(SRCDIR)/pbsAllocator_budget.c \
+$(SRCDIR)/pbsAllocator_modeladapters.c $(SRCDIR)/LMSVS.c
 
 all: $(BINDIR)/pbsAllocator
 
-$(BINDIR)/pbsAllocator: $(CSRC) $(SRCDIR)/pbsAllocator.h
+$(BINDIR)/pbsAllocator: $(CSRC) $(SRCDIR)/pbsAllocator.h $(SRCDIR)/LMSVS.h
 	$(CC) $(CFLAGS) -I $(MODDIR) -o $(BINDIR)/pbsAllocator $(CSRC) $(LIBFLAGS)
 
 clean:
