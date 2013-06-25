@@ -6,14 +6,113 @@ struct  page    *loaddata_pages = NULL;
 struct  page    *allocation_pages = NULL;
 u64             *allocation_array = NULL;
 
+loaddata_list_header_t  *loaddata_list_header;
+
+SRT_loaddata_t  *loaddata_array;
+
+SRT_loaddata_t  *loaddata_freelist;
+struct mutex    freelist_lock;
+
+
+int init_loaddataList(void)
+{
+    int moi;
+    int ret;
+    
+    unsigned long loaddata_headersize;
+    unsigned long loaddata_list_entrysize;
+    int loaddata_index;
+
+    /*Check that the loaddata_array has been initialized*/
+    if(loaddata_array == NULL)
+    {
+        ret = -EBUSY;
+        goto error0;
+    }
+    
+    /*Get the pointer to the loaddata_list_header*/
+    loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
+
+    /*Initialize various aspects of the loaddata_list_header*/
+    loaddata_list_header->prev_sp_boundary  = 0;
+    loaddata_list_header->scheduling_period = scheduling_period_ns.tv64;
+
+    loaddata_list_header->max_allocator_runtime = 0;
+    loaddata_list_header->last_allocator_runtime = 0;
+
+    loaddata_list_header->SRT_count = 0;
+    loaddata_list_header->first = 0;
+    
+    /*Initialize the LAMbS related entries of the loaddata_list_header*/
+    
+    /*Set initial measurements to 0*/
+    loaddata_list_header->icount_last_sp = 0;
+    loaddata_list_header->energy_last_sp = 0;
+    loaddata_list_header->energy_total = 0;
+    
+    /*Set the number of modes of operation to the appropriate value*/
+    loaddata_list_header->mo_count = LAMbS_mo_count;
+    /*Set the time spent in each mode of operation to 0*/
+    for(moi = 0; moi < LAMbS_mo_count; moi++)
+    {
+        loaddata_list_header->mostat_last_sp[moi] = 0;
+    }
+    
+    /*The following lines decides the first element in the free list*/
+    /*Get the size of the header*/
+    loaddata_headersize = sizeof_loaddata_header();
+    /*Get the size of an array element*/
+    loaddata_list_entrysize =   (unsigned long)&(loaddata_array[1]) - 
+                                (unsigned long)&(loaddata_array[0]);
+    
+    /*Round up the size of the header to the nearest size of the array element and 
+    determine the corresponding array index, the index of the first free loaddata
+    entry*/
+    loaddata_index = (loaddata_headersize + loaddata_list_entrysize - 1) /
+                        loaddata_list_entrysize;
+    
+    loaddata_freelist = &(loaddata_array[loaddata_index]);
+    
+    for(    ; 
+            loaddata_index < (LOADDATALIST_SIZE/loaddata_list_entrysize); 
+            loaddata_index++)
+    {
+        loaddata_array[loaddata_index].job_release_time = 0;
+        loaddata_array[loaddata_index].pid              = 0;
+        loaddata_array[loaddata_index].current_runtime  = 0;
+        loaddata_array[loaddata_index].sp_till_deadline = 1;
+        loaddata_array[loaddata_index].sp_per_tp        = 1;
+        loaddata_array[loaddata_index].queue_length     = 0;
+        loaddata_array[loaddata_index].next = (loaddata_index+1);
+        loaddata_array[loaddata_index].prev = (loaddata_index-1);
+    }
+    
+    loaddata_freelist->prev = 0;
+    loaddata_array[(LOADDATALIST_SIZE/loaddata_list_entrysize)-1].next = 0;
+                        
+    return 0;
+    
+error0:
+    return ret;
+}
+
 int do_pbs_mmap(struct vm_area_struct *vmas)
 {
+    int ret;
     int size;
     struct page *mappable;
     pgprot_t    protection_flag;
 
     //FIXME: check if pages have already been mapped
     //only map pages if none have already been mapped
+
+    /*Initialize the load data list*/
+    ret = init_loaddataList();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "pbs_mmap: init_loaddataList failed!\n");
+        return ret;
+    }
 
     size = vmas->vm_end - vmas->vm_start;
     protection_flag = vmas->vm_page_prot;
@@ -67,76 +166,6 @@ int do_pbs_mmap(struct vm_area_struct *vmas)
 
 }
 
-loaddata_list_header_t  *loaddata_list_header;
-
-SRT_loaddata_t  *loaddata_array;
-
-SRT_loaddata_t  *loaddata_freelist;
-struct mutex    freelist_lock;
-
-int init_loaddataList(void)
-{
-    int ret;
-    
-    unsigned long loaddata_headersize;
-    unsigned long loaddata_list_entrysize;
-    int loaddata_index;
-
-    if(loaddata_array == NULL)
-    {
-        ret = -EBUSY;
-        goto error0;
-    }
-    
-    loaddata_list_header = (loaddata_list_header_t*)loaddata_array;
-
-    loaddata_list_header->prev_sp_boundary  = 0;
-    loaddata_list_header->scheduling_period = scheduling_period_ns.tv64;
-
-    loaddata_list_header->max_allocator_runtime = 0;
-    loaddata_list_header->last_allocator_runtime = 0;
-
-    loaddata_list_header->SRT_count = 0;
-    loaddata_list_header->first = 0;
-    
-    /*The following lines decides the first element in the free list*/
-    /*Get the size of the header*/
-    loaddata_headersize = sizeof_loaddata_header();
-    /*Get the size of an array element*/
-    loaddata_list_entrysize =   (unsigned long)&(loaddata_array[1]) - 
-                                (unsigned long)&(loaddata_array[0]);
-    
-    /*Round up the size of the header to the nearest size of the array element and 
-    determine the corresponding array index, the index of the first free loaddata
-    entry*/
-    loaddata_index = (loaddata_headersize + loaddata_list_entrysize - 1) /
-                        loaddata_list_entrysize;
-    
-    loaddata_freelist = &(loaddata_array[loaddata_index]);
-    
-    for(    ; 
-            loaddata_index < (LOADDATALIST_SIZE/loaddata_list_entrysize); 
-            loaddata_index++)
-    {
-        loaddata_array[loaddata_index].job_release_time = 0;
-        loaddata_array[loaddata_index].pid              = 0;
-        loaddata_array[loaddata_index].current_runtime  = 0;
-        loaddata_array[loaddata_index].sp_till_deadline = 1;
-        loaddata_array[loaddata_index].sp_per_tp        = 1;
-        loaddata_array[loaddata_index].queue_length     = 0;
-        loaddata_array[loaddata_index].next = (loaddata_index+1);
-        loaddata_array[loaddata_index].prev = (loaddata_index-1);
-    }
-    
-    loaddata_freelist->prev = 0;
-    loaddata_array[(LOADDATALIST_SIZE/loaddata_list_entrysize)-1].next = 0;
-                        
-    return 0;
-    
-error0:
-    return ret;
-}
-
 int allocate_mapping_pages(void)
 {
     int ret;
@@ -183,14 +212,6 @@ int allocate_mapping_pages(void)
 
     //initialize the locks
     mutex_init(&freelist_lock);
-
-    //call function to initialize loaddata list;
-    ret = init_loaddataList();
-    if(0 != ret)    
-    {
-        printk(KERN_INFO "allocate_mapping_pages: init_loaddataList failed");
-        goto error2;
-    }
 
     printk(KERN_INFO "allocate_mapping_pages: pages allocated!\n");
     

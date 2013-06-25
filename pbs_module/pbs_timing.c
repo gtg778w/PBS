@@ -136,23 +136,9 @@ do                                                      \
 
 void first_sched_period_tick(void)
 {
-    int moi;
-    
     /*Take initial readings of absolute instruction count, energy, and time spent so far
     in each mode of operation*/
     LAMbS_measurements_init();
-    
-    /*Set initial measurements to 0*/
-    loaddata_list_header->icount_last_sp = 0;
-    loaddata_list_header->energy_last_sp = 0;
-    loaddata_list_header->energy_total = 0;
-    
-    loaddata_list_header->mo_count = LAMbS_mo_count;
-    /*Set the time spent in each mode of operation to 0*/
-    for(moi = 0; moi < LAMbS_mo_count; moi++)
-    {
-        loaddata_list_header->mostat_last_sp[moi] = 0;
-    }
 }
 
 void sched_period_tick(void)
