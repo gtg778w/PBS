@@ -270,7 +270,8 @@ int bw_mgt_open(struct inode *inode, struct file *file)
 
     if(allocator_state != MODULE_LOADED)
     {
-        return -EBUSY;
+        ret = -EBUSY;
+        goto error0;
     }
 
     printk(KERN_INFO "*********************************\n");
@@ -279,11 +280,14 @@ int bw_mgt_open(struct inode *inode, struct file *file)
     ret = init_loaddataList();
     if(ret != 0)
     {
-        return ret;
+        printk(KERN_INFO "bw_mgt_open: init_loaddataList failed!");
+        goto error0;
     }
 
     allocator_state = ALLOCATOR_OPEN;
 
+    return 0;
+error0:
     return ret;
 }
 

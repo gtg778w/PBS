@@ -12,6 +12,7 @@
 
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
+#include "LAMbS_models.h"
 
 static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                                     unsigned long val, void *data)
@@ -78,6 +79,7 @@ int LAMbS_mo_init(int verbose)
     if(0 != LAMbS_mo_setup)
     {
         printk(KERN_INFO "LAMbS_mo_init: has been called previously");
+        ret = -1;
         goto error0;
     }
     
@@ -114,10 +116,22 @@ int LAMbS_mo_init(int verbose)
         goto error2;
     }
     
+    /*Allocate the mappable pages for the power and performance models*/
+    ret = LAMbS_models_alloc_pages();
+    if(ret != 0)
+    {
+        printk(KERN_INFO "LAMbS_mo_init: LAMbS_models_alloc_pages failed!");
+        goto error3;
+    }
+    
     LAMbS_mo_setup = 1;
     
     return 0;
 
+error3:
+    /*Uninit LAMbS_mostat*/    
+    LAMbS_mostat_uninit();
+    
 error2:
     /*Remove the MO(frequency) change notifier*/
     cpufreq_unregister_notifier(    &LAMbS_motrans_notifier_block,
@@ -126,7 +140,7 @@ error1:
     /*cleanup the MO lookup table*/
     LAMbS_molookup_uninit();
 error0:
-    return -1;
+    return ret;
 }
 
 void LAMbS_mo_uninit(void)
@@ -134,6 +148,9 @@ void LAMbS_mo_uninit(void)
     if(0 != LAMbS_mo_setup)
     {
         LAMbS_mo_setup = 0;
+
+        /*Free the mmap pages for the models and om schedule command*/
+        LAMbS_models_free_pages();
         
         /*Cleanup the mostat mechanism*/
         LAMbS_mostat_uninit();

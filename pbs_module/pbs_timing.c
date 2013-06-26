@@ -17,6 +17,11 @@ rt_runtime_update
      LAMbS_mo_count
 */
 
+#include "LAMbS_models.h"
+/*
+     LAMbS_models_init
+*/
+
 /**********************************************************************
 
 Global variables and functions associated with the scheduling period timer.
@@ -139,6 +144,9 @@ void first_sched_period_tick(void)
     /*Take initial readings of absolute instruction count, energy, and time spent so far
     in each mode of operation*/
     LAMbS_measurements_init();
+
+    /*Zero out the model coefficients*/    
+    LAMbS_models_init();
 }
 
 void sched_period_tick(void)

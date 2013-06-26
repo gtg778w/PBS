@@ -13,7 +13,6 @@ SRT_loaddata_t  *loaddata_array;
 SRT_loaddata_t  *loaddata_freelist;
 struct mutex    freelist_lock;
 
-
 int init_loaddataList(void)
 {
     int moi;
@@ -99,71 +98,69 @@ error0:
 int do_pbs_mmap(struct vm_area_struct *vmas)
 {
     int ret;
-    int size;
+    long unsigned int size, allowed_size;
     struct page *mappable;
     pgprot_t    protection_flag;
 
     //FIXME: check if pages have already been mapped
     //only map pages if none have already been mapped
 
-    /*Initialize the load data list*/
-    ret = init_loaddataList();
-    if(0 != ret)
-    {
-        printk(KERN_INFO "pbs_mmap: init_loaddataList failed!\n");
-        return ret;
-    }
-
     size = vmas->vm_end - vmas->vm_start;
     protection_flag = vmas->vm_page_prot;
+    
     //protection_flag.pgprot |= VM_SHARED;
-    if(vmas->vm_pgoff == 0)
+    switch(vmas->vm_pgoff)
     {
-        if(size == LOADDATALIST_SIZE)
-        {
+        case LOADDATALIST_PAGEOFFSET:
+            allowed_size = LOADDATALIST_SIZE;
             mappable = loaddata_pages;
             if((protection_flag.pgprot & VM_WRITE) != 0)
             {
                 printk(KERN_INFO "pbs_mmap: mapped pages with offset 0 are not granted write permission!\n");
-                return -EPERM;
+                ret = -EPERM;
+                goto error0;
             }
+            break;
             
-        }
-        else
-        {
-            printk(KERN_INFO "pbs_mmap: Invalid size for offset = 0! Can only be %ib!\n", LOADDATALIST_SIZE);
-            return -EINVAL;
-        }
-    }
-    else if(vmas->vm_pgoff == (LOADDATALIST_SIZE>>PAGE_SHIFT))
-    {
-        if(size == ALLOC_SIZE)
-        {
+        case ALLOC_PAGEOFFSET:
+            allowed_size = ALLOC_SIZE;
             mappable = allocation_pages;
-        }
-        else
-        {
-            printk(KERN_INFO "pbs_mmap: Invalid size for offset = %i! Can only be %ib!\n", LOADDATALIST_SIZE, ALLOC_SIZE);
-            return -EINVAL;
-        }
+            break;
+            
+        case LAMbS_MODELS_OFFSET:
+            allowed_size = LAMbS_MODELS_SIZE;
+            mappable = LAMbS_models_pages;
+            break;
+            
+        default:
+            printk(KERN_INFO "pbs_mmap: Invalid offset. ");
+            ret = -EINVAL;
+            goto error0;
     }
-    else
+    
+    /*Check that the size of the mapped region is valid*/
+    if(size != allowed_size)
     {
-        printk(KERN_INFO "pbs_mmap: Invalid offset. Can only be 0 or %i!\n", LOADDATALIST_SIZE);
-        return -EINVAL;
+        printk(KERN_INFO "pbs_mmap: Invalid size. The size of the mapped region "
+                        "starting at offset %lu must be %lu bytes.", 
+                        (vmas->vm_pgoff << PAGE_SHIFT), allowed_size);
+        ret = -EINVAL;
+        goto error0;
     }
-
-    printk(KERN_INFO "pbs_mmap: Mapping offset %lx with size %d and permission %lx\n", vmas->vm_pgoff, size, protection_flag.pgprot);
 
     //map the page into the virtual address
     if(remap_pfn_range(vmas, vmas->vm_start, page_to_pfn(mappable), size, protection_flag))
     {
-        printk(KERN_INFO "Failed to map memory!\n");
-        return -EAGAIN;
+        printk(KERN_INFO "pbs_mmap: remap_pfn_range failed for offset %lu, size %lu "
+                        "bytes\n", (vmas->vm_pgoff << PAGE_SHIFT), allowed_size);
+        ret = -EAGAIN;
+        goto error0;
     }
 
     return 0;
-
+    
+error0:
+    return ret;
 }
 
 int allocate_mapping_pages(void)

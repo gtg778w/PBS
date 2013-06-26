@@ -24,12 +24,6 @@ typedef struct bw_mgt_cmd_s
     s64         args[2];
 } bw_mgt_cmd_t;
 
-#define LOADDATALIST_SIZE   (1<<20) //1MB
-#define LOADDATALIST_ORDER  (20-PAGE_SHIFT)
-
-#define ALLOC_SIZE  (1<<17)
-#define ALLOC_ORDER (17-PAGE_SHIFT)
-
 typedef struct _SRT_loaddata
 {
     u64 job_release_time;   // 8 bytes
@@ -80,5 +74,23 @@ typedef struct _loaddata_list_header
     /*Tail grown array of variable size since mo_count is unknown ahead of time*/
     u64 mostat_last_sp[1];
 } loaddata_list_header_t;
+
+#define LOADDATALIST_SIZE       (1<<20) //1MB
+#define LOADDATALIST_ORDER      (20-PAGE_SHIFT)
+#define LOADDATALIST_PAGEOFFSET (0)
+
+#define ALLOC_SIZE              (1<<17)
+#define ALLOC_ORDER             (17-PAGE_SHIFT)
+#define ALLOC_PAGEOFFSET        (LOADDATALIST_SIZE>>PAGE_SHIFT)
+
+#define LAMbS_MODELS_ORDER      (1)
+#define LAMbS_MODELS_SIZE       (PAGE_SIZE << LAMbS_MODELS_ORDER)
+#define LAMbS_MODELS_OFFSET     (ALLOC_PAGEOFFSET + (ALLOC_SIZE >> PAGE_SHIFT))
+
+/*The following is intended for 
+    instructions retired per nanosecond
+    microjoules  comsumed per nanosecond
+*/
+#define LAMbS_MODELS_FIXEDPOINT_SHIFT (48)
 
 #endif /*#ifndef PBSALLOCATOR_CMD_INCLUDE*/

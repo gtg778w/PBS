@@ -36,6 +36,11 @@ loaddata structures
 LAMbS_mo_count
 */
 
+#include "LAMbS_models.h"
+/*
+LAMbS_models_pages
+*/
+
 /*the loaddata header size is defined as a macro to allow for the tail-grown array 
 inside the structure. This macro is only available to the kernel, because it makes
 use of the LAMbS_mo_count global variable*/
