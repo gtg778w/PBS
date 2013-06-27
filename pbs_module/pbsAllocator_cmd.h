@@ -75,12 +75,12 @@ typedef struct _loaddata_list_header
     u64 mostat_last_sp[1];
 } loaddata_list_header_t;
 
-#define LOADDATALIST_SIZE       (1<<20) //1MB
 #define LOADDATALIST_ORDER      (20-PAGE_SHIFT)
+#define LOADDATALIST_SIZE       (PAGE_SIZE<<LOADDATALIST_ORDER) //1MB
 #define LOADDATALIST_PAGEOFFSET (0)
 
-#define ALLOC_SIZE              (1<<17)
 #define ALLOC_ORDER             (17-PAGE_SHIFT)
+#define ALLOC_SIZE              (PAGE_SIZE<<ALLOC_ORDER)
 #define ALLOC_PAGEOFFSET        (LOADDATALIST_SIZE>>PAGE_SHIFT)
 
 #define LAMbS_MODELS_ORDER      (1)

@@ -86,7 +86,7 @@ int allocator_setup(uint64_t scheduling_period,
     //setup the loaddata mapping
     loaddata_array = mmap(NULL, LOADDATALIST_SIZE, 
                          (PROT_READ), MAP_SHARED, 
-                         proc_file, 0);
+                         proc_file, (LOADDATALIST_PAGEOFFSET * PAGE_SIZE));
     if(loaddata_array == MAP_FAILED)
     {
         perror("allocator_setup: Failed to map loaddata_array");
@@ -102,7 +102,7 @@ int allocator_setup(uint64_t scheduling_period,
     //setup the allocations mapping
     allocation_array = mmap(NULL, ALLOC_SIZE, 
                             (PROT_READ | PROT_WRITE), MAP_SHARED, 
-                            proc_file, LOADDATALIST_SIZE);
+                            proc_file, (ALLOC_PAGEOFFSET * PAGE_SIZE));
     if(allocation_array == MAP_FAILED)
     {
         perror("allocator_setup: Failed to map allocation_array");
@@ -148,7 +148,7 @@ int allocator_close(int proc_file)
 
     if(munmap(allocation_array, ALLOC_SIZE) != 0)
     {
-        perror("Failed to unmap loaddata pages!\n");
+        perror("Failed to unmap allocation pages!\n");
         retval = -1;
         goto exit0;
     }

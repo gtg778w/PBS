@@ -308,7 +308,7 @@ int main(int argc, char** argv)
     }
 
     //Setup the model adapters
-    retval = pbsAllocator_modeladapters_init();
+    retval = pbsAllocator_modeladapters_init(proc_file);
     if(0 != retval)
     {
         fprintf(stderr, "pbsAllocator_modeladapters_init failed!\n");
@@ -334,7 +334,7 @@ exit1:
     }
 
     /*free the modeladapters*/    
-    pbsAllocator_modeladapters_free();
+    pbsAllocator_modeladapters_free(proc_file);
 
     if(Sflag == 0)
     {

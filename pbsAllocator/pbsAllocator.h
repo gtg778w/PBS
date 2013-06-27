@@ -10,6 +10,12 @@ typedef uint8_t     u8;
 typedef int32_t     s32;
 typedef int64_t     s64;
 
+#include <unistd.h>
+#define PAGE_SIZE   (getpagesize())
+
+#include <strings.h>
+#define PAGE_SHIFT  (ffs(PAGE_SIZE)-1)
+
 #include "pbsAllocator_cmd.h"
 
 extern SRT_loaddata_t           *loaddata_array;
@@ -32,8 +38,8 @@ void free_log_memory(void);
 
 void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget);
 
-int pbsAllocator_modeladapters_init(void);
+int pbsAllocator_modeladapters_init(int proc_file);
 void pbsAllocator_modeladapters_adapt(void);
-void pbsAllocator_modeladapters_free(void);
+void pbsAllocator_modeladapters_free(int proc_file);
 
 #endif
