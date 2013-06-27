@@ -29,7 +29,9 @@ int allocator_close(int proc_file);
 extern int64_t                  sp_limit;
 
 int setup_log_memory(void);
-void log_allocator_dat( long long sp_count);
+void log_allocator_dat( long long sp_count, 
+                        double est_icount,
+                        double est_energy);
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
                     SRT_loaddata_t  *SRT_loaddata_p,
@@ -38,8 +40,10 @@ void free_log_memory(void);
 
 void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget);
 
-int pbsAllocator_modeladapters_init(int proc_file);
-void pbsAllocator_modeladapters_adapt(void);
-void pbsAllocator_modeladapters_free(int proc_file);
+extern double  *perf_model_coeffs_double;
+extern double  *power_model_coeffs_double;
+int     pbsAllocator_modeladapters_init(int proc_file);
+void    pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p);
+void    pbsAllocator_modeladapters_free(int proc_file);
 
 #endif

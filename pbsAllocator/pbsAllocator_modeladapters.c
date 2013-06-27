@@ -19,6 +19,7 @@ uint64_t    *operation_mode_schedule_u64 = NULL;
 
 double  *perf_model_coeffs_double = NULL;
 double  *power_model_coeffs_double = NULL;
+double  *mostat_double = NULL;
 
 int pbsAllocator_modeladapters_init(int proc_file)
 {
@@ -45,14 +46,15 @@ int pbsAllocator_modeladapters_init(int proc_file)
     LMSVS_init(powr_modeladapter_p, mo_count);
 
     /*Allocate space for the independant variables and model coefficients*/
-    perf_model_coeffs_double = (double*)calloc(mo_count*2, sizeof(double));
+    perf_model_coeffs_double = (double*)calloc(mo_count*3, sizeof(double));
     if(NULL == perf_model_coeffs_double)
     {
         perror( "pbsAllocator_modeladapters_init: calloc failed for "
                 "perf_model_coeffs_double");
         goto error2;
     }
-    power_model_coeffs_double= &(power_model_coeffs_double[mo_count]);
+    power_model_coeffs_double= &(perf_model_coeffs_double[mo_count]);
+    mostat_double = &(power_model_coeffs_double[mo_count]);
 
     /*Setup the LAMbS_models mapping*/
     LAMbS_models_pages = mmap(  NULL, LAMbS_MODELS_SIZE, 
@@ -75,6 +77,7 @@ error3:
     free(perf_model_coeffs_double);
     perf_model_coeffs_double = NULL;
     power_model_coeffs_double = NULL;
+    mostat_double = NULL;
 error2:
     free(powr_modeladapter_p);
     powr_modeladapter_p = NULL;
@@ -106,6 +109,7 @@ void pbsAllocator_modeladapters_free(int proc_file)
         free(perf_model_coeffs_double);
         perf_model_coeffs_double= NULL;
         power_model_coeffs_double   = NULL;
+        mostat_double = NULL;
     }
     
     if(NULL != powr_modeladapter_p)
@@ -121,8 +125,70 @@ void pbsAllocator_modeladapters_free(int proc_file)
     }
 }
 
-void pbsAllocator_modeladapters_adapt(void)
+void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p)
 {
+    int moi;
+    int mocount = loaddata_list_header->mo_count;
+    double energy_count;
+    double instruction_count;
     
+    /*Copy and scale the previous FP coefficients into the coeffs array*/
+    /*Copy the u64 mostat array into the double mostat array*/
+    for(moi = 0; moi < mocount; moi++)
+    {
+        perf_model_coeffs_double[moi] = ((double)perf_model_coeffs_u64[moi]) * 
+                        (1.0 / (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT));
+                                        
+        power_model_coeffs_double[moi] = ((double)power_model_coeffs_u64[moi]) *
+                        (1.0 / (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT));
+                        
+        mostat_double[moi] = (double)loaddata_list_header->mostat_last_sp[moi];
+    }
+    
+    /*predict the instruction count*/
+    *est_icount_p = LMSVS_predict(  perf_modeladapter_p, 
+                                    mostat_double, 
+                                    perf_model_coeffs_double);
+    
+    /*predict the energy consumption*/
+    *est_energy_p = LMSVS_predict(  powr_modeladapter_p, 
+                                    mostat_double, 
+                                    power_model_coeffs_double);
+    
+    /*Copy the instruction count and energy consumed into local varriables*/
+    instruction_count = (double)loaddata_list_header->icount_last_sp;
+    energy_count = (double)loaddata_list_header->energy_last_sp;
+    
+    /*Adapt the performance model*/
+    LMSVS_update(   perf_modeladapter_p,
+                    mostat_double,
+                    perf_model_coeffs_double,
+                    instruction_count);
+        
+    /*Adapt the power model*/
+    LMSVS_update(   powr_modeladapter_p,
+                    mostat_double,
+                    power_model_coeffs_double,
+                    energy_count);
+
+    /*Copy the coefficients back into the memory region*/
+    /*Copy the u64 mostat array into the double mostat array*/
+    for(moi = 0; moi < mocount; moi++)
+    {
+        /*Since no MO can turn back time or produce energy, none of the model 
+        coefficients can be negative. Saturate below at zero*/
+        perf_model_coeffs_double[moi]   = (perf_model_coeffs_double[moi] < 0)?
+                                        0: perf_model_coeffs_double[moi];
+        power_model_coeffs_u64[moi]     = (power_model_coeffs_u64[moi] < 0)?
+                                        0: power_model_coeffs_u64[moi];
+                
+        perf_model_coeffs_u64[moi] 
+            = (uint64_t)(   perf_model_coeffs_double[moi] *
+                            (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
+                                        
+        power_model_coeffs_u64[moi] 
+            = (uint64_t)(   power_model_coeffs_double[moi] *
+                            (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
+    }
 }
 

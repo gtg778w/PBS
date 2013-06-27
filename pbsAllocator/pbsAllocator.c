@@ -42,6 +42,8 @@ void allocator_loop_wlogging(int proc_file)
     
     long long sp_count = 0;
 
+    double inst_count, energy_count;
+
     int retval;
     int t, task_count, task_index;
 
@@ -61,7 +63,8 @@ void allocator_loop_wlogging(int proc_file)
             break;
         }
 
-        log_allocator_dat(sp_count);
+        pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
+        log_allocator_dat(sp_count, inst_count, energy_count);
 
         next = &(loaddata_array[loaddata_list_header->first]);
         task_count = loaddata_list_header->SRT_count;
