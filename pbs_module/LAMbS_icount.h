@@ -17,9 +17,8 @@ extern struct perf_event_attr icount_attr;
 extern struct perf_event_attr icount_attr_kernel;
 extern struct perf_event* icount_event_kernel;
 extern struct perf_event* icount_event;
-extern bool debug;
 
-int LAMbS_icount_init(bool debug);
+int LAMbS_icount_init(void);
 void LAMbS_icount_uninit(void);
 
 void LAMbS_icount_get(LAMbS_icount_t* mostat);

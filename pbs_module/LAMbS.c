@@ -27,7 +27,6 @@ LAMbS_energy_t global_energy;
 /*********************************************************************
  * debug? Count kernel instructions and maybe other things later 
  *********************************************************************/
-bool debug;
 
 
 /**********************************************************************
@@ -100,7 +99,7 @@ int LAMbS_init(void)
 {
     int ret;
     
-    ret = LAMbS_icount_init(debug);
+    ret = LAMbS_icount_init();
     if(0 != ret)
     {
         printk(KERN_INFO "LAMbS_init: LAMbS_icount_init failed");
