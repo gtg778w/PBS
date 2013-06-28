@@ -12,7 +12,7 @@
 #include "LAMbS_icount.h"
 #include "LAMbS_energy.h"
 #include "LAMbS_mo.h"
-
+#include "LAMbS_VIC.h"
 
 /**********************************************************************
 
@@ -35,9 +35,6 @@ bool debug;
 Measurement-related functions
 
 ***********************************************************************/
-
-
-
 
 int LAMbS_measurements_alloc(void)
 {
@@ -121,15 +118,24 @@ int LAMbS_init(void)
         goto error2;
     }
 
+    ret = LAMbS_VIC_init();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "LAMbS_init: LAMbS_VIC_init failed");
+        goto error3;        
+    }
+
     ret = LAMbS_measurements_alloc();
     if(0 != ret)
     {
         printk(KERN_INFO "LAMbS_init: LAMbS_measurements_alloc failed");
-        goto error3;
+        goto error4;
     }
     
     return 0;
-
+    
+error4:
+    LAMbS_VIC_uninit();
 error3:
     LAMbS_mo_uninit();        
 error2:
@@ -143,6 +149,8 @@ error0:
 void LAMbS_uninit(void)
 {
     LAMbS_measurements_free();
+
+    LAMbS_VIC_uninit();
 
     LAMbS_mo_uninit();
     

@@ -60,8 +60,8 @@ void LAMbS_mostat_transition(int old_moi, int new_moi)
         /*Update the current state*/
         _mostat.last_moi = new_moi;
         
-    /*Saving and disabling interrupts around critical section*/
-    local_irq_save(irq_flags);
+    /*Restore previous interrupt state after critical section*/
+    local_irq_restore(irq_flags);
 }
 
 void (*LAMbS_mostat_transition_p)(int old_moi, int new_moi) = 
