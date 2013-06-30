@@ -16,7 +16,4 @@ void pba_refresh_budget(struct SRT_struct *SRT_struct_p);
 void pba_init(struct SRT_struct *SRT_struct_p);
 void pba_uninit(struct SRT_struct *SRT_struct_p);
 
-u64 pbs_clock(void);
-void setup_sched_clock(void);
-
 #endif

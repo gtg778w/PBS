@@ -3,8 +3,8 @@
 #include "bw_mgt.h"
 #include "pba.h"
 /*
-init/uninit the pbs_hrtick_timer
-rt_runtime_update
+    init/uninit the pbs_hrtick_timer
+    rt_runtime_update
 */
 
 #include "LAMbS.h"
@@ -14,12 +14,17 @@ rt_runtime_update
 
 #include "LAMbS_molookup.h"
 /*
-     LAMbS_mo_count
+    LAMbS_mo_count
 */
 
 #include "LAMbS_models.h"
 /*
-     LAMbS_models_init
+    LAMbS_models_init
+*/
+
+#include "LAMbS_VIC.h"
+/*
+    LAMbS_clock
 */
 
 /**********************************************************************
@@ -83,7 +88,7 @@ enum hrtimer_restart sp_timer_func(struct hrtimer *fired_timer)
         }
 
         //record the activation time for the allocator
-        allocator_actv_time = pbs_clock();
+        allocator_actv_time = LAMbS_clock();
 
     }
 
@@ -101,7 +106,7 @@ void allocator_schedout(    struct preempt_notifier *notifier,
 {
     s64 max_runtime, last_runtime;
 
-    allocator_stop_time = pbs_clock();
+    allocator_stop_time = LAMbS_clock();
 
     //log the run_time for the allocator
     last_runtime= allocator_stop_time - allocator_actv_time;

@@ -18,6 +18,32 @@
 #include "LAMbS_mostat.h"
 #include "LAMbS_models.h"
 
+/*********************************************************
+*Code and varriables related to the monotonic clock used 
+by everything
+*********************************************************/
+
+extern unsigned long long sched_clock(void) __attribute__ ((weak));
+
+int setup_sched_clock(void)
+{
+    if(NULL == sched_clock)
+    {
+        printk(KERN_INFO "setup_sched_clock: The sched_clock symbol needed by the "
+                        "pbs_module is not expotred by the kernel.");
+        goto error0;
+    }
+
+    return 0;
+error0:
+    return -1;
+}
+
+
+/*********************************************************
+
+**********************************************************/
+
 static u64              last_global_VIC;
 static LAMbS_mostat_t   *VIC_mostat_p;
 static u64              *_VIC_mostat_delta;

@@ -1,54 +1,17 @@
 #include "bw_mgt.h"
 #include "pba.h"
 
+#include "LAMbS_VIC.h"
+/*
+    LAMbS_clock
+    LAMbS_VIC_get
+*/
+
 #define PBA_IS_THROTTLED(pba_struct_p) (pba_struct_p->flags & PBA_THROTTLED)
 #define PBA_IS_SLEEPING(pba_struct_p)  (pba_struct_p->flags & PBA_SLEEPING)
 
 #define THROTTLE_THREASHOLD_NS 5000
 
-
-static unsigned long long (*sched_clock_p)(void);
-
-extern unsigned long long sched_clock(void) __attribute__ ((weak));
-
-//module_param(sched_clock_p, (void*), S_IRUGO);
-
-//the following macro should be called with interrupts disabled
-#define _pbs_clock() (*sched_clock_p)()
-
-u64 pbs_clock(void)
-{
-    u64 time;
-    unsigned long irq_flags;
-
-    local_irq_save(irq_flags);
-    time = _pbs_clock();
-    local_irq_restore(irq_flags);
-
-    return time;
-}
-
-
-//this function is assigned a "weak" symbol to allow calling functions to
-//link to the kernel's built in implementation, if the symbol is exported
-void setup_sched_clock(void)
-{
-    u64 now;
-
-    if(sched_clock)
-    {
-        sched_clock_p = &sched_clock;
-    }
-    else
-    {
-        sched_clock_p = (void*)0xffffffff81018e70;
-        printk(KERN_INFO "WARNING: This capability is still incomplete");
-    }
-
-    //this is just a safety check to make sure things won't crash later
-    now = pbs_clock();
-    printk(KERN_INFO "time during sched_clock setup: %llu", now);
-}
 
 u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
 {
@@ -61,7 +24,7 @@ u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current time
-        now = pbs_clock();
+        now = LAMbS_clock();
         //compute the runtime in this activation
         current_runtime = now - pba_struct_p->jb_actv_time;
     }
@@ -82,7 +45,7 @@ void pba_firstjob(struct SRT_struct *ss)
     pba_struct_p = &(ss->pba_struct);
 
     //obtain the current time
-    now = pbs_clock();
+    now = LAMbS_clock();
 
     (ss->loaddata)->current_runtime = 0;
 
@@ -121,7 +84,7 @@ void pba_nextjob(struct SRT_struct *ss)
     pba_struct_p = &(ss->pba_struct);
 
     //obtain the current time
-    now = pbs_clock();
+    now = LAMbS_clock();
 
     //compute the runtime in this activation
     current_jb_runtime = now - (pba_struct_p->jb_actv_time);
@@ -158,7 +121,7 @@ void pba_nextjob2(struct SRT_struct *ss)
     pba_struct_p = &(ss->pba_struct);
 
     //obtain the current time
-    now = pbs_clock();
+    now = LAMbS_clock();
 
     //compute the runtime in this activation
     current_jb_runtime2 = now - (pba_struct_p->jb_actv_time2);
@@ -191,7 +154,7 @@ u64 pba_get_spruntime(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current time
-        now = pbs_clock();
+        now = LAMbS_clock();
         current_runtime = now - pba_struct_p->last_actv_time;
     }
 
@@ -361,7 +324,7 @@ void pba_schedin(   struct preempt_notifier *notifier,
     struct SRT_struct *SRT_struct_p;
     struct pba_struct *pba_struct_p;
 
-    now = pbs_clock();
+    now = LAMbS_clock();
 
     pba_struct_p = container_of(notifier, struct pba_struct, pin_notifier);
     SRT_struct_p = container_of(pba_struct_p, struct SRT_struct, pba_struct);
@@ -452,7 +415,7 @@ void pba_schedout(  struct preempt_notifier *notifier,
     local_irq_save(irq_flags);
 
         //obtain the current time
-        now = _pbs_clock();
+        now = LAMbS_clock();
 
         //compute the runtime in this activation for the job
         current_runtime += now;
