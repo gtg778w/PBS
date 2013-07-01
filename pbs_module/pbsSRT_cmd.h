@@ -33,11 +33,13 @@ typedef struct job_mgt_cmd_s
     s64         args[4];
 } job_mgt_cmd_t;
 
-
+/*For each time-related varriable, a VIC-related varriable has been created*/
 struct SRT_job_log
 {
     u64 runtime2;
+    u64 runVIC2;
     u64 runtime;
+    u64 runVIC;
     u64 abs_releaseTime;
     u64 abs_LFT;
 
@@ -56,6 +58,7 @@ typedef struct SRT_summary_s
 
     /*Total comsumed budget (vs allocated budget)*/
     s64 consumed_budget;
+    s64 consumed_VIC;
 
     /*The total number of jobs that missed the 
     corresponding deadline since the first job.*/

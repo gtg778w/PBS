@@ -73,6 +73,7 @@ Definitions that have to be shared with SRT tasks
 e.g. job_mgt_cmd_t
 */
 
+/*For each time-related variable, a VIC-based variable has been created*/
 struct pba_struct
 {
     //bandwidth enforcement timer
@@ -82,9 +83,12 @@ struct pba_struct
 
     //keep track of the last task activation time
     u64 last_actv_time;
+    u64 last_actv_VIC;
 
     //total runtime in the current scheduling period
     u64 total_sp_runtime;
+    u64 total_sp_runVIC;
+    
     //reset at sp beginning
     //update tsr on sched out
     //update last_actv_time on sched_in and sp beginning
@@ -92,9 +96,12 @@ struct pba_struct
 
     //keep track of the last job activation time
     u64 jb_actv_time;
+    u64 jb_actv_VIC;
 
     //total runtime of the current job
-    u64 total_jb_runtime; 
+    u64 total_jb_runtime;
+    u64 total_jb_runVIC;
+    
     //reset at jb beginning
     //update tjr on sched_out
     //update jb_actv_time on sched in and jb beginning
@@ -105,9 +112,12 @@ struct pba_struct
     
     //keep track of the last job activation time for the second definition of job
     u64 jb_actv_time2;
+    u64 jb_actv_VIC2;
 
     //total runtime of the current job for the second definition of job
     u64 total_jb_runtime2;
+    u64 total_jb_runVIC2;
+    
     //reset on read operation
     //update tjr2 on sched_out
     //update jb_actv_time2 on sched in and read operation
@@ -117,7 +127,6 @@ struct pba_struct
     u64 sp_budget;
 
     u16 flags;
-
 };
 
 //the following are bits in the flags field 
