@@ -35,7 +35,7 @@ static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
     }
 
     if (val == CPUFREQ_POSTCHANGE) {
-	pr_debug("saving cpu_cur_freq of cpu %u to be %u kHz\n",
+	printk(KERN_NOTICE "saving cpu_cur_freq of cpu %u to be %u kHz\n",
 		 freq->cpu, freq->new);
 	per_cpu(cpu_cur_freq, freq->cpu) = freq->new;
     }
@@ -50,11 +50,11 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 static int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq) {
     int ret = -EINVAL;
 
-    pr_debug("LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy->cpu, freq);
+    printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy->cpu, freq);
 
     mutex_lock(&setfreq_mutex);
     if (!per_cpu(cpu_is_managed, policy->cpu)) {
-	pr_debug("freq not set: cpu_is_managed for cpu %u = false\n", policy->cpu);
+	printk(KERN_NOTICE "freq not set: cpu_is_managed for cpu %u = false\n", policy->cpu);
 	goto err;
     }
 
@@ -106,7 +106,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_cur_freq, cpu) = policy->cur;
 	per_cpu(cpu_set_freq, cpu) = policy->cur;
 
-	pr_debug("managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
+	printk(KERN_NOTICE "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
 	        cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
 		per_cpu(cpu_cur_freq, cpu));
 	mutex_unlock(&setfreq_mutex);
@@ -120,12 +120,12 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_max_freq, cpu) = 0;
 	per_cpu(cpu_min_freq, cpu) = 0;
 	per_cpu(cpu_set_freq, cpu) = 0;
-	pr_debug("managing cpu %u stopped\n", cpu);
+	printk(KERN_NOTICE "managing cpu %u stopped\n", cpu);
 	mutex_unlock(&setfreq_mutex);
 	break;
     case CPUFREQ_GOV_LIMITS:
 	mutex_lock(&setfreq_mutex);
-	pr_debug("limit event for cpu %u: %u - %u kHz, currently %u kHz, "
+	printk(KERN_NOTICE "limit event for cpu %u: %u - %u kHz, currently %u kHz, "
 		 "last set to %u kHz\n", cpu, policy->min, policy->max,
 		 per_cpu(cpu_cur_freq, cpu), per_cpu(cpu_set_freq, cpu));
 	if (policy->max < per_cpu(cpu_set_freq, cpu)) {
