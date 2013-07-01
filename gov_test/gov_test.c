@@ -16,6 +16,7 @@
 #include <linux/types.h>
 #include <linux/cpu.h>
 #include <linux/init.h>
+#include <linux/printk.h>
 
 
 /* I think this is needed by per_cpu and it seems easier just to add it */
