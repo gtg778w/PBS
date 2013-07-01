@@ -44,9 +44,9 @@ error0:
 
 **********************************************************/
 
-static u64              last_global_VIC;
-static LAMbS_mostat_t   *VIC_mostat_p;
-static u64              *_VIC_mostat_delta;
+static u64  last_global_VIC;
+static LAMbS_mostat_t  *VIC_mostat_p;
+static u64  *_VIC_mostat_delta;
 
 int LAMbS_VIC_init(void)
 {

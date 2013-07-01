@@ -180,7 +180,7 @@ void pba_nextjob2(struct SRT_struct *ss)
     
     //compute the runtime in this activation
     current_jb_runtime2 = now - (pba_struct_p->jb_actv_time2);
-    current_jb_runVIC2 = now - (pba_struct_p->jb_actv_VIC2);
+    current_jb_runVIC2 = now_VIC - (pba_struct_p->jb_actv_VIC2);
         
     //set the total runtime to the sum of the curent runtime 
     //and accumulated previous runtime

@@ -348,14 +348,15 @@ void pbsSRT_close(SRT_handle *handle)
             perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
         }
         
-        fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, "
-                                    "0, 0, 0\n\n", getpid(),
+        fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, %llu"
+                                    "0, 0, 0, 0\n\n", getpid(),
                                     (unsigned long long)handle->period,
                                     (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,
                                     (unsigned long long)summary.cumulative_budget,
                                     (unsigned long long)summary.cumulative_budget_sat,
                                     (unsigned long long)summary.consumed_budget,
+                                    (unsigned long long)summary.consumed_VIC,
                                     (unsigned long long)summary.total_misses);
 
         if(handle->loglevel >= pbsSRT_LOGLEVEL_FULL)
@@ -366,10 +367,12 @@ void pbsSRT_close(SRT_handle *handle)
                 log_entry = &(handle->log[i]);
                 relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
                 miss = (relative_LFT > handle->period);
-                fprintf(handle->log_file,   "%lu, %lu, %lu, "
+                fprintf(handle->log_file,   "%lu, %lu, %lu, %lu, %lu"
                                             "%lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
                                             (unsigned long)log_entry->runtime,
                                             (unsigned long)log_entry->runtime2,
+                                            (unsigned long)log_entry->runVIC,
+                                            (unsigned long)log_entry->runVIC2,
                                             miss,
                                             (unsigned long)log_entry->abs_releaseTime,
                                             (unsigned long)log_entry->abs_LFT,
