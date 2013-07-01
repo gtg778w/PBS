@@ -24,9 +24,11 @@ module_param
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 #include "pba.h"
+#include "LAMbS_VIC.h"
 /*
 (un)init_bw_mgt
 (un)init_jb_mgt
+setup_sched_clock
 */
 
 MODULE_AUTHOR("Safayet N Ahmed");

@@ -1,54 +1,16 @@
 #include "bw_mgt.h"
 #include "pba.h"
 
+#include "LAMbS_VIC.h"
+/*
+    LAMbS_clock
+    LAMbS_VIC_get
+*/
+
 #define PBA_IS_THROTTLED(pba_struct_p) (pba_struct_p->flags & PBA_THROTTLED)
 #define PBA_IS_SLEEPING(pba_struct_p)  (pba_struct_p->flags & PBA_SLEEPING)
 
 #define THROTTLE_THREASHOLD_NS 5000
-
-
-static unsigned long long (*sched_clock_p)(void);
-
-extern unsigned long long sched_clock(void) __attribute__ ((weak));
-
-//module_param(sched_clock_p, (void*), S_IRUGO);
-
-//the following macro should be called with interrupts disabled
-#define _pbs_clock() (*sched_clock_p)()
-
-u64 pbs_clock(void)
-{
-    u64 time;
-    unsigned long irq_flags;
-
-    local_irq_save(irq_flags);
-    time = _pbs_clock();
-    local_irq_restore(irq_flags);
-
-    return time;
-}
-
-
-//this function is assigned a "weak" symbol to allow calling functions to
-//link to the kernel's built in implementation, if the symbol is exported
-void setup_sched_clock(void)
-{
-    u64 now;
-
-    if(sched_clock)
-    {
-        sched_clock_p = &sched_clock;
-    }
-    else
-    {
-        sched_clock_p = (void*)0xffffffff81018e70;
-        printk(KERN_INFO "WARNING: This capability is still incomplete");
-    }
-
-    //this is just a safety check to make sure things won't crash later
-    now = pbs_clock();
-    printk(KERN_INFO "time during sched_clock setup: %llu", now);
-}
 
 u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
 {
@@ -61,7 +23,7 @@ u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current time
-        now = pbs_clock();
+        now = LAMbS_clock();
         //compute the runtime in this activation
         current_runtime = now - pba_struct_p->jb_actv_time;
     }
@@ -73,63 +35,110 @@ u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
     return total_runtime;
 }
 
-void pba_firstjob(struct SRT_struct *ss)
+u64 pba_get_jbrunVIC(struct pba_struct *pba_struct_p)
 {
     u64 now;
+
+    u64 total_runVIC, current_runVIC = 0;
+
+    //if the task is currently running, compute the runtime since
+    //the last activation
+    if(!PBA_IS_SLEEPING(pba_struct_p))
+    {
+        //obtain the current VIC
+        now = LAMbS_VIC_get();
+        //compute the runVIC in this activation
+        current_runVIC = now - pba_struct_p->jb_actv_VIC;
+    }
+
+    //set the total runtime to the sum of the curent runtime 
+    //and accumulated previous runtime
+    total_runVIC = current_runVIC + pba_struct_p->total_jb_runVIC;
+
+    return total_runVIC;
+}
+
+void pba_firstjob(struct SRT_struct *ss)
+{
+    u64 now, now_VIC;
 
     struct pba_struct *pba_struct_p;    
 
     pba_struct_p = &(ss->pba_struct);
 
-    //obtain the current time
-    now = pbs_clock();
-
+    //obtain the current time and VIC
+    now = LAMbS_clock();
+    now_VIC = LAMbS_VIC_get();
+    
     (ss->loaddata)->current_runtime = 0;
 
-    (ss->log).runtime = 0;
-    (ss->log).runtime2 = 0;
+    (ss->log).runtime   = 0;
+    (ss->log).runtime2  = 0;
     (ss->log).last_sp_compt_allocated   = (pba_struct_p->sp_budget);
     (ss->log).last_sp_compt_used_sofar  = 0;
 
+    (ss->log).runVIC    = 0;
+    (ss->log).runVIC2   = 0;    
+
     //reset the total accumulated runtime to 0
-    pba_struct_p->total_jb_runtime = 0;
+    pba_struct_p->total_jb_runtime  = 0;
     pba_struct_p->total_jb_runtime2 = 0;
     
+    pba_struct_p->total_jb_runVIC   = 0;
+    pba_struct_p->total_jb_runVIC2  = 0;
+    
     //set now as the beginning of the new job
-    pba_struct_p->jb_actv_time = now;
+    pba_struct_p->jb_actv_time  = now;
+    pba_struct_p->jb_actv_VIC   = now_VIC;
     //also set now as the beginning of the new job based on the second 
     //definition of job, although this is slightly incorrect, it will only
     //be used for the first job
     pba_struct_p->jb_actv_time2 = now;
+    pba_struct_p->jb_actv_VIC2  = now_VIC;
     
     //reset the budget used to 0
-    pba_struct_p->total_sp_runtime = 0;
+    pba_struct_p->total_sp_runtime  = 0;
+    pba_struct_p->total_sp_runVIC   = 0;
+    
     //set now as the beginning of current activation
-    pba_struct_p->last_actv_time = now;
-
+    pba_struct_p->last_actv_time    = now;
+    pba_struct_p->last_actv_VIC     = now_VIC;
+    
 }
 
 /*Job boundary according to the traditional definition of job*/
 void pba_nextjob(struct SRT_struct *ss)
 {
-    u64 now, current_jb_runtime, current_sp_runtime;
-
+    u64 now, now_VIC;
+    u64 current_jb_runtime, current_sp_runtime;
+    u64 current_jb_runVIC, current_sp_runVIC;
+    
     u64 total_runtime;
+    u64 total_runVIC;
 
     struct pba_struct *pba_struct_p;
 
     pba_struct_p = &(ss->pba_struct);
 
-    //obtain the current time
-    now = pbs_clock();
-
+    //obtain the current time and VIC
+    now = LAMbS_clock();
+    now_VIC = LAMbS_VIC_get();
+    
     //compute the runtime in this activation
     current_jb_runtime = now - (pba_struct_p->jb_actv_time);
     current_sp_runtime = now - (pba_struct_p->last_actv_time);
 
+    //compute the runVIC in this activation
+    current_jb_runVIC = now_VIC - (pba_struct_p->jb_actv_VIC);
+    current_sp_runVIC = now_VIC - (pba_struct_p->last_actv_VIC);
+
     //set the total runtime to the sum of the curent runtime 
     //and accumulated previous runtime
     total_runtime = current_jb_runtime + (pba_struct_p->total_jb_runtime);
+
+    //set the total runVIC to the sum of the curent runtime 
+    //and accumulated previous runVIC
+    total_runVIC  = current_jb_runVIC + (pba_struct_p->total_jb_runVIC);
 
     //update the loaddata structure for the next job
     (ss->loaddata)->current_runtime = 0;
@@ -137,13 +146,17 @@ void pba_nextjob(struct SRT_struct *ss)
 
     //write information regarding the completed job into the log
     (ss->log).runtime = total_runtime;
+    (ss->log).runVIC  = total_runVIC;
     (ss->log).last_sp_compt_allocated   = (pba_struct_p->sp_budget);
     (ss->log).last_sp_compt_used_sofar  = current_sp_runtime;
 
-    //reset the total accumulated runtime to 0
+    //reset the total accumulated runtime and runVIC to 0
     pba_struct_p->total_jb_runtime = 0;
-    //set now as the beginning of the new job
+    pba_struct_p->total_jb_runVIC = 0;
+    
+    //set now and now_VIC as the beginning of the new job
     pba_struct_p->jb_actv_time = now;
+    pba_struct_p->jb_actv_VIC = now_VIC;
 }
 
 /*Job boundary according to the second definition of job*/
@@ -153,28 +166,38 @@ void pba_nextjob2(struct SRT_struct *ss)
 
     u64 total_runtime2;
 
+    u64 now_VIC, current_jb_runVIC2;
+
+    u64 total_runVIC2;
+    
     struct pba_struct *pba_struct_p;
 
     pba_struct_p = &(ss->pba_struct);
 
     //obtain the current time
-    now = pbs_clock();
-
+    now = LAMbS_clock();
+    now_VIC = LAMbS_VIC_get();
+    
     //compute the runtime in this activation
     current_jb_runtime2 = now - (pba_struct_p->jb_actv_time2);
-    
+    current_jb_runVIC2 = now - (pba_struct_p->jb_actv_VIC2);
+        
     //set the total runtime to the sum of the curent runtime 
     //and accumulated previous runtime
     total_runtime2 = current_jb_runtime2 + (pba_struct_p->total_jb_runtime2);
+    total_runVIC2 = current_jb_runVIC2 + (pba_struct_p->total_jb_runVIC2);
 
     //write information regarding the completed job into the log
     (ss->log).runtime2 = total_runtime2;
+    (ss->log).runVIC2 = total_runVIC2;
     
     //reset the total accumulated runtime to 0
     pba_struct_p->total_jb_runtime2 = 0;
+    pba_struct_p->total_jb_runVIC2 = 0;
     
     //set now as the beginning of the new job
     pba_struct_p->jb_actv_time2 = now;
+    pba_struct_p->jb_actv_VIC2 = now_VIC;
 }
 
 ////this is called for the purpose of checking if budget has expired
@@ -191,7 +214,7 @@ u64 pba_get_spruntime(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current time
-        now = pbs_clock();
+        now = LAMbS_clock();
         current_runtime = now - pba_struct_p->last_actv_time;
     }
 
@@ -200,6 +223,31 @@ u64 pba_get_spruntime(struct pba_struct *pba_struct_p)
     total_runtime = current_runtime + pba_struct_p->total_sp_runtime;
 
     return total_runtime;
+}
+
+////this is called for the purpose of checking if VIC budget has expired
+//this is also called to determine how much budget remains after a 
+//job completes
+u64 pba_get_sprunVIC(struct pba_struct *pba_struct_p)
+{
+    u64 now_VIC;
+
+    u64 total_runVIC, current_runVIC = 0;
+
+    //if the task is currently running, compute the runtime since
+    //the last activation
+    if(!PBA_IS_SLEEPING(pba_struct_p))
+    {
+        //obtain the current time
+        now_VIC = LAMbS_VIC_get();
+        current_runVIC = now_VIC - pba_struct_p->last_actv_VIC;
+    }
+
+    //set the total runtime to the sum of the curent accumulated 
+    //runtime and previous runtime
+    total_runVIC = current_runVIC + pba_struct_p->total_sp_runVIC;
+
+    return total_runVIC;
 }
 
 //FIXME
@@ -276,6 +324,10 @@ void pba_refresh_budget(struct SRT_struct *SRT_struct_p)
     SRT_struct_p->summary.consumed_budget = 
         SRT_struct_p->summary.consumed_budget + pba_struct_p->total_sp_runtime;
     pba_struct_p->total_sp_runtime = 0;
+    
+    SRT_struct_p->summary.consumed_VIC = 
+        SRT_struct_p->summary.consumed_VIC + pba_struct_p->total_sp_runVIC;
+    pba_struct_p->total_sp_runVIC = 0;
 
     if(pba_struct_p->flags & PBA_THROTTLED)
     {
@@ -357,11 +409,13 @@ void pba_schedin(   struct preempt_notifier *notifier,
                     int cpu)
 {
     u64 now;
+    u64 now_VIC;
 
     struct SRT_struct *SRT_struct_p;
     struct pba_struct *pba_struct_p;
 
-    now = pbs_clock();
+    now = LAMbS_clock();
+    now_VIC = LAMbS_VIC_get();
 
     pba_struct_p = container_of(notifier, struct pba_struct, pin_notifier);
     SRT_struct_p = container_of(pba_struct_p, struct SRT_struct, pba_struct);
@@ -397,6 +451,11 @@ void pba_schedin(   struct preempt_notifier *notifier,
         pba_struct_p->jb_actv_time = now;
         pba_struct_p->jb_actv_time2 = now;
 
+        //set the start-VIC variables to the current VIC
+        pba_struct_p->last_actv_VIC = now_VIC;
+        pba_struct_p->jb_actv_VIC = now_VIC;
+        pba_struct_p->jb_actv_VIC2 = now_VIC;
+
         //reset the SLEEPING flag
         pba_struct_p->flags &= (~PBA_SLEEPING);
 
@@ -418,6 +477,11 @@ void pba_schedout(  struct preempt_notifier *notifier,
     s64 current_runtime2;
     s64 budget_used;
 
+    u64 now_VIC;
+    s64 current_runVIC;
+    s64 current_runVIC2;
+    s64 VICbudget_used;
+    
     pba_struct_p = container_of(notifier, struct pba_struct, pin_notifier);
     SRT_struct_p = container_of(pba_struct_p, struct SRT_struct, pba_struct);
 
@@ -448,16 +512,24 @@ void pba_schedout(  struct preempt_notifier *notifier,
     current_runtime2 = -(pba_struct_p->jb_actv_time2);
     budget_used = -(pba_struct_p->last_actv_time);
 
+    //load the scheduling period activation VIC and job activation VIC
+    current_runVIC = -(pba_struct_p->jb_actv_VIC);
+    current_runVIC2 = -(pba_struct_p->jb_actv_VIC2);
+    VICbudget_used = -(pba_struct_p->last_actv_VIC);    
+
     //allow the next set of operations to be performed atomically
     local_irq_save(irq_flags);
 
         //obtain the current time
-        now = _pbs_clock();
+        now = LAMbS_clock();
 
+        //obtain the current time
+        now_VIC = LAMbS_VIC_get();        
+        
         //compute the runtime in this activation for the job
         current_runtime += now;
         current_runtime2 += now;
-                
+        
         //compute the runtime in this activation (maybe less than job runtime, 
         //because of job transition)
         budget_used += now;
@@ -470,6 +542,23 @@ void pba_schedout(  struct preempt_notifier *notifier,
         //set the total sp runtime to the sum of the runtime in this activation
         //and previous accumulated sp runtimes
         pba_struct_p->total_sp_runtime += budget_used;
+
+        //compute the runVIC in this activation for the job
+        current_runVIC += now_VIC;
+        current_runVIC2 += now_VIC;
+        
+        //compute the runtime in this activation (maybe less than job runtime, 
+        //because of job transition)
+        VICbudget_used += now_VIC;
+
+        //set the total job runtime to the sum of the curent job runtime 
+        //and previous accumulated job runtime
+        pba_struct_p->total_jb_runVIC += current_runVIC;
+        pba_struct_p->total_jb_runVIC2 += current_runVIC2;
+
+        //set the total sp runtime to the sum of the runtime in this activation
+        //and previous accumulated sp runtimes
+        pba_struct_p->total_sp_runVIC += VICbudget_used;
 
         //set the SLEEPING flag
         pba_struct_p->flags |= PBA_SLEEPING;
