@@ -48,7 +48,7 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 };
 
 
-static int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq) {
+int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq) {
     int ret = -EINVAL;
 
     printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy->cpu, freq);
@@ -74,7 +74,7 @@ err:
     mutex_unlock(&setfreq_mutex);
     return ret;
 }
-
+EXPORT_SYMBOL_GPL(LAMbS_cpufreq_set);
 /* from Documentation/cpu-freq/governors.txt
  *
  * If you need other "events" externally of your driver, _only_ use the

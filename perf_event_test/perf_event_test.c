@@ -3,6 +3,8 @@
 #include <linux/ioctl.h>
 #include <linux/perf_event.h>
 #include <asm/unistd.h>
+#include <linux/cpufreq.h>
+
 /*
 long perf_event_open(struct perf_event_attr *hw_event, 
 		    pid_t pid, 
@@ -13,12 +15,18 @@ long perf_event_open(struct perf_event_attr *hw_event,
     ret = sysl(__NR_perf_event_open, hw_event, pid, cpu, group_fd, flags);
     return ret;
 }*/
+
+
 #define MSR_PKG_ENERGY_STATUS 0x611
 #define MSR_PKG_POWER_INFO 0x614
 #define MSR_RAPL_POWER_UNIT 0x606
 
+int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq);
+
 struct perf_event_attr pe_inst;
 struct perf_event *event_inst;
+struct cpufreq_policy *policy;
+
 u64 count_inst;
 u64 c=100000000;
 u64 sum=0;
@@ -42,8 +50,12 @@ static int __init start_count(void) {
     long long i;
     u64 enabled = 0;
     u64 running = 0;
+    int ret;
     unsigned int ecx = MSR_PKG_ENERGY_STATUS;
     long long energy;
+    policy->min = 1200000;
+    policy->max = 2300000;
+    policy->governor = "lambs";
 
     printk(KERN_ALERT "perf_event_test loaded\n");
     /*
@@ -70,6 +82,13 @@ static int __init start_count(void) {
     
     /*printk(KERN_ALERT "currently running on %d", smp_processor_id());*/
     event_inst = perf_event_create_kernel_counter(&pe_inst, 0, NULL, NULL, NULL);
+
+    ret = LAMbS_cpufreq_set(policy, 1800000);
+    if (!ret) {
+        printk(KERN_NOTICE "frequency changed. Hopefully.\n");
+    } else {
+        printk(KERN_NOTICE "error ret value: %d\n",ret);
+    }
 
     sum = c;
     for (i = 0; i < c; i++) {
