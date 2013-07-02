@@ -91,6 +91,8 @@ void allocator_loop(int proc_file)
     long long sp_count = 0;
     unsigned char loop_condition = 1;
 
+    double inst_count, energy_count;
+
     int retval;
     int t, task_count, task_index;
 
@@ -108,6 +110,8 @@ void allocator_loop(int proc_file)
                     "command.");
             break;
         }
+
+        pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
 
         next = &(loaddata_array[loaddata_list_header->first]);
         task_count = loaddata_list_header->SRT_count;
