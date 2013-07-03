@@ -1,4 +1,5 @@
-function [] = plot_C_vs_VIC(result_struct, initial_skip, plot_name, filedir, axis_vals)
+function [] = plot_C_vs_VIC(result_struct, initial_skip, plot_name, filedir, ...
+                            Caxis_vals, VICaxis_vals)
 
     initial_skip = initial_skip + 1;
     
@@ -14,6 +15,7 @@ function [] = plot_C_vs_VIC(result_struct, initial_skip, plot_name, filedir, axi
     plot(t, C);
     xlabel('time (ns)');
     ylabel('Execution Time (ns)');
+    axis(Caxis_vals);
     
     title_h = title(plot_title);
     
@@ -21,7 +23,8 @@ function [] = plot_C_vs_VIC(result_struct, initial_skip, plot_name, filedir, axi
     plot(t, VIC);
     xlabel('time (ns)');
     ylabel('Virtual Instruction Count');
-
+    axis(VICaxis_vals);
+    
     figurename = sprintf('%s/%s.jpg', filedir, plot_name);
     print (fig_h, figurename, '-djpg');
 end
