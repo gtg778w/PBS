@@ -367,7 +367,7 @@ void pbsSRT_close(SRT_handle *handle)
                 log_entry = &(handle->log[i]);
                 relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
                 miss = (relative_LFT > handle->period);
-                fprintf(handle->log_file,   "%lu, %lu, %lu, %lu, %lu"
+                fprintf(handle->log_file,   "%lu, %lu, %lu, %lu, %lu, "
                                             "%lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
                                             (unsigned long)log_entry->runtime,
                                             (unsigned long)log_entry->runtime2,
