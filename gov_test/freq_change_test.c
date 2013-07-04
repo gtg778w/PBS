@@ -17,21 +17,28 @@ long perf_event_open(struct perf_event_attr *hw_event,
 
 int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq);
 
-struct cpufreq_policy *policy;
+struct cpufreq_policy policy;
 
 static int __init change_freq(void) {
-    int ret;
-    policy->min = 1200000;
-    policy->max = 2300000;
-    policy->governor = "lambs";
+    int ret = 0;
+    
+    ret = cpufreq_get_policy(&policy, 0);
+
+    if (!ret) {
+	printk(KERN_NOTICE "Got cpufreq_policy");
+    } else {
+	printk(KERN_NOTICE "ERROR: didn't get cpufreq_policy: %d\n", ret);
+	goto err;
+    }
 
     printk(KERN_ALERT "perf_event_test loaded\n");
 
-    ret = LAMbS_cpufreq_set(policy, 1800000);
+    ret = LAMbS_cpufreq_set(&policy, 1000000);
     if (!ret) {
         printk(KERN_NOTICE "frequency changed. Hopefully.\n");
     } else {
-        printk(KERN_NOTICE "error ret value: %d\n",ret);
+        goto err;
+	printk(KERN_NOTICE "error ret value: %d\n",ret);
     }
 
 /*
@@ -39,8 +46,9 @@ static int __init change_freq(void) {
     pe_power.type 
 */
     /*perf_event_enable(event_inst);*/
-
-    return 0;
+err:
+    
+    return ret;
 }
 
 static void __exit end_count(void) {
