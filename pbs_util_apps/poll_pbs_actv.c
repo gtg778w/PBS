@@ -6,7 +6,7 @@ read
 */
 
 #include "loadgen.h"
-
+#include "pbspoll_helper.h"
 
 /*
     The purpose of this code is to pole sched_pbs_actv at a reasonably low rate
@@ -17,12 +17,9 @@ read
 int main(int argc, char** argv)
 {
     int ret;
-    FILE* file_p;
 
     char *busyloop_enable_flag;
     int busyloop_enable = 0;
-    
-    unsigned char read_buffer[3] = {' ', '\n', '\0'};
     
     unsigned long workload_loopcount;
     int32_t workload_state = 0;
@@ -38,6 +35,7 @@ int main(int argc, char** argv)
         else
         {
             fprintf(stderr, "Usage: %s [-I]\n\t-I: busy loop when idle\n\n", argv[0]);
+            goto error0;
         }
     }
 
@@ -52,42 +50,18 @@ int main(int argc, char** argv)
 
     for(;;)
     {
-        /*
-            open the status file
-        */
-        file_p = fopen("/proc/sched_pbs_actv", "r");
-        if(file_p == NULL)
+        /*Check if the allocator task is active*/
+        ret = pbspoll_check_active();
+        if(ret < 0)
         {
-            perror("Failed to open \"/proc/sched_pbs_actv\"");
-            return -1;
+            fprintf(stderr, "main: pbspoll_check_active failed!\n");
+            goto error0;
         }
 
-        /*
-            read the file
-        */
-        ret = fread(read_buffer, sizeof(char), 2, file_p);
-        if(ret < 2)
+        /*If the allocator task is no longer active, break out of the loop*/
+        if(0 == ret)
         {
-            if(ferror(file_p))
-                perror("fread failed");
-            else
-                fprintf(stderr, "fread read only %i characters!\n", ret);
-
-            fclose(file_p);
-            return -1;    
-        }
-
-        /*
-            close the file
-        */
-        fclose(file_p);
-
-        /*
-            check if the allocator is inactive, then exit
-        */
-        if(read_buffer[0] == '0')
-        {
-            return 0;
+            break;
         }
 
         /*
@@ -103,11 +77,9 @@ int main(int argc, char** argv)
         }
     }
 
-    /*
-        control should never reach here
-        this is a canary
-    */
-    fprintf(stderr, "control reached after the loop!");
+    return 0;
+error0:
+    fprintf(stderr, "%s: main failed!", argv[0]);
     return -1;
 }
 
