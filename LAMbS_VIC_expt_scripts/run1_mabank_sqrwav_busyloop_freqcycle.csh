@@ -47,7 +47,7 @@
 
         set logdir="log/cpufreq_VIC_expt/"${freq}
         
-	mkdir -p ${logdir}
+        mkdir -p ${logdir}
         
         #loop through the repetitions of the experiment
         foreach i (`seq 1 1 ${repetitions}`)

@@ -11,9 +11,6 @@
     # Format for the allocator task log file name:
     # <experiment number>_pbs_ul_allocator_<-a>_<-s>.log
 
-    set freqdir="/sys/devices/system/cpu/cpu0/cpufreq/"
-    set availablefreqs=`cat ${freqdir}/scaling_available_frequencies`    
-
     set sa="12100"
 
     set j1="2700"
@@ -39,25 +36,22 @@
 
     set repetitions=1
 
-    foreach freq (${availablefreqs})
-        echo "userspace" > ${freqdir}"scaling_governor"
-        echo ${freq} > ${freqdir}"scaling_setspeed"
-
-        echo "Frequency set to ${freq}KHz"
+    set logdir="log/cpufreq_VIC_expt/cycling"
+    
+    mkdir -p ${logdir}
+    
+    #loop through the repetitions of the experiment
+    foreach i (`seq 1 1 ${repetitions}`)
+        set logfile1=${logdir}"/"${i}${logfilesuffix1}
         
-        #loop through the repetitions of the experiment
-        foreach i (`seq 1 1 ${repetitions}`)
-            set logfile1="log/"${i}"_cpufreq"${freq}${logfilesuffix1}
+        echo 
+        echo "running "$i"of ${repetitions}"
+        bin/cpufreq_step 104, 2.0, 0 &
+        bin/pbsAllocator -f -S -s ${sa} &
+        sleep 1
+        bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -a ${a1} -L 2 -R ${logfile1} &
+        bin/poll_pbs_actv -I
 
-            echo 
-            echo "running "$i"of ${repetitions}"
-
-            bin/pbsAllocator -f -S -s ${sa} &
-            sleep 1
-            bin/sqrwavSRT -f -j ${j1} -P ${P1} -D ${D1} -d ${d1} -M ${M1} -m ${m1} -N ${N1} -A ${A1} -p ${p1} -b ${b1} -a ${a1} -L 2 -R ${logfile1} &
-            bin/poll_pbs_actv -I
-
-            echo "completed "$i"of ${repetitions}"
-        end
+        echo "completed "$i"of ${repetitions}"
     end
 
