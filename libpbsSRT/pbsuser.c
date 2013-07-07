@@ -184,17 +184,26 @@ close_exit:
     close(procfile);
     handle->procfile = 0;
 free2_exit:
-    free(handle->pu_c0);
-    handle->pu_c0   = NULL;
-    handle->pstd_c0 = NULL;
-    handle->pu_cl   = NULL;
-    handle->pstd_cl = NULL;
+    if(loglevel >= pbsSRT_LOGLEVEL_FULL)
+    {
+        free(handle->pu_c0);
+        handle->pu_c0   = NULL;
+        handle->pstd_c0 = NULL;
+        handle->pu_cl   = NULL;
+        handle->pstd_cl = NULL;
+    }
 free_exit:
-    free(handle->log);
-    handle->log = NULL;
+    if(loglevel >= pbsSRT_LOGLEVEL_FULL)
+    {
+        free(handle->log);
+        handle->log = NULL;
+    }
 lclose_exit:
-    fclose(handle->log_file);
-    handle->log_file = NULL;
+    if(loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
+    {
+        fclose(handle->log_file);
+        handle->log_file = NULL;
+    }
 streight_exit:
     return ret_val;
 }
@@ -384,9 +393,11 @@ void pbsSRT_close(SRT_handle *handle)
                                             (unsigned long)handle->pstd_cl[i]);
             }
 
-            fclose(handle->log_file);
+            free(handle->pu_c0);
             free(handle->log);
         }
+        
+        fclose(handle->log_file);
     }
     
     close(handle->procfile);
