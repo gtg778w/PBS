@@ -31,6 +31,8 @@ int main(int argc, char** argv)
         if(strcmp(busyloop_enable_flag, "-I") == 0)
         {
             busyloop_enable = 1;
+            printf("%s: busyloop enabled!\n", argv[0]);
+            fflush(stdout);
         }
         else
         {
