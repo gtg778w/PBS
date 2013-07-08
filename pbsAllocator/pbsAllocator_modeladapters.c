@@ -164,7 +164,7 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
                     mostat_double,
                     perf_model_coeffs_double,
                     instruction_count);
-        
+    
     /*Adapt the power model*/
     LMSVS_update(   powr_modeladapter_p,
                     mostat_double,
@@ -175,18 +175,18 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
     /*Copy the u64 mostat array into the double mostat array*/
     for(moi = 0; moi < mocount; moi++)
     {
-        /*Since no MO can turn back time or produce energy, none of the model 
+        /*Since no MO can turn back time or produce energy, none of the model
         coefficients can be negative. Saturate below at zero*/
         perf_model_coeffs_double[moi]   = (perf_model_coeffs_double[moi] < 0)?
                                         0: perf_model_coeffs_double[moi];
-        power_model_coeffs_u64[moi]     = (power_model_coeffs_u64[moi] < 0)?
+        power_model_coeffs_double[moi]  = (power_model_coeffs_u64[moi] < 0)?
                                         0: power_model_coeffs_u64[moi];
-                
-        perf_model_coeffs_u64[moi] 
+        
+        perf_model_coeffs_u64[moi]
             = (uint64_t)(   perf_model_coeffs_double[moi] *
                             (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
-                                        
-        power_model_coeffs_u64[moi] 
+        
+        power_model_coeffs_u64[moi]
             = (uint64_t)(   power_model_coeffs_double[moi] *
                             (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
     }
