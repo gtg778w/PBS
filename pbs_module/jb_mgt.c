@@ -51,7 +51,7 @@ struct SRT_struct *allocate_SRT_struct(void)
     }
 
     /*zero out the summary structure*/
-    initable->summary = (struct SRT_summary_s){0, 0, 0, 0};
+    initable->summary = (struct SRT_summary_s){0, 0, 0, 0, 0};;
 
     initable->loaddata = alloc_loaddata();
     if(initable->loaddata == NULL)

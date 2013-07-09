@@ -357,7 +357,7 @@ void pbsSRT_close(SRT_handle *handle)
             perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
         }
         
-        fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, %llu"
+        fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, %llu, "
                                     "0, 0, 0, 0\n\n", getpid(),
                                     (unsigned long long)handle->period,
                                     (unsigned long long)handle->estimated_mean_exectime,
