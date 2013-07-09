@@ -499,7 +499,8 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
     //update the statistics for counting job computation times
     pba_firstjob(SRT_struct);
 
-    //set the release-time in loaddata to the release time of the next job.
+    /*set the release-time in loaddata to the next scheduling period, 
+    the release time of the first job.*/
     (SRT_struct->loaddata)->job_release_time = expires_next.tv64;
 
     //this is the beginning of the job 0

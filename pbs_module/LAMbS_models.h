@@ -16,7 +16,7 @@ For LAMbS_mo_count
 extern struct  page *LAMbS_models_pages;
 
 extern u64  *instruction_retirement_rate;
-extern u64  *energy_consumption_rate;
+extern u64  *instruction_retirement_rate_inv;
 extern u64  *om_schedule;
 
 int     LAMbS_models_alloc_pages(void);

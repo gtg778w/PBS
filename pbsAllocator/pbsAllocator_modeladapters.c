@@ -14,7 +14,7 @@ LMSVS_t *powr_modeladapter_p;
 void    *LAMbS_models_pages = NULL;
 
 uint64_t    *perf_model_coeffs_u64 = NULL;
-uint64_t    *power_model_coeffs_u64 = NULL;
+uint64_t    *perf_model_coeffs_inv_u64 = NULL;
 uint64_t    *operation_mode_schedule_u64 = NULL;
 
 double  *perf_model_coeffs_double = NULL;
@@ -67,9 +67,9 @@ int pbsAllocator_modeladapters_init(int proc_file)
     }
     
     /*Set the u64 model array pointers to corresponding addresses in the mapped pages*/
-    perf_model_coeffs_u64 = (uint64_t*)LAMbS_models_pages;
-    power_model_coeffs_u64= &(perf_model_coeffs_u64[mo_count]);
-    operation_mode_schedule_u64=&(power_model_coeffs_u64[mo_count]);
+    perf_model_coeffs_u64       = (uint64_t*)LAMbS_models_pages;
+    perf_model_coeffs_inv_u64   = &(perf_model_coeffs_u64[mo_count]);
+    operation_mode_schedule_u64 = &(perf_model_coeffs_inv_u64[mo_count]);
     
     return 0;
     
@@ -100,14 +100,14 @@ void pbsAllocator_modeladapters_free(int proc_file)
         
         LAMbS_models_pages      = NULL;
         perf_model_coeffs_u64   = NULL;
-        power_model_coeffs_u64  = NULL;
+        perf_model_coeffs_inv_u64   = NULL;
         operation_mode_schedule_u64 = NULL;
     }
 
     if(NULL != perf_model_coeffs_double)
     {
         free(perf_model_coeffs_double);
-        perf_model_coeffs_double= NULL;
+        perf_model_coeffs_double    = NULL;
         power_model_coeffs_double   = NULL;
         mostat_double = NULL;
     }
@@ -138,9 +138,9 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
     {
         perf_model_coeffs_double[moi] = ((double)perf_model_coeffs_u64[moi]) * 
                         (1.0 / (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT));
-                                        
-        power_model_coeffs_double[moi] = ((double)power_model_coeffs_u64[moi]) *
-                        (1.0 / (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT));
+
+        /*Update the power model based on its previous value*/                                        
+        /*power_model_coeffs_double[moi] = power_model_coeffs_double[moi]*/
                         
         mostat_double[moi] = (double)loaddata_list_header->mostat_last_sp[moi];
     }
@@ -171,7 +171,8 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
                     power_model_coeffs_double,
                     energy_count);
 
-    /*Copy the coefficients back into the memory region*/
+    /*Copy the perf coefficients and perf coefficient inverse back into the memory 
+    region*/
     /*Copy the u64 mostat array into the double mostat array*/
     for(moi = 0; moi < mocount; moi++)
     {
@@ -179,15 +180,13 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
         coefficients can be negative. Saturate below at zero*/
         perf_model_coeffs_double[moi]   = (perf_model_coeffs_double[moi] < 0)?
                                         0: perf_model_coeffs_double[moi];
-        power_model_coeffs_double[moi]  = (power_model_coeffs_u64[moi] < 0)?
-                                        0: power_model_coeffs_u64[moi];
-        
+
         perf_model_coeffs_u64[moi]
             = (uint64_t)(   perf_model_coeffs_double[moi] *
                             (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
         
-        power_model_coeffs_u64[moi]
-            = (uint64_t)(   power_model_coeffs_double[moi] *
+        perf_model_coeffs_inv_u64[moi]
+            = (uint64_t)(   ((double)1.0 / perf_model_coeffs_double[moi]) *
                             (double)((uint64_t)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT) );
     }
 }

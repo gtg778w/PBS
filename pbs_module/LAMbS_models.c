@@ -23,7 +23,7 @@ __free_pages
 struct  page    *LAMbS_models_pages = NULL;
 
 u64 *instruction_retirement_rate;
-u64 *energy_consumption_rate;
+u64 *instruction_retirement_rate_inv;
 u64 *om_schedule;
 
 int LAMbS_models_alloc_pages(void)
@@ -62,8 +62,8 @@ int LAMbS_models_alloc_pages(void)
 
     /*Setup the arrays*/
     instruction_retirement_rate = (u64*)page_address(LAMbS_models_pages);
-    energy_consumption_rate = &(instruction_retirement_rate[LAMbS_mo_count]);
-    om_schedule = &(energy_consumption_rate[LAMbS_mo_count]);
+    instruction_retirement_rate_inv = &(instruction_retirement_rate[LAMbS_mo_count]);
+    om_schedule = &(instruction_retirement_rate_inv[LAMbS_mo_count]);
 
     return 0;
     
@@ -81,7 +81,7 @@ void LAMbS_models_init(void)
     for(moi = 0; moi < LAMbS_mo_count; moi++)
     {
         instruction_retirement_rate[moi] = 0;
-        energy_consumption_rate[moi] = 0;
+        instruction_retirement_rate_inv[moi] = 0;
         om_schedule[moi] = 0;
     }
 }
@@ -98,7 +98,7 @@ void LAMbS_models_free_pages(void)
 {
     /*Set all the array addresses to NULL*/
     instruction_retirement_rate = NULL;
-    energy_consumption_rate = NULL;
+    instruction_retirement_rate_inv = NULL;
     om_schedule = NULL;
     
     /*Free the page frames, set the page frame pointer to NULL*/
