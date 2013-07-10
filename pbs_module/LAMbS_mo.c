@@ -10,9 +10,16 @@
     struct notifier_block
 */
 
+#include <linux/smp.h>
+/*
+    smp_processor_id
+*/ 
+
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
 #include "LAMbS_models.h"
+
+int LAMbS_current_moi;
 
 static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                                     unsigned long val, void *data)
@@ -43,8 +50,12 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
             old_moi = LAMbS_molookup(old_mo);
             new_moi = LAMbS_molookup(new_mo);
             
+            /*Update the current mo*/
+            LAMbS_current_moi = new_moi;
+            
             /*Perform the update operation for the mostat mechanism*/
             LAMbS_mostat_transition_p(old_moi, new_moi);
+            
             break;
         
         case CPUFREQ_RESUMECHANGE:
@@ -74,6 +85,9 @@ static int LAMbS_mo_setup = 0;
 int LAMbS_mo_init(int verbose)
 {
     int ret;
+    
+    unsigned long irq_flags;
+    int cpu, mo;
     
     /*Check that LAMbS_mo has not already been setup*/
     if(0 != LAMbS_mo_setup)
@@ -107,6 +121,27 @@ int LAMbS_mo_init(int verbose)
         printk(KERN_INFO "LAMbS_mo_init: cpufreq_register_notifier failed!\n");
         goto error1;
     }
+
+    /*Get the current MOI and set the last_moi global varriable*/
+    /*Saving and disabling interrupts around critical section*/
+    local_irq_save(irq_flags);
+    
+        /*Get the index of the current mode of operation on this CPU*/
+        cpu = smp_processor_id();
+        mo = cpufreq_quick_get(cpu);
+        LAMbS_current_moi = LAMbS_molookup(mo);
+    
+    /*Restoring interrupts after critical section*/
+    local_irq_restore(irq_flags);    
+
+    printk(KERN_INFO "LAMbS_mo_init: starting moi: %i", LAMbS_current_moi);
+
+    /*Check that a valid moi was returned by the molookup*/
+    if(LAMbS_current_moi < 0)
+    {
+        ret = -1;
+        goto error2;
+    }
     
     /*Setup the mostat mechanism*/
     ret = LAMbS_mostat_init();
@@ -133,6 +168,7 @@ error3:
     LAMbS_mostat_uninit();
     
 error2:
+    LAMbS_current_moi = 0;
     /*Remove the MO(frequency) change notifier*/
     cpufreq_unregister_notifier(    &LAMbS_motrans_notifier_block,
                                     CPUFREQ_TRANSITION_NOTIFIER);

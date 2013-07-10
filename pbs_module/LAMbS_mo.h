@@ -7,4 +7,6 @@
 int LAMbS_mo_init(int verbose);
 void LAMbS_mo_uninit(void);
 
+extern int LAMbS_current_moi;
+
 #endif
