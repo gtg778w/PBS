@@ -46,7 +46,7 @@ u64 pba_get_jbrunVIC(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current VIC
-        now = LAMbS_VIC_get();
+        now = LAMbS_VIC_get(NULL);
         //compute the runVIC in this activation
         current_runVIC = now - pba_struct_p->jb_actv_VIC;
     }
@@ -68,7 +68,7 @@ void pba_firstjob(struct SRT_struct *ss)
 
     //obtain the current time and VIC
     now = LAMbS_clock();
-    now_VIC = LAMbS_VIC_get();
+    now_VIC = LAMbS_VIC_get(NULL);
     
     (ss->loaddata)->current_runtime = 0;
 
@@ -122,7 +122,7 @@ void pba_nextjob(struct SRT_struct *ss)
 
     //obtain the current time and VIC
     now = LAMbS_clock();
-    now_VIC = LAMbS_VIC_get();
+    now_VIC = LAMbS_VIC_get(NULL);
     
     //compute the runtime in this activation
     current_jb_runtime = now - (pba_struct_p->jb_actv_time);
@@ -176,7 +176,7 @@ void pba_nextjob2(struct SRT_struct *ss)
 
     //obtain the current time
     now = LAMbS_clock();
-    now_VIC = LAMbS_VIC_get();
+    now_VIC = LAMbS_VIC_get(NULL);
     
     //compute the runtime in this activation
     current_jb_runtime2 = now - (pba_struct_p->jb_actv_time2);
@@ -239,7 +239,7 @@ u64 pba_get_sprunVIC(struct pba_struct *pba_struct_p)
     if(!PBA_IS_SLEEPING(pba_struct_p))
     {
         //obtain the current time
-        now_VIC = LAMbS_VIC_get();
+        now_VIC = LAMbS_VIC_get(NULL);
         current_runVIC = now_VIC - pba_struct_p->last_actv_VIC;
     }
 
@@ -415,7 +415,7 @@ void pba_schedin(   struct preempt_notifier *notifier,
     struct pba_struct *pba_struct_p;
 
     now = LAMbS_clock();
-    now_VIC = LAMbS_VIC_get();
+    now_VIC = LAMbS_VIC_get(NULL);
 
     pba_struct_p = container_of(notifier, struct pba_struct, pin_notifier);
     SRT_struct_p = container_of(pba_struct_p, struct SRT_struct, pba_struct);
@@ -524,7 +524,7 @@ void pba_schedout(  struct preempt_notifier *notifier,
         now = LAMbS_clock();
 
         //obtain the current time
-        now_VIC = LAMbS_VIC_get();        
+        now_VIC = LAMbS_VIC_get(NULL);        
         
         //compute the runtime in this activation for the job
         current_runtime += now;

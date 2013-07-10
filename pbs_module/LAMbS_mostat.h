@@ -12,6 +12,7 @@ void LAMbS_mostat_uninit(void);
 
 typedef struct LAMbS_mostat_s
 {
+    u64 time_stamp;
     u64 stat[1];
 } LAMbS_mostat_t;
 

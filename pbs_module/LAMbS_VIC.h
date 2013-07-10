@@ -10,7 +10,7 @@
 int setup_sched_clock(void);
 
 int     LAMbS_VIC_init(void);
-u64     LAMbS_VIC_get(void);
+u64     LAMbS_VIC_get(u64* timestamp_p);
 void    LAMbS_VIC_uninit(void);
 
 #endif

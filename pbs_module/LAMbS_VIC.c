@@ -83,7 +83,7 @@ error0:
     return ret;
 }
 
-u64 LAMbS_VIC_get(void)
+u64 LAMbS_VIC_get(u64* timestamp_p)
 {
     unsigned long irq_flags;
     u64 VIC_delta;
@@ -96,6 +96,12 @@ u64 LAMbS_VIC_get(void)
     
         /*Get the time spent in each mode of operation since the last call*/
         LAMbS_mostat_getDelta(VIC_mostat_p, _VIC_mostat_delta);
+        
+        /*Check if a time stamp has to be returned*/
+        if(NULL != timestamp_p)
+        {
+            *timestamp_p = VIC_mostat_p->time_stamp;
+        }
         
         /*Do a dot product between _VIC_mostat_delta and instruction_retirement_rate*/
         for(moi = 0; moi < LAMbS_mo_count; moi++)

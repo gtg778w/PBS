@@ -179,7 +179,9 @@ void LAMbS_mostat_get(LAMbS_mostat_t* mostat)
         /*update _mostat*/
         _LAMbS_mostat_update();
      
-        /*copy the state table*/   
+        /*Copy the time stamp*/
+        mostat->time_stamp = _mostat.last_transition_time;
+        /*Copy the state table*/   
         for(moi = 0; moi < LAMbS_mo_count; moi++)
         {
             mostat->stat[moi] = _mostat.stat[moi];
@@ -200,7 +202,9 @@ void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat)
         /*update _mostat*/
         _LAMbS_mostat_update();
         
-        /*compute the change in the stat table and update the stat table*/
+        /*Copy the time stamp*/
+        mostat->time_stamp = _mostat.last_transition_time;
+        /*Compute the change in the stat table and update the stat table*/
         for(moi = 0; moi < LAMbS_mo_count; moi++)
         {
             delta_mostat[moi] = _mostat.stat[moi] - mostat->stat[moi];
