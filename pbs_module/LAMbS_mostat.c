@@ -36,25 +36,19 @@ struct _mostat_s _mostat;
 
 void LAMbS_mostat_transition_dummy(int old_moi, int new_moi){}
 
+/*It is assumed that the following function is called with interrupts disabled.*/
 void LAMbS_mostat_transition(int old_moi, int new_moi)
 {
-    unsigned long irq_flags;
     u64 now;
     u64 time_since_last_transition;
-    
-    /*Saving and disabling interrupts around critical section*/
-    local_irq_save(irq_flags);    
-    
-        /*Compute time spent in the previous state*/
-        now = sched_clock();
-        time_since_last_transition = now - _mostat.time_stamp;
-        _mostat.time_stamp = now;
         
-        /*Accumulate the time spent in the previous state*/
-        _mostat.stat[old_moi] += time_since_last_transition;
-                
-    /*Restore previous interrupt state after critical section*/
-    local_irq_restore(irq_flags);
+    /*Compute time spent in the previous state*/
+    now = sched_clock();
+    time_since_last_transition = now - _mostat.time_stamp;
+    _mostat.time_stamp = now;
+    
+    /*Accumulate the time spent in the previous state*/
+    _mostat.stat[old_moi] += time_since_last_transition;
 }
 
 void (*LAMbS_mostat_transition_p)(int old_moi, int new_moi) = 

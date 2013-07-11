@@ -9,6 +9,7 @@ and allocator task.
 #include "jb_mgt.h"
 #include "pbsAllocator_cmd.h"
 #include "pbs_mmap.h"
+#include "LAMbS_mo.h"
 
 /**********************************************************************
 
@@ -206,6 +207,9 @@ ssize_t bw_mgt_write(   struct file *filep,
                 //check before going to sleep
                 if(allocator_state == ALLOCATOR_LOOP)
                 {
+                    /*Notify LAMbS_mo that the model coefficients have been updated*/
+                    LAMbS_mo_modelupdate_notify();
+                
                     //assign new bandwidths
                     assign_bandwidths();
 

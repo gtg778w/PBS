@@ -80,8 +80,9 @@ void LAMbS_models_init(void)
     
     for(moi = 0; moi < LAMbS_mo_count; moi++)
     {
-        instruction_retirement_rate[moi] = 0;
-        instruction_retirement_rate_inv[moi] = 0;
+        /*Initialize all instruction retirement rates to 1*/
+        instruction_retirement_rate[moi] = ((u64)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT);
+        instruction_retirement_rate_inv[moi] = ((u64)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT);
         om_schedule[moi] = 0;
     }
 }

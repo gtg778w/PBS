@@ -20,6 +20,8 @@
 #include "LAMbS_models.h"
 
 int LAMbS_current_moi;
+u64 LAMbS_current_instretirementrate;
+u64 LAMbS_current_instretirementrate_inv;
 
 static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                                     unsigned long val, void *data)
@@ -33,7 +35,9 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
     struct cpufreq_freqs *freq = data;
     int old_mo, new_mo;
     int old_moi, new_moi;    
-    
+
+    unsigned long irq_flags;
+        
     /*Check what type of event this notification is for*/
     switch(val)
     {
@@ -49,13 +53,20 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
             new_mo  = freq->new;
             old_moi = LAMbS_molookup(old_mo);
             new_moi = LAMbS_molookup(new_mo);
+
+            local_irq_save(irq_flags);
             
-            /*Update the current mo*/
-            LAMbS_current_moi = new_moi;
-            
-            /*Perform the update operation for the mostat mechanism*/
-            LAMbS_mostat_transition_p(old_moi, new_moi);
-            
+                /*Perform the update operation for the mostat mechanism*/
+                LAMbS_mostat_transition_p(old_moi, new_moi);
+                
+                /*Update the current mo and instruction retirement rate*/
+                LAMbS_current_moi = new_moi;
+                LAMbS_current_instretirementrate = 
+                                        instruction_retirement_rate[new_moi];
+                LAMbS_current_instretirementrate_inv = 
+                                        instruction_retirement_rate_inv[new_moi];
+            local_irq_restore(irq_flags);
+
             break;
         
         case CPUFREQ_RESUMECHANGE:
@@ -79,6 +90,21 @@ static struct notifier_block LAMbS_motrans_notifier_block =
 {
     .notifier_call = LAMbS_motrans_notifier
 };
+
+/*The allocator has updated model coefficients*/
+void    LAMbS_mo_modelupdate_notify(void)
+{
+    unsigned long irq_flags;
+    
+    local_irq_save(irq_flags);
+    
+        LAMbS_current_instretirementrate = 
+                                instruction_retirement_rate[LAMbS_current_moi];
+        LAMbS_current_instretirementrate_inv = 
+                                instruction_retirement_rate_inv[LAMbS_current_moi];
+
+    local_irq_restore(irq_flags);
+}
 
 static int LAMbS_mo_setup = 0;
 

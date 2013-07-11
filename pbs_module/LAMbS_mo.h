@@ -4,8 +4,9 @@
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
 
-int LAMbS_mo_init(int verbose);
-void LAMbS_mo_uninit(void);
+int     LAMbS_mo_init(int verbose);
+void    LAMbS_mo_uninit(void);
+void    LAMbS_mo_modelupdate_notify(void);
 
 extern int LAMbS_current_moi;
 
