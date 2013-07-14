@@ -1,27 +1,40 @@
 #! /bin/csh -x
 
-    #Process input arguments for LOGDIR and PeSoRTADIR
-    if ( $#argv == 0 ) then
-        set LOGDIR="log"
-        set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
-    else if ( $#argv == 1 ) then
-        set LOGDIR=$argv[1]
-        set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
+    #Set default values for optional input arguments
+    set repetitions="1"
+    set LOGDIR="log"
+    set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
+    set BINDIR="bin/"
+
+    #Process input arguments for repetitions BINDIR LOGDIR and PeSoRTADIR
+    if ( $#argv == 1 ) then
+        set repetitions=$argv[1]
     else if ( $#argv == 2 ) then
-        set LOGDIR=$argv[1]
-        set PeSoRTADIR=$argv[2]
-    else
-        echo "Usage:"$argv[0]" [log directory] [PeSoRTA directory]"; exit 1
+        set repetitions=$argv[1]
+        set LOGDIR=$argv[2]
+    else if ( $#argv == 3 ) then
+        set repetitions=$argv[1]
+        set LOGDIR=$argv[2]
+        set PeSoRTADIR=$argv[3]
+    else if ( $#argv == 4 ) then
+        set repetitions=$argv[1]
+        set LOGDIR=$argv[2]
+        set PeSoRTADIR=$argv[3]
+        set BINDIR=$argv[4]
+    else if ( $#argv > 4 ) then
+        echo "Usage:"$argv[0]" [repetitions] [log directory] [PeSoRTA directory] [bin dir]"
+        exit 1
     endif
 
     #The relevant folder for CPU speed settings
     set freqdir="/sys/devices/system/cpu/cpu0/cpufreq/"
     #The list of available frequencies
-    set availablefreqs=`cat ${freqdir}"scaling_available_frequencies"`    
+    set availablefreqs=`cat ${freqdir}"scaling_available_frequencies"`
+    @ freq_i = $#availablefreqs
     #Get the maximum frequency
-    set freq=$availablefreqs[1]
+    set freq=$availablefreqs[${freq_i}]
     echo "Setting CPU frequency to $freq"
-
+    
     #Set the CPU to the maximum speed
     echo "userspace" > ${freqdir}"scaling_governor"
     echo ${freq} > ${freqdir}"scaling_setspeed"
@@ -30,12 +43,12 @@
     set Ta="10416667"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="87000"
+    set sa="28800"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
     set CONFIGNAME="dec.bigbuckbunnyfull.mov"
-    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconsthigh"
+    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstlow"
     mkdir -p ${LOCALLOGDIR}
 
     #The name of the configuration file for the PeSoRTA workload
@@ -43,7 +56,7 @@
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="21313"
+    set J1="6480"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
@@ -53,7 +66,7 @@
     #Alpha values of the workload
     set alpha_array=("1.39533")
     
-    set repetitions="1"
+    @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
     
     #Initialize the experiment ID
     #Each repetition for each value of alpha should have a unique ID
@@ -69,11 +82,12 @@
         foreach rep (`seq 1 1 ${repetitions}`)
         
             #Display progress and estimated duration
-            echo "Experiment "${expt_id}" of 30"
-            echo "Approximate total duration of experiment: 14:48"
+            echo "Experiment: ${LOCALLOGDIR}"
+            echo "Approximate total duration of experiment: ${duration_secs}"
+            echo "Repetition "${expt_id}" of ${repetitions}"
             
             #Names of LOG files
-            set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqconsthigh"${SRT_logfilesuffix}
+            set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqconstlow"${SRT_logfilesuffix}
             set ALC_logfile=${LOCALLOGDIR}"/"${expt_id}${ALC_logfilesuffix}
             
             #Start the allocator            
