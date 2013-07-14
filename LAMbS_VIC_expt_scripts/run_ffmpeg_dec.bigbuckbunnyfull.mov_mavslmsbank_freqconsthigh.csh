@@ -81,8 +81,9 @@
         foreach rep (`seq 1 1 ${repetitions}`)
         
             #Display progress and estimated duration
-            echo "Experiment "${expt_id}" of ${repetitions}"
+            echo "Experiment: ${LOCALLOGDIR}"
             echo "Approximate total duration of experiment: ${duration_secs}"
+            echo "Repetition "${expt_id}" of ${repetitions}"
             
             #Names of LOG files
             set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqconsthigh"${SRT_logfilesuffix}
