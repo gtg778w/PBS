@@ -30,6 +30,7 @@ static DEFINE_PER_CPU(unsigned int, cpu_is_managed); /* governor represents cpu 
 static DEFINE_MUTEX(setfreq_mutex);
 
 struct hrtimer LAMbS_sched_timer;
+u64 min_trans_thresh = 100;
 int moi;
 
 static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
@@ -55,10 +56,9 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 int schedule_next_moi(void) {
     /* number of transitions count? */
     for( ; moi < LAMbS_mo_count; moi++) {
-	if (minimum_transition_threshold < LAMbS_mo_schedule[moi]) {
-	    ret++;
+	if (LAMbS_mo_schedule[moi] > min_trans_thresh) {
 	    LAMbS_frequency_set(LAMbS_mo[moi]);
-	    hrtimer_start(*LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_REL);
+	    hrtimer_start(&LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_MODE_REL);
 	    return 0;
 	}
     }
@@ -147,7 +147,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	mutex_unlock(&setfreq_mutex);
 	
 	/* initialize timer */
-	hrtimer_init(*sched_timer, CLOCK_MONOTONIC);
+	hrtimer_init(*LAMbS_sched_timer, CLOCK_MONOTONIC);
 
 	/* get frequency table */
 	
