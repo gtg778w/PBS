@@ -17,7 +17,8 @@
 #include <linux/cpu.h>
 #include <linux/init.h>
 #include <linux/printk.h>
-
+#include <linux/ktime.h>
+#include <linux/hrtimer.h>
 
 /* I think this is needed by per_cpu and it seems easier just to add it */
 static DEFINE_PER_CPU(unsigned int, cpu_max_freq);
@@ -27,6 +28,10 @@ static DEFINE_PER_CPU(unsigned int, cpu_set_freq);  /* desired frequency */
 static DEFINE_PER_CPU(unsigned int, cpu_is_managed); /* governor represents cpu */
 
 static DEFINE_MUTEX(setfreq_mutex);
+
+struct hrtimer LAMbS_sched_timer;
+int moi;
+u64 minimum_transition_threshold = 1000;
 
 static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 				  void *data) {
@@ -47,11 +52,33 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
     .notifier_call = lambs_cpufreq_notifier
 };
 
+
+int schedule_next_moi(void) {
+    /* number of transitions count? */
+    for( ; moi < LAMbS_mo_count; moi++) {
+	if (minimum_transition_threshold < LAMbS_mo_schedule[moi]) {
+	    ret++;
+	    LAMbS_frequency_set(LAMbS_mo[moi]);
+	    hrtimer_start(*LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_REL);
+    }
 int LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule) {
-    
+    moi = 0;
+    /* need to sanitize LAMbS_mo_schedule, check ordering */
+
+
+    LAMbS_sched_timer.function = &schedule_next_moi();
+
+    schedule_next_moi();
+
 }
 
+
 EXPORT_SYMBOL_GPL(LAMbS_cpufreq_sched);
+
+/* 
+ * Actually do the frequency change. Requires a mutex_lock. Code can eventually be 
+ * trimmed to not log, etc. but for now it will basically reuse the gov_test code.
+ */
 
 int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq) {
     int ret = -EINVAL;
@@ -99,7 +126,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
     switch (event) {
     case CPUFREQ_GOV_START:
 	mutex_lock(&setfreq_mutex);
-	/* one processor only! */
+/* one processor only! */
 	cpufreq_register_notifier(&lambs_cpufreq_notifier_block, 
 				    CPUFREQ_TRANSITION_NOTIFIER);
 	
@@ -113,10 +140,13 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_set_freq, cpu) = policy->cur;
 	
 	printk(KERN_NOTICE "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
-	        cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
-		per_cpu(cpu_cur_freq, cpu));
+	    cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
+	    per_cpu(cpu_cur_freq, cpu));
 	mutex_unlock(&setfreq_mutex);
 	
+	/* initialize timer */
+	hrtimer_init(*sched_timer, CLOCK_MONOTONIC);
+
 	/* get frequency table */
 	
 	break;
