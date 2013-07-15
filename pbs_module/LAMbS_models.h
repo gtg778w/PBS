@@ -34,16 +34,16 @@ static inline u64 LAMBS_models_multiply_shift(u64 opA, u64 opB, unsigned int shi
     /*Extract the hi and lo parts of the operands*/
     /*All operands are unsigned. There should be no sign extension*/
     hiA = (opA >> 32);
-    loA = (opA);
+    loA = (opA) & 0xffffffff;
 
     hiB = (opB >> 32);
-    loB = (opB);
+    loB = (opB) & 0xffffffff;
     
     /*initial multiply operation: 128bit C = 64bit A * 64bit B*/
-    hihiC = hiA * hiB;  /* x (2 ^ 64) */
-    hiloC = hiA * loB;  /* x (2 ^ 32) */
-    lohiC = loA * hiB;  /* x (2 ^ 32) */
-    loloC = (loA * loB);/* x (2 ^ 0)  */
+    hihiC = hiA * hiB;  /* x (2 ^ 64) / (2 ^ shift)*/
+    hiloC = hiA * loB;  /* x (2 ^ 32) / (2 ^ shift)*/
+    lohiC = loA * hiB;  /* x (2 ^ 32) / (2 ^ shift)*/
+    loloC = (loA * loB);/* x (2 ^ 0)  / (2 ^ shift)*/
     
     /*Shift the parts as appropriate according to the shift argument. It is assumed the
     shift argument is less than 64*/
