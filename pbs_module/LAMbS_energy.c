@@ -15,11 +15,14 @@ void LAMbS_energy_uninit(void)
 
 void LAMbS_energy_get(LAMbS_energy_t* ecount)
 {
+    /*The following code is temporarily removed for processors that don't support RAPL*/
+    #if 0
     unsigned long edx = 0, eax = 0;
     unsigned long ecx = MSR_PKG_ENERGY_STATUS;
     __asm__ __volatile__("rdmsr" : "=a"(eax), "=d"(edx) : "c"(ecx));
 
     ecount->cur_energy = eax | (u64)edx << 0x20;
+    #endif
 }
 
 void LAMbS_energy_getDelta(LAMbS_energy_t* ecount, u64 *delta_energy_p)
