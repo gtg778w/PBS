@@ -31,7 +31,6 @@ static DEFINE_MUTEX(setfreq_mutex);
 
 struct hrtimer LAMbS_sched_timer;
 int moi;
-u64 minimum_transition_threshold = 1000;
 
 static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 				  void *data) {
@@ -60,16 +59,19 @@ int schedule_next_moi(void) {
 	    ret++;
 	    LAMbS_frequency_set(LAMbS_mo[moi]);
 	    hrtimer_start(*LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_REL);
+	    return 0;
+	}
     }
+    return 0;
+}
+
 int LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule) {
     moi = 0;
     /* need to sanitize LAMbS_mo_schedule, check ordering */
 
-
     LAMbS_sched_timer.function = &schedule_next_moi();
 
     schedule_next_moi();
-
 }
 
 
