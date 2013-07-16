@@ -196,7 +196,9 @@ ssize_t bw_mgt_write(   struct file *filep,
                 //function "sp_timer_func" this is done to ensure that expires_next 
                 //and expires_prev are initialized by it
                 allocator_state = ALLOCATOR_LOOP;
-		/* LAMbS_cpufreq_schedule(LAMbS_mo_sched);*/:wq
+                
+                /*Execute the operation-mode schedule*/
+        		/* LAMbS_cpufreq_schedule(LAMbS_mo_sched);*/
                 allocator_sleep();
                 
                 //This is the start of the first scheduling period
@@ -213,6 +215,9 @@ ssize_t bw_mgt_write(   struct file *filep,
                     //assign new bandwidths
                     assign_bandwidths();
 
+                    /*Execute the operation-mode schedule*/
+            		/* LAMbS_cpufreq_schedule(LAMbS_mo_sched);*/
+            		
                     //sleep until the next scheduling period
                     allocator_sleep();
 
