@@ -8,8 +8,7 @@ int     LAMbS_mo_init(int verbose);
 void    LAMbS_mo_uninit(void);
 void    LAMbS_mo_modelupdate_notify(void);
 
-extern int  LAMbS_current_moi;
+extern u64  LAMbS_current_moi;
 extern u64  LAMbS_current_instretirementrate;
 extern u64  LAMbS_current_instretirementrate_inv;
-
 #endif

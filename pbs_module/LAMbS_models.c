@@ -30,7 +30,7 @@ int LAMbS_models_alloc_pages(void)
 {
     int ret;
     
-    int LAMbS_models_size = LAMbS_mo_count * 3 * sizeof(u64);
+    int LAMbS_models_size = LAMbS_mo_struct.count * 3 * sizeof(u64);
     
     if(LAMbS_MODELS_SIZE < LAMbS_models_size)
     {
@@ -62,8 +62,8 @@ int LAMbS_models_alloc_pages(void)
 
     /*Setup the arrays*/
     instruction_retirement_rate = (u64*)page_address(LAMbS_models_pages);
-    instruction_retirement_rate_inv = &(instruction_retirement_rate[LAMbS_mo_count]);
-    om_schedule = &(instruction_retirement_rate_inv[LAMbS_mo_count]);
+    instruction_retirement_rate_inv = &(instruction_retirement_rate[LAMbS_mo_struct.count]);
+    om_schedule = &(instruction_retirement_rate_inv[LAMbS_mo_struct.count]);
 
     return 0;
     
@@ -78,7 +78,7 @@ void LAMbS_models_init(void)
 {
     int moi;
     
-    for(moi = 0; moi < LAMbS_mo_count; moi++)
+    for(moi = 0; moi < LAMbS_mo_struct.count; moi++)
     {
         /*Initialize all instruction retirement rates to 1*/
         instruction_retirement_rate[moi] = ((u64)1 << LAMbS_MODELS_FIXEDPOINT_SHIFT);

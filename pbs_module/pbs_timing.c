@@ -12,11 +12,6 @@
     measurement-related code for energy, icount, mostat
 */
 
-#include "LAMbS_molookup.h"
-/*
-    LAMbS_mo_count
-*/
-
 #include "LAMbS_models.h"
 /*
     LAMbS_models_init

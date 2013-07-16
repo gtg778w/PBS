@@ -13,7 +13,7 @@
 
 #include "LAMbS_molookup.h"
 /*
-    LAMbS_mo_count;
+    LAMbS_mo_struct;
 */
 #include "LAMbS_mostat.h"
 #include "LAMbS_models.h"
@@ -60,7 +60,7 @@ int LAMbS_VIC_init(void)
         goto error0;
     }
     
-    _VIC_mostat_delta = kmalloc((sizeof(u64) * LAMbS_mo_count), GFP_KERNEL);
+    _VIC_mostat_delta = kmalloc((sizeof(u64) * LAMbS_mo_struct.count), GFP_KERNEL);
     if(NULL == _VIC_mostat_delta)
     {
         printk(KERN_INFO "LAMbS_VIC_init: kmalloc failed for _VIC_mostat_delta");
@@ -104,7 +104,7 @@ u64 LAMbS_VIC_get(u64* timestamp_p)
         }
         
         /*Do a dot product between _VIC_mostat_delta and instruction_retirement_rate*/
-        for(moi = 0; moi < LAMbS_mo_count; moi++)
+        for(moi = 0; moi < LAMbS_mo_struct.count; moi++)
         {
             /*This multiplication operation is expensive, so only do it if necessary*/
             /*In most cases, there should only be non-zero delta_mostat values in one or 

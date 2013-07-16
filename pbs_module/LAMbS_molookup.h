@@ -6,17 +6,26 @@
 
 #define LAMbS_molookup_hashfunc(x) (x % LAMbS_molookup_HASHMOD) 
 
-/*The actual MO table*/
-extern int LAMbS_mo[LAMbS_molookup_HASHSIZE];
-
-/*The size of the MO table*/
-extern int LAMbS_mo_count;
-
 /*The maximum number of modes of operation that can be handled*/
 #define LAMbS_mo_MAXCOUNT (LAMbS_molookup_HASHSIZE)
 
-/*Maps hash values to indices in the MO table*/
-extern int LAMbS_molookup_hashtable[LAMbS_molookup_HASHSIZE];
+struct LAMbS_mo_struct
+{
+    /*The number of modes of operation in the system*/
+    int count;
+    
+    /*The array of frequencies supported by the system*/
+    int table[LAMbS_mo_MAXCOUNT];
+    
+    /*hash table for reverse lookup to go from frequency to array index*/
+    int hashtable[LAMbS_mo_MAXCOUNT];
+
+    /*The index indicated by cpufreq_frequency_get_table for the
+    corresponding mo value in the table field*/
+    int _internal_indices[LAMbS_mo_MAXCOUNT];
+};
+
+extern struct LAMbS_mo_struct LAMbS_mo_struct;
 
 /*convert an mo identifier like frequency to an index*/
 /*The following function has been optimized for the
@@ -32,8 +41,8 @@ static inline int LAMbS_molookup(int mo)
     /*Find the desired MO*/
     do
     {
-        moi = LAMbS_molookup_hashtable[hashtable_i];
-        found_mo = LAMbS_mo[moi];
+        moi = LAMbS_mo_struct.hashtable[hashtable_i];
+        found_mo = LAMbS_mo_struct.table[moi];
         
         /*If there is a collision and the desired MO is not found*/
         if(found_mo != mo)

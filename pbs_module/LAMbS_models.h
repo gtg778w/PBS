@@ -5,12 +5,12 @@
 
 #include "pbsAllocator_cmd.h"
 /*
-For the page size and order
+    page size and order
 */
 
 #include "LAMbS_molookup.h"
 /*
-For LAMbS_mo_count
+    LAMbS_mo_struct
 */
 
 extern struct  page *LAMbS_models_pages;

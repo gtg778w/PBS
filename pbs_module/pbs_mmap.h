@@ -33,7 +33,7 @@ loaddata structures
 
 #include "LAMbS_molookup.h"
 /*
-LAMbS_mo_count
+LAMbS_mo_struct
 */
 
 #include "LAMbS_models.h"
@@ -43,9 +43,9 @@ LAMbS_models_pages
 
 /*the loaddata header size is defined as a macro to allow for the tail-grown array 
 inside the structure. This macro is only available to the kernel, because it makes
-use of the LAMbS_mo_count global variable*/
+use of the LAMbS_mo_struct global variable*/
 #define sizeof_loaddata_header()    (   sizeof(loaddata_list_header_t) +    \
-                                        (sizeof(u64)*(LAMbS_mo_count-1)))
+                                        (sizeof(u64)*((LAMbS_mo_struct.count)-1)))
 
 extern SRT_loaddata_t   *loaddata_array;
 extern u64              *allocation_array;

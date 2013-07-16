@@ -160,11 +160,10 @@ int LAMbS_mo_init(int verbose)
     /*Restoring interrupts after critical section*/
     local_irq_restore(irq_flags);    
 
-    printk(KERN_INFO "LAMbS_mo_init: starting moi: %i", LAMbS_current_moi);
-
     /*Check that a valid moi was returned by the molookup*/
     if(LAMbS_current_moi < 0)
     {
+        printk(KERN_INFO "LAMbS_mo_init: starting moi: %i", LAMbS_current_moi);
         ret = -1;
         goto error2;
     }

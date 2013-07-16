@@ -50,9 +50,9 @@ int init_loaddataList(void)
     loaddata_list_header->energy_total = 0;
     
     /*Set the number of modes of operation to the appropriate value*/
-    loaddata_list_header->mo_count = LAMbS_mo_count;
+    loaddata_list_header->mo_count = LAMbS_mo_struct.count;
     /*Set the time spent in each mode of operation to 0*/
-    for(moi = 0; moi < LAMbS_mo_count; moi++)
+    for(moi = 0; moi < LAMbS_mo_struct.count; moi++)
     {
         loaddata_list_header->mostat_last_sp[moi] = 0;
     }
