@@ -1,4 +1,4 @@
-SRCS	= gov_test.c freq_change_test.c
+SRCS	= gov_test.c freq_change_test.c LAMbS_governor.c
 OBJS	= $(SRCS:.c=.o)
 
 obj-m += $(OBJS)
