@@ -87,7 +87,7 @@ u64 LAMbS_VIC_get(u64* timestamp_p)
 {
     unsigned long irq_flags;
     u64 VIC_delta;
-    int moi;
+    s32 moi;
     
     VIC_delta = 0;
     

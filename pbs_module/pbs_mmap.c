@@ -15,7 +15,7 @@ struct mutex    freelist_lock;
 
 int init_loaddataList(void)
 {
-    int moi;
+    s32 moi;
     int ret;
     
     unsigned long loaddata_headersize;

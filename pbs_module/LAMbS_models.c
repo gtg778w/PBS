@@ -76,7 +76,7 @@ error0:
 
 void LAMbS_models_init(void)
 {
-    int moi;
+    s32 moi;
     
     for(moi = 0; moi < LAMbS_mo_struct.count; moi++)
     {

@@ -19,7 +19,7 @@
 #include "LAMbS_mostat.h"
 #include "LAMbS_models.h"
 
-int LAMbS_current_moi;
+s32 LAMbS_current_moi;
 u64 LAMbS_current_instretirementrate;
 u64 LAMbS_current_instretirementrate_inv;
 
@@ -33,8 +33,8 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
     next frequency, the cpu where the transition takes place,
     and flags related to the driver*/
     struct cpufreq_freqs *freq = data;
-    int old_mo, new_mo;
-    int old_moi, new_moi;    
+    u32 old_mo, new_mo;
+    s32 old_moi, new_moi;    
 
     unsigned long irq_flags;
         

@@ -5,7 +5,7 @@
 
 #include "LAMbS_molookup.h"
 
-extern void (*LAMbS_mostat_transition_p)(int old_moi, int new_moi);
+extern void (*LAMbS_mostat_transition_p)(s32 old_moi, s32 new_moi);
 
 int LAMbS_mostat_init(void);
 void LAMbS_mostat_uninit(void);

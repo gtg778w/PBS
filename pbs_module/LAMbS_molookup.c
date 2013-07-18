@@ -23,10 +23,11 @@ struct LAMbS_mo_struct LAMbS_mo_struct;
 static void moswap(void *a, void *b, int size)
 {
     int a_i, b_i;
-    int temp_mo, temp_moi;
+    u32 temp_mo;
+    u16 temp_moii;
     /*Some pointer arithmatic to get array indices*/
-    a_i = ((int*)a) - LAMbS_mo_struct.table;
-    b_i = ((int*)b) - LAMbS_mo_struct.table;
+    a_i = ((u32*)a) - LAMbS_mo_struct.table;
+    b_i = ((u32*)b) - LAMbS_mo_struct.table;
     
     /*Swap the frequencies*/
     temp_mo                     = LAMbS_mo_struct.table[a_i];
@@ -34,14 +35,14 @@ static void moswap(void *a, void *b, int size)
     LAMbS_mo_struct.table[b_i]  = temp_mo;
 
     /*Swap the frequency indices*/    
-    temp_moi                                = LAMbS_mo_struct._internal_indices[a_i];
+    temp_moii                               = LAMbS_mo_struct._internal_indices[a_i];
     LAMbS_mo_struct._internal_indices[a_i]  = LAMbS_mo_struct._internal_indices[b_i];
-    LAMbS_mo_struct._internal_indices[b_i]  = temp_moi;
+    LAMbS_mo_struct._internal_indices[b_i]  = temp_moii;
 }
 
 static int mocmp(const void *a, const void *b)
 {
-    int cmp = *((int*)a) - *((int*)b);
+    int cmp = *((u32*)a) - *((u32*)b);
     cmp =   (cmp > 0)? 1 :
             ((cmp < 0)? -1: 0);
     return cmp;
@@ -50,10 +51,10 @@ static int mocmp(const void *a, const void *b)
 /*Initialize the tables used by the function LAMbS_motoi*/
 int LAMbS_molookup_init(void)
 {
-    int freqtable_i;
+    s32 freqtable_i;
 
-    int hashtable_i;
-    int hashtable_i_start;
+    s32 hashtable_i;
+    s32 hashtable_i_start;
 
     struct cpufreq_frequency_table *freq_table;
 
@@ -85,7 +86,7 @@ int LAMbS_molookup_init(void)
     
     /*Sort the LAMbS_mo table*/
     sort(   LAMbS_mo_struct.table, 
-            LAMbS_mo_struct.count, sizeof(int), 
+            LAMbS_mo_struct.count, sizeof(u32), 
             mocmp, moswap);
 
     /*Initialize the hash table with -1s (an invalid MO table index)*/
@@ -97,7 +98,7 @@ int LAMbS_molookup_init(void)
     /*Compute and populate the hashtable*/
     for(    freqtable_i = 0; 
             freqtable_i < LAMbS_mo_struct.count; 
-            freqtable_i++) 
+            freqtable_i++)
     {
         /*Hash the MO to get a hash table index*/
         hashtable_i = LAMbS_molookup_hashfunc(LAMbS_mo_struct.table[freqtable_i]);
@@ -144,7 +145,9 @@ void LAMbS_molookup_uninit(void)
 int LAMbS_molookup_test(int verbose)
 {
     int ret = 0;
-    int moi, mo, mo_lookup;
+    u32 mo;
+    s32 mo_lookup;
+    s32 moi;
     
     if(0 != verbose)
     {

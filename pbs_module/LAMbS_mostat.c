@@ -34,10 +34,10 @@ struct _mostat_s
 
 struct _mostat_s _mostat;
 
-void LAMbS_mostat_transition_dummy(int old_moi, int new_moi){}
+void LAMbS_mostat_transition_dummy(s32 old_moi, s32 new_moi){}
 
 /*It is assumed that the following function is called with interrupts disabled.*/
-void LAMbS_mostat_transition(int old_moi, int new_moi)
+void LAMbS_mostat_transition(s32 old_moi, s32 new_moi)
 {
     u64 now;
     u64 time_since_last_transition;
@@ -51,7 +51,7 @@ void LAMbS_mostat_transition(int old_moi, int new_moi)
     _mostat.stat[old_moi] += time_since_last_transition;
 }
 
-void (*LAMbS_mostat_transition_p)(int old_moi, int new_moi) = 
+void (*LAMbS_mostat_transition_p)(s32 old_moi, s32 new_moi) = 
     LAMbS_mostat_transition_dummy;
 
 /*This macro should be called with interrupts disabled to prevent the value of 
@@ -72,7 +72,7 @@ setup before this function is called*/
 int LAMbS_mostat_init(void)
 {
     int ret = 0;
-    int moi;
+    s32 moi;
     
     unsigned long irq_flags;
     
@@ -160,7 +160,7 @@ void LAMbS_mostat_get(LAMbS_mostat_t* mostat)
 void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat)
 {
     unsigned long irq_flags;
-    int moi;
+    s32 moi;
     
     /*disable interrupts for critical section*/
     local_irq_save(irq_flags);

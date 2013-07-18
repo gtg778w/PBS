@@ -15,7 +15,7 @@ struct LAMbS_mo_struct
     u32 table[LAMbS_mo_MAXCOUNT];
 
     /*hash table for reverse lookup to go from frequency to array index*/
-    u32 hashtable[LAMbS_mo_MAXCOUNT];
+    s32 hashtable[LAMbS_mo_MAXCOUNT];
 
     /*The number of modes of operation in the system*/
     u16 count;
@@ -31,12 +31,12 @@ extern struct LAMbS_mo_struct LAMbS_mo_struct;
 /*The following function has been optimized for the
 common case where the desired MO exists in the MO table
 and there is no collision in the hash table*/
-static inline int LAMbS_molookup(int mo)
+static inline s32 LAMbS_molookup(u32 mo)
 {
-    int found_mo;
-    int moi;
-    int hashtable_start_i = LAMbS_molookup_hashfunc(mo);
-    int hashtable_i = hashtable_start_i;
+    u32 found_mo;
+    s32 moi;
+    s32 hashtable_start_i = LAMbS_molookup_hashfunc(mo);
+    s32 hashtable_i = hashtable_start_i;
     
     /*Find the desired MO*/
     do
