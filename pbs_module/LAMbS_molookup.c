@@ -20,6 +20,8 @@
 
 struct LAMbS_mo_struct LAMbS_mo_struct;
 
+EXPORT_SYMBOL(LAMbS_mo_struct);
+
 static void moswap(void *a, void *b, int size)
 {
     int a_i, b_i;
