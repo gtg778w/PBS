@@ -1,5 +1,10 @@
 #include <linux/kernel.h>
 
+#include <linux/module.h>
+/*
+EXPORT_SYMBOL
+*/
+
 #include <linux/sort.h>
 /*
     sort
