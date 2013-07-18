@@ -11,18 +11,18 @@
 
 struct LAMbS_mo_struct
 {
-    /*The number of modes of operation in the system*/
-    int count;
-    
     /*The array of frequencies supported by the system*/
-    int table[LAMbS_mo_MAXCOUNT];
-    
+    u32 table[LAMbS_mo_MAXCOUNT];
+
     /*hash table for reverse lookup to go from frequency to array index*/
-    int hashtable[LAMbS_mo_MAXCOUNT];
+    u32 hashtable[LAMbS_mo_MAXCOUNT];
+
+    /*The number of modes of operation in the system*/
+    u16 count;
 
     /*The index indicated by cpufreq_frequency_get_table for the
     corresponding mo value in the table field*/
-    int _internal_indices[LAMbS_mo_MAXCOUNT];
+    u16 _internal_indices[LAMbS_mo_MAXCOUNT];
 };
 
 extern struct LAMbS_mo_struct LAMbS_mo_struct;
