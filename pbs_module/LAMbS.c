@@ -13,6 +13,7 @@
 #include "LAMbS_energy.h"
 #include "LAMbS_mo.h"
 #include "LAMbS_VIC.h"
+#include "LAMbS_VICtimer.h"
 
 /**********************************************************************
 
@@ -131,8 +132,17 @@ int LAMbS_init(void)
         goto error4;
     }
     
-    return 0;
+    ret = LAMbS_VICtimer_mechanism_init();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "LAMbS_init: LAMbS_VICtimer_mechanism_init failed");
+        goto error5;
+    }
     
+    return 0;
+
+error5:
+    LAMbS_measurements_free();
 error4:
     LAMbS_VIC_uninit();
 error3:
@@ -147,6 +157,8 @@ error0:
 
 void LAMbS_uninit(void)
 {
+    LAMbS_VICtimer_mechanism_clear();
+
     LAMbS_measurements_free();
 
     LAMbS_VIC_uninit();
