@@ -1,6 +1,8 @@
 #ifndef LAMBS_MOLOOKUP_HEADER
 #define LAMBS_MOLOOKUP_HEADER
 
+#include <linux/kernel.h>
+
 #define LAMbS_molookup_HASHMOD (257)
 #define LAMbS_molookup_HASHSIZE LAMbS_molookup_HASHMOD
 
