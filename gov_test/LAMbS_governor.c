@@ -11,14 +11,30 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/smp.h>
+
+/* ? */
+
 #include <linux/cpufreq.h>
 #include <linux/mutex.h>
+
+/* mutex for frequency changing */
+
 #include <linux/types.h>
 #include <linux/cpu.h>
 #include <linux/init.h>
 #include <linux/printk.h>
 #include <linux/ktime.h>
+
+/* ktime_t casting (64b) */
+
 #include <linux/hrtimer.h>
+
+/* struct hrtimer
+ * hrtimer_init()
+ * hrtimer_start()
+ */
+
+#define MIN_THRESH 100
 
 /* I think this is needed by per_cpu and it seems easier just to add it */
 static DEFINE_PER_CPU(unsigned int, cpu_max_freq);
@@ -30,7 +46,8 @@ static DEFINE_PER_CPU(unsigned int, cpu_is_managed); /* governor represents cpu 
 static DEFINE_MUTEX(setfreq_mutex);
 
 struct hrtimer LAMbS_sched_timer;
-u64 min_trans_thresh = 100;
+struct cpufreq_policy *policy_p;
+u64 min_trans_thresh = MIN_THRESH;
 int moi;
 
 static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
@@ -55,9 +72,9 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 
 int schedule_next_moi(void) {
     /* number of transitions count? */
-    for( ; moi < LAMbS_mo_count; moi++) {
+    for( ; moi < LAMbS_mo_struct.count; moi++) {
 	if (LAMbS_mo_schedule[moi] > min_trans_thresh) {
-	    LAMbS_frequency_set(LAMbS_mo[moi]);
+	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
 	    hrtimer_start(&LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_MODE_REL);
 	    return 0;
 	}
@@ -67,8 +84,8 @@ int schedule_next_moi(void) {
 
 int LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule) {
     moi = 0;
-    /* need to sanitize LAMbS_mo_schedule, check ordering */
 
+    /* setup function called when timer expires */
     LAMbS_sched_timer.function = &schedule_next_moi();
 
     schedule_next_moi();
@@ -82,27 +99,30 @@ EXPORT_SYMBOL_GPL(LAMbS_cpufreq_sched);
  * trimmed to not log, etc. but for now it will basically reuse the gov_test code.
  */
 
-int LAMbS_cpufreq_set(struct cpufreq_policy *policy, unsigned int freq) {
+int LAMbS_freq_set(u32 freq) {
     int ret = -EINVAL;
 
-    printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy->cpu, freq);
+    printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy_p->cpu, freq);
 
     mutex_lock(&setfreq_mutex);
-    if (!per_cpu(cpu_is_managed, policy->cpu)) {
-	printk(KERN_NOTICE "freq not set: cpu_is_managed for cpu %u = false\n", policy->cpu);
+    if (!per_cpu(cpu_is_managed, policy_p->cpu)) {
+	printk(KERN_NOTICE "freq not set: cpu_is_managed for cpu %u = false\n", policy_p->cpu);
 	goto err;
     }
 
-    per_cpu(cpu_set_freq, policy->cpu) = freq;
+    per_cpu(cpu_set_freq, policy_p->cpu) = freq;
 
+    /* pretty sure this isn't needed. __cpufreq_driver_target does this 
+    
     if (freq < per_cpu(cpu_min_freq, policy->cpu)) {
 	freq = per_cpu(cpu_min_freq, policy->cpu);
     }
     if (freq > per_cpu(cpu_max_freq, policy->cpu)) {
 	freq = per_cpu(cpu_max_freq, policy->cpu);
     }
+    */
 
-    ret = __cpufreq_driver_target(policy, freq, CPUFREQ_RELATION_L);
+    ret = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
 
 err:
     mutex_unlock(&setfreq_mutex);
@@ -123,7 +143,6 @@ EXPORT_SYMBOL_GPL(LAMbS_cpufreq_set);
 static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int event) {
     unsigned int cpu = policy->cpu;
     int rc = 0;
-	
     
     switch (event) {
     case CPUFREQ_GOV_START:
@@ -146,10 +165,11 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	    per_cpu(cpu_cur_freq, cpu));
 	mutex_unlock(&setfreq_mutex);
 	
+	/* keep local pointer for frequency setting */
+	policy_p = policy;
+
 	/* initialize timer */
 	hrtimer_init(*LAMbS_sched_timer, CLOCK_MONOTONIC);
-
-	/* get frequency table */
 	
 	break;
     case CPUFREQ_GOV_STOP:
