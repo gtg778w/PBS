@@ -219,6 +219,19 @@ void free_log_memory(void)
         {
             printf("}\n");
         }
+        /*printf("\tperf_inv\t{ ");
+        for(moi = 0; moi < (mocount-1); moi++)
+        {
+            printf( "%e, ", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
+        }
+        if(mocount > 0)
+        {
+            printf( "%e }\n", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
+        }
+        else
+        {
+            printf("}\n");
+        }*/
         printf("\tpower\t{ ");
         for(moi = 0; moi < (mocount-1); moi++)
         {

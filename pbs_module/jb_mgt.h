@@ -73,6 +73,11 @@ Definitions that have to be shared with SRT tasks
 e.g. job_mgt_cmd_t
 */
 
+#include "LAMbS_VICtimer.h"
+/*
+Implementation of VICtimers needed by the budget code
+*/
+
 /*For each time-related variable, a VIC-based variable has been created*/
 struct pba_struct
 {

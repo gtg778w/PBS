@@ -96,6 +96,19 @@ void    LAMbS_mo_modelupdate_notify(void)
 {
     unsigned long irq_flags;
     
+    {
+        static int flag = 1;
+        
+        if(flag)
+        {
+            flag = 0;
+            
+            printk(KERN_INFO "LAMbS_mo_modelupdate_notify called: %lu, %lu",
+                            (unsigned long)instruction_retirement_rate[LAMbS_current_moi],
+                            (unsigned long)instruction_retirement_rate_inv[LAMbS_current_moi]);
+        }
+    }
+    
     local_irq_save(irq_flags);
     
         LAMbS_current_instretirementrate = 
@@ -156,7 +169,7 @@ int LAMbS_mo_init(int verbose)
         cpu = smp_processor_id();
         mo = cpufreq_quick_get(cpu);
         LAMbS_current_moi = LAMbS_molookup(mo);
-    
+
     /*Restoring interrupts after critical section*/
     local_irq_restore(irq_flags);    
 

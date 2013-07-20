@@ -13,9 +13,9 @@ LMSVS_t *powr_modeladapter_p;
 
 void    *LAMbS_models_pages = NULL;
 
-uint64_t    *perf_model_coeffs_u64 = NULL;
-uint64_t    *perf_model_coeffs_inv_u64 = NULL;
-uint64_t    *operation_mode_schedule_u64 = NULL;
+volatile uint64_t    *perf_model_coeffs_u64 = NULL;
+volatile uint64_t    *perf_model_coeffs_inv_u64 = NULL;
+volatile uint64_t    *operation_mode_schedule_u64 = NULL;
 
 double  *perf_model_coeffs_double = NULL;
 double  *power_model_coeffs_double = NULL;

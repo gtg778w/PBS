@@ -284,6 +284,27 @@ void assign_bandwidths(void)
         //move to the next task in the list
         pos = pos->next;
     }
+    
+    //FIXME
+    {
+        static int i = 0;
+        int ret;
+        
+        if(i < 10)
+        {
+            i++;
+        }
+        else if( i == 10)
+        {
+            ret = LAMbS_VICtimer_start_test(10000, 4000000);
+            if(ret == -1)
+            {
+                printk(KERN_INFO "assign_bandwidths: LAMbS_VICtimer_start_test failed!");
+            }
+            
+            i++;
+        }
+    }
 }
 
 
@@ -397,6 +418,10 @@ int stop_pbs_timing(char not_allocator)
     {
         printk(KERN_INFO "Allocator detected exceeding predicted maximum usage"
                 " %i times!\n", allocator_overrun_count);
+    }
+
+    {
+        LAMbS_VICtimer_stop_test();
     }
 
     return 0;

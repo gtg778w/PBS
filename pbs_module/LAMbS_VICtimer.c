@@ -403,6 +403,14 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         target or overshot it*/
         if( ns_to_target < LAMbS_VICTIMER_THRESHOLD )
         {
+            printk(KERN_INFO    "LAMbS_VICtimer_start: target_VIC    = %lu",
+                                (unsigned long)target_VIC);
+            printk(KERN_INFO    "LAMbS_VICtimer_start: VIC_to_target = %lu",
+                                (unsigned long)VIC_to_target);
+            printk(KERN_INFO    "LAMbS_VICtimer_start: ns_per_int = %lu",
+                                (unsigned long)LAMbS_current_instretirementrate_inv);
+            printk(KERN_INFO    "LAMbS_VICtimer_start: ns_to_target =  %lu",
+                                (unsigned long)ns_to_target);
             ret = 1;
             goto exit1;
         }
@@ -608,6 +616,9 @@ int LAMbS_VICtimer_start_test(int test_length, u64 VIC_interval)
         goto error1;
     }
     
+    printk(KERN_INFO    "LAMbS_VICtimer_start_test: VIC = %lu",
+                        (long unsigned)LAMbS_VIC_get(NULL));
+    
     test_started = 1;
     
     return 0;
@@ -653,18 +664,22 @@ int LAMbS_VICtimer_stop_test(void)
         max_error = (error > max_error)? error : max_error;
         min_error = (error < min_error)? error : min_error;
         
-        printk(KERN_INFO    "\t\t%lu,\t%lu,\t%lu", 
+        printk(KERN_INFO    "\t\t%lu,\t%lu,\t%li", 
                             (unsigned long)VICtimer_test_target_VIC[i],
                             (unsigned long)VICtimer_test_callback_VIC[i],
-                            (unsigned long)error);
+                            (long)error);
     }
     printk(KERN_INFO "}");
     
     /*Print the maximum and minimum callback_VIC error*/
     printk(KERN_INFO    "LAMbS_VICtimer_stop_test: max_error = %lu", 
-                        (unsigned long)max_error);
+                        (long)max_error);
     printk(KERN_INFO    "LAMbS_VICtimer_stop_test: min_error = %lu", 
-                        (unsigned long)min_error);
+                        (long)min_error);
+    
+    printk(KERN_INFO    "LAMbS_VICtimer_stop_test: VIC = %lu",
+                        (long unsigned)LAMbS_VIC_get(NULL));
+    
     
     /*Free the memory allocated for the test*/    
     kfree(VICtimer_test_target_VIC);
