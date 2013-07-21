@@ -76,8 +76,6 @@ int bw_mgt_mmap(struct file *file, struct vm_area_struct *vmas)
     }
     else
     {
-        //FIXME
-        //printk(KERN_INFO "Process %d calling mmap while allocator state = %s!\n", current->pid, a_state_strings[allocator_state]);
         printk(KERN_INFO "Process %d calling mmap while allocator state = %i!\n", current->pid, allocator_state);
         ret = -EINVAL;
     }
