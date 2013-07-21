@@ -18,6 +18,7 @@
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
 #include "LAMbS_models.h"
+#include "LAMbS_VICtimer.h"
 
 s32 LAMbS_current_moi;
 u64 LAMbS_current_instretirementrate;
@@ -65,6 +66,8 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                                         instruction_retirement_rate[new_moi];
                 LAMbS_current_instretirementrate_inv = 
                                         instruction_retirement_rate_inv[new_moi];
+                                        
+                LAMbS_VICtimer_motransition(old_moi, new_moi);
             local_irq_restore(irq_flags);
 
             break;
@@ -96,25 +99,14 @@ void    LAMbS_mo_modelupdate_notify(void)
 {
     unsigned long irq_flags;
     
-    {
-        static int flag = 1;
-        
-        if(flag)
-        {
-            flag = 0;
-            
-            printk(KERN_INFO "LAMbS_mo_modelupdate_notify called: %lu, %lu",
-                            (unsigned long)instruction_retirement_rate[LAMbS_current_moi],
-                            (unsigned long)instruction_retirement_rate_inv[LAMbS_current_moi]);
-        }
-    }
-    
     local_irq_save(irq_flags);
     
         LAMbS_current_instretirementrate = 
                                 instruction_retirement_rate[LAMbS_current_moi];
         LAMbS_current_instretirementrate_inv = 
                                 instruction_retirement_rate_inv[LAMbS_current_moi];
+
+        LAMbS_VICtimer_motransition(LAMbS_current_moi, LAMbS_current_moi);
 
     local_irq_restore(irq_flags);
 }
