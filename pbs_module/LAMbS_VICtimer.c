@@ -402,18 +402,6 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         target or overshot it*/
         if( ns_to_target < LAMbS_VICTIMER_THRESHOLD )
         {
-
-/*FIXME*/
-/*{
-    printk(KERN_INFO    "LAMbS_VICtimer_start: target_VIC    = %lu",
-                        (unsigned long)target_VIC);
-    printk(KERN_INFO    "LAMbS_VICtimer_start: VIC_to_target = %lu",
-                        (unsigned long)VIC_to_target);
-    printk(KERN_INFO    "LAMbS_VICtimer_start: ns_per_int = %lu",
-                        (unsigned long)LAMbS_current_instretirementrate_inv);
-    printk(KERN_INFO    "LAMbS_VICtimer_start: ns_to_target =  %lu",
-                        (unsigned long)ns_to_target);
-}*/
             ret = 1;
             goto exit1;
         }
