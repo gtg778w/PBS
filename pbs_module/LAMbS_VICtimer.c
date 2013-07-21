@@ -4,7 +4,7 @@
 #include "LAMbS_models.h"
 #include "LAMbS_VICtimer.h"
 
-s64 LAMbS_VICtimer_threshold = 1000;
+s64 LAMbS_VICtimer_threshold = 3000;
 
 /*The threshold should be configured based on timer resolution*/
 #define LAMbS_VICTIMER_THRESHOLD (LAMbS_VICtimer_threshold)
@@ -115,7 +115,6 @@ static enum LAMbS_VICtimer_restart
 
                 /*The timer has to restart*/
                 ret = LAMbS_VICTIMER_RESTART;
-                
             }
             else
             {
@@ -357,7 +356,7 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
     /*Check that this is not a misbehaving timer*/
     if( LAMbS_VICTIMER_CALLBACK_STORM == LAMbS_VICtimer_p->state )
     {
-        printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer is state "
+        printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer in state "
                          "LAMbS_VICTIMER_CALLBACK_STORM");
         ret = -1;
         goto exit0;
@@ -403,14 +402,18 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         target or overshot it*/
         if( ns_to_target < LAMbS_VICTIMER_THRESHOLD )
         {
-            printk(KERN_INFO    "LAMbS_VICtimer_start: target_VIC    = %lu",
-                                (unsigned long)target_VIC);
-            printk(KERN_INFO    "LAMbS_VICtimer_start: VIC_to_target = %lu",
-                                (unsigned long)VIC_to_target);
-            printk(KERN_INFO    "LAMbS_VICtimer_start: ns_per_int = %lu",
-                                (unsigned long)LAMbS_current_instretirementrate_inv);
-            printk(KERN_INFO    "LAMbS_VICtimer_start: ns_to_target =  %lu",
-                                (unsigned long)ns_to_target);
+
+/*FIXME*/
+/*{
+    printk(KERN_INFO    "LAMbS_VICtimer_start: target_VIC    = %lu",
+                        (unsigned long)target_VIC);
+    printk(KERN_INFO    "LAMbS_VICtimer_start: VIC_to_target = %lu",
+                        (unsigned long)VIC_to_target);
+    printk(KERN_INFO    "LAMbS_VICtimer_start: ns_per_int = %lu",
+                        (unsigned long)LAMbS_current_instretirementrate_inv);
+    printk(KERN_INFO    "LAMbS_VICtimer_start: ns_to_target =  %lu",
+                        (unsigned long)ns_to_target);
+}*/
             ret = 1;
             goto exit1;
         }
@@ -425,7 +428,7 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         /*Start the timer*/
         ktime_to_target.tv64 = ns_to_target;
         hrtimer_start(&(LAMbS_VICtimer_p->hrtimer), ktime_to_target, HRTIMER_MODE_REL);
-
+        
 exit1:
     /*Leave the critical section*/
     local_irq_restore(irq_flags);
@@ -439,7 +442,7 @@ void LAMbS_VICtimer_init(   LAMbS_VICtimer_t *LAMbS_VICtimer_p)
     /* Initialize the hrtimer */
     hrtimer_init(   &(LAMbS_VICtimer_p->hrtimer), 
                     CLOCK_MONOTONIC, 
-                    HRTIMER_MODE_ABS);
+                    HRTIMER_MODE_REL);
     LAMbS_VICtimer_p->hrtimer.function = LAMbS_VICtimer_hrtcallback;
 
     /* Initialize the activelist_entry */
@@ -471,6 +474,9 @@ int LAMbS_VICtimer_mechanism_init(void)
 
     printk(KERN_INFO "LAMbS_VICtimer_mechanism_init: threshold = %luns",
                      (unsigned long) LAMbS_VICtimer_threshold);
+
+    /*Initialize the active list to be empty*/
+    INIT_LIST_HEAD(&LAMbS_VICtimer_activelist);
 
     return ret;
 }
@@ -543,10 +549,10 @@ static enum LAMbS_VICtimer_restart
     VICtimer_test_callback_VIC[VICtimer_test_index] =   VIC_current;
     
     /*Set the next target as the current target plus the test interval*/
-    next_target =   VICtimer_test_target_VIC[VICtimer_test_index]
-                    + VICtimer_test_interval;
+    
+    next_target =   VIC_current + VICtimer_test_interval;
                     
-    VICtimer_p->target_VIC = VICtimer_p->target_VIC + VICtimer_test_interval;
+    VICtimer_p->target_VIC = next_target;
     
     /*Increment the test index*/
     VICtimer_test_index++;
@@ -672,9 +678,9 @@ int LAMbS_VICtimer_stop_test(void)
     printk(KERN_INFO "}");
     
     /*Print the maximum and minimum callback_VIC error*/
-    printk(KERN_INFO    "LAMbS_VICtimer_stop_test: max_error = %lu", 
+    printk(KERN_INFO    "LAMbS_VICtimer_stop_test: max_error = %li", 
                         (long)max_error);
-    printk(KERN_INFO    "LAMbS_VICtimer_stop_test: min_error = %lu", 
+    printk(KERN_INFO    "LAMbS_VICtimer_stop_test: min_error = %li", 
                         (long)min_error);
     
     printk(KERN_INFO    "LAMbS_VICtimer_stop_test: VIC = %lu",

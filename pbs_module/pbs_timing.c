@@ -296,7 +296,7 @@ void assign_bandwidths(void)
         }
         else if( i == 10)
         {
-            ret = LAMbS_VICtimer_start_test(10000, 4000000);
+            ret = LAMbS_VICtimer_start_test(5000, 33000);
             if(ret == -1)
             {
                 printk(KERN_INFO "assign_bandwidths: LAMbS_VICtimer_start_test failed!");
@@ -420,6 +420,7 @@ int stop_pbs_timing(char not_allocator)
                 " %i times!\n", allocator_overrun_count);
     }
 
+    /*FIXME*/
     {
         LAMbS_VICtimer_stop_test();
     }
