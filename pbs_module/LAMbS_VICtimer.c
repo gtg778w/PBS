@@ -1,3 +1,7 @@
+/*
+General note: VIC timer mechanism is more accurate with shorter relative VIC targets.
+*/
+
 
 #include "LAMbS_mo.h"
 #include "LAMbS_VIC.h"
