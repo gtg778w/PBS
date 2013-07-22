@@ -19,6 +19,11 @@ sched_clock
     kmem_cache_* objects and functions
 */
 
+#include <linux/module.h>
+/*
+EXPORT_SYMBOL
+*/
+
 #include "LAMbS_mostat.h"
 
 #include "LAMbS_mo.h"
@@ -129,10 +134,14 @@ LAMbS_mostat_t* LAMbS_mostat_alloc(void)
     return ret;
 }
 
+EXPORT_SYMBOL(LAMbS_mostat_alloc);
+
 void LAMbS_mostat_free(LAMbS_mostat_t* mostat)
 {
     kmem_cache_free(LAMbS_mostat_slab_cache, mostat);
 }
+
+EXPORT_SYMBOL(LAMbS_mostat_free);
 
 void LAMbS_mostat_get(LAMbS_mostat_t* mostat)
 {
@@ -157,6 +166,8 @@ void LAMbS_mostat_get(LAMbS_mostat_t* mostat)
     local_irq_restore(irq_flags);
 }
 
+EXPORT_SYMBOL(LAMbS_mostat_get);
+
 void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat)
 {
     unsigned long irq_flags;
@@ -180,4 +191,6 @@ void LAMbS_mostat_getDelta(LAMbS_mostat_t* mostat, u64 *delta_mostat)
     /*restore interrupt flags for the end of the critical section*/
     local_irq_restore(irq_flags);
 }
+
+EXPORT_SYMBOL(LAMbS_mostat_getDelta);
 
