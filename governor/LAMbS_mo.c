@@ -1,4 +1,11 @@
 
+#include <linux/kernel.h>
+
+#include <linux/module.h>
+/*
+EXPORT_SYMBOL
+*/
+
 #include <linux/cpufreq.h>
 /*
     cpufreq_register_notifier
@@ -17,8 +24,6 @@
 
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
-#include "LAMbS_models.h"
-#include "LAMbS_VICtimer.h"
 
 s32 LAMbS_current_moi;
 EXPORT_SYMBOL(LAMbS_current_moi);
@@ -162,10 +167,6 @@ int LAMbS_mo_init(int verbose)
     LAMbS_mo_setup = 1;
     
     return 0;
-
-error3:
-    /*Uninit LAMbS_mostat*/    
-    LAMbS_mostat_uninit();
     
 error2:
     LAMbS_current_moi = 0;
@@ -184,9 +185,6 @@ void LAMbS_mo_uninit(void)
     if(0 != LAMbS_mo_setup)
     {
         LAMbS_mo_setup = 0;
-
-        /*Free the mmap pages for the models and om schedule command*/
-        LAMbS_models_free_pages();
         
         /*Cleanup the mostat mechanism*/
         LAMbS_mostat_uninit();
