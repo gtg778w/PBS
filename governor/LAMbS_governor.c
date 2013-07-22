@@ -34,6 +34,9 @@
  * hrtimer_start()
  */
 
+#include "LAMbS_governor.h"
+
+
 #define MIN_THRESH 100
 
 /* I think this is needed by per_cpu and it seems easier just to add it */
@@ -49,8 +52,9 @@ struct hrtimer LAMbS_sched_timer;
 struct cpufreq_policy *policy_p;
 u64 min_trans_thresh = MIN_THRESH;
 int moi;
+u64* schedule;
 
-static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
+static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 				  void *data) {
     struct cpufreq_freqs *freq = data;
     if (!per_cpu(cpu_is_managed, freq->cpu)) {
@@ -66,29 +70,29 @@ static int lambs_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 }
 
 static struct notifier_block lambs_cpufreq_notifier_block = {
-    .notifier_call = lambs_cpufreq_notifier
+    .notifier_call = LAMbS_cpufreq_notifier
 };
 
 
-int schedule_next_moi(void) {
+enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     /* number of transitions count? */
     for( ; moi < LAMbS_mo_struct.count; moi++) {
-	if (LAMbS_mo_schedule[moi] > min_trans_thresh) {
+	if (schedule[moi] > min_trans_thresh) {
 	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
-	    hrtimer_start(&LAMbS_sched_timer, (ktime_t)LAMbS_mo_schedule, HRTIMER_MODE_REL);
-	    return 0;
+	    hrtimer_start(&LAMbS_sched_timer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
+	    return HRTIMER_NORESTART;
 	}
     }
-    return 0;
+    return HRTIMER_NORESTART;
 }
 
-int LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule) {
+void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
     moi = 0;
-
+    schedule = LAMbS_mo_schedule;
     /* setup function called when timer expires */
-    LAMbS_sched_timer.function = &schedule_next_moi();
+    LAMbS_sched_timer.function = &schedule_next_moi;
 
-    schedule_next_moi();
+    schedule_next_moi(&LAMbS_sched_timer);
 }
 
 
@@ -128,7 +132,7 @@ err:
     mutex_unlock(&setfreq_mutex);
     return ret;
 }
-EXPORT_SYMBOL_GPL(LAMbS_cpufreq_set);
+EXPORT_SYMBOL_GPL(LAMbS_freq_set);
 /* from Documentation/cpu-freq/governors.txt
  *
  * If you need other "events" externally of your driver, _only_ use the
@@ -169,7 +173,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	policy_p = policy;
 
 	/* initialize timer */
-	hrtimer_init(*LAMbS_sched_timer, CLOCK_MONOTONIC);
+	hrtimer_init(&LAMbS_sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	
 	break;
     case CPUFREQ_GOV_STOP:
@@ -214,11 +218,21 @@ struct cpufreq_governor cpufreq_gov_lambs = {
     .owner	= THIS_MODULE,
 };
 
+/* remove verbose */
+
 static int __init cpufreq_gov_lambs_init(void) {
-    return cpufreq_register_governor(&cpufreq_gov_lambs);
+    int ret;
+    ret = LAMbS_mo_init(0);
+    if (!ret) {
+        return cpufreq_register_governor(&cpufreq_gov_lambs);
+    } else {
+	printk(KERN_ERR "LAMbS_mo_init failed with error %d", ret);
+	return ret;
+    }
 }
 
 static void __exit cpufreq_gov_lambs_exit(void) {
+    LAMbS_mo_uninit(); 
     cpufreq_unregister_governor(&cpufreq_gov_lambs);
 }
 
