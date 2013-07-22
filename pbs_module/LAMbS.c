@@ -11,7 +11,7 @@
 
 #include "LAMbS_icount.h"
 #include "LAMbS_energy.h"
-#include "LAMbS_mo.h"
+#include "LAMbS_models.h"
 #include "LAMbS_VIC.h"
 #include "LAMbS_VICtimer.h"
 
@@ -55,7 +55,7 @@ error0:
     return ret;
 }
 
-void LAMbS_measurements_init(void)
+void LAMbS_models_measurements_init(void)
 {
     /*Init the instruction count*/
     LAMbS_icount_get(&global_icount);
@@ -65,6 +65,9 @@ void LAMbS_measurements_init(void)
     
     /*Init the time spent in each mode of operation*/
     LAMbS_mostat_get(global_mostat_p);
+    
+    /*Initialize the model coefficients*/
+    LAMbS_models_init();
 }
 
 void LAMbS_measure_delta(   u64* delta_icount_p,
@@ -111,13 +114,13 @@ int LAMbS_init(void)
         goto error1;
     }
     
-    ret = LAMbS_mo_init(0);
+    ret = LAMbS_models_alloc_pages();
     if(0 != ret)
     {
-        printk(KERN_INFO "LAMbS_init: LAMbS_mo_init failed");
+        printk(KERN_INFO "LAMbS_init: LAMbS_models_alloc_pages failed");
         goto error2;
     }
-
+    
     ret = LAMbS_VIC_init();
     if(0 != ret)
     {
@@ -146,7 +149,7 @@ error5:
 error4:
     LAMbS_VIC_uninit();
 error3:
-    LAMbS_mo_uninit();        
+    LAMbS_models_free_pages();
 error2:
     LAMbS_energy_uninit();
 error1:
@@ -163,7 +166,7 @@ void LAMbS_uninit(void)
 
     LAMbS_VIC_uninit();
 
-    LAMbS_mo_uninit();
+    LAMbS_models_free_pages();
     
     LAMbS_energy_uninit();
     

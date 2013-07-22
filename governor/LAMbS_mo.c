@@ -21,8 +21,7 @@
 #include "LAMbS_VICtimer.h"
 
 s32 LAMbS_current_moi;
-u64 LAMbS_current_instretirementrate;
-u64 LAMbS_current_instretirementrate_inv;
+EXPORT_SYMBOL(LAMbS_current_moi);
 
 static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                                     unsigned long val, void *data)
@@ -62,12 +61,8 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                 
                 /*Update the current mo and instruction retirement rate*/
                 LAMbS_current_moi = new_moi;
-                LAMbS_current_instretirementrate = 
-                                        instruction_retirement_rate[new_moi];
-                LAMbS_current_instretirementrate_inv = 
-                                        instruction_retirement_rate_inv[new_moi];
-                                        
-                LAMbS_VICtimer_motransition(old_moi, new_moi);
+                
+                /*Call mo tranisition notifiers here*/
             local_irq_restore(irq_flags);
 
             break;
@@ -93,23 +88,6 @@ static struct notifier_block LAMbS_motrans_notifier_block =
 {
     .notifier_call = LAMbS_motrans_notifier
 };
-
-/*The allocator has updated model coefficients*/
-void    LAMbS_mo_modelupdate_notify(void)
-{
-    unsigned long irq_flags;
-    
-    local_irq_save(irq_flags);
-    
-        LAMbS_current_instretirementrate = 
-                                instruction_retirement_rate[LAMbS_current_moi];
-        LAMbS_current_instretirementrate_inv = 
-                                instruction_retirement_rate_inv[LAMbS_current_moi];
-
-        LAMbS_VICtimer_motransition(LAMbS_current_moi, LAMbS_current_moi);
-
-    local_irq_restore(irq_flags);
-}
 
 static int LAMbS_mo_setup = 0;
 
@@ -180,15 +158,7 @@ int LAMbS_mo_init(int verbose)
         printk(KERN_INFO "LAMbS_mo_init: LAMbS_mostat_init failed!");
         goto error2;
     }
-    
-    /*Allocate the mappable pages for the power and performance models*/
-    ret = LAMbS_models_alloc_pages();
-    if(ret != 0)
-    {
-        printk(KERN_INFO "LAMbS_mo_init: LAMbS_models_alloc_pages failed!");
-        goto error3;
-    }
-    
+        
     LAMbS_mo_setup = 1;
     
     return 0;

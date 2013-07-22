@@ -142,11 +142,8 @@ do                                                      \
 void first_sched_period_tick(void)
 {
     /*Take initial readings of absolute instruction count, energy, and time spent so far
-    in each mode of operation*/
-    LAMbS_measurements_init();
-
-    /*Zero out the model coefficients*/    
-    LAMbS_models_init();
+    in each mode of operation and initialize the model coefficients*/
+    LAMbS_models_measurements_init();
 }
 
 void sched_period_tick(void)

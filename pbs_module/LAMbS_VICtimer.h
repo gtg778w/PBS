@@ -31,7 +31,7 @@ typedef struct LAMbS_VICtimer_s
 
 
 
-void LAMbS_VICtimer_motransition(int old_moi, int new_moi);
+void LAMbS_VICtimer_motransition(void);
 
 int LAMbS_VICtimer_cancel(  LAMbS_VICtimer_t *LAMbS_VICtimer_p);
 

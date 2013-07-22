@@ -202,16 +202,16 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
 }
 
 /*
-    Called on transition of the mode of operation
-
-    - The notifying function has a line with "BUG_ON(irqs_disabled());" which implies 
-      that this function should never be called with interrupts disabled.
+    Called when the current estimated instruction retirement rate changes either due to
+    a change in the mode of operation or a change in the estimated retirement rate in a 
+    given mode
 
     - This function should not have to call schedule or _schedule. If one of the 
-      VIC_timer functions set the NEED_RESCHED flag for the task, the task should be 
-      recheduled at least during return from interrupt or syscall, if not earlier.
+      VIC_timer functions set the NEED_RESCHED flag for the task, the task would be 
+      recheduled at least during return from interrupt or syscall, if not earlier 
+      (inshallah).
 */
-void LAMbS_VICtimer_motransition(int old_moi, int new_moi)
+void LAMbS_VICtimer_motransition(void)
 {
     unsigned long irq_flags;
 
@@ -226,44 +226,38 @@ void LAMbS_VICtimer_motransition(int old_moi, int new_moi)
     s64  ns_to_target;
     ktime_t ktime_to_target;
     
-    /*Enter critical section.*/
-    local_irq_save(irq_flags);
-
-        /*Get the new instruction retirement rate*/
-        instruction_ret_rate_inv = instruction_retirement_rate_inv[new_moi];
-        
-        /*Loop through the list of active VIC timers and reset their targets
-        or call their callbacks as appropriate*/
-        list_for_each_safe(next_actvlist_node, temp_node, &LAMbS_VICtimer_activelist)
+    /*Get the new instruction retirement rate*/
+    instruction_ret_rate_inv = LAMbS_current_instretirementrate_inv;
+    
+    /*Loop through the list of active VIC timers and reset their targets
+    or call their callbacks as appropriate*/
+    list_for_each_safe(next_actvlist_node, temp_node, &LAMbS_VICtimer_activelist)
+    {
+        /*Get the address of the timer based on the address of the linked list node*/
+        LAMbS_VICtimer_p = container_of(    next_actvlist_node, 
+                                            struct LAMbS_VICtimer_s, 
+                                            activelist_entry);
+                                            
+        /*Check the status of the timer and take appropriate action*/
+        timer_reset = LAMbS_VICtimer_check_callback(LAMbS_VICtimer_p,
+                                                    &ns_to_target);
+                                    
+        /*Reset the timer if necessary*/
+        if(LAMbS_VICTIMER_RESTART == timer_reset)
         {
-            /*Get the address of the timer based on the address of the linked list node*/
-            LAMbS_VICtimer_p = container_of(    next_actvlist_node, 
-                                                struct LAMbS_VICtimer_s, 
-                                                activelist_entry);
-                                                
-            /*Check the status of the timer and take appropriate action*/
-            timer_reset = LAMbS_VICtimer_check_callback(LAMbS_VICtimer_p,
-                                                        &ns_to_target);
-                                        
-            /*Reset the timer if necessary*/
-            if(LAMbS_VICTIMER_RESTART == timer_reset)
-            {
-                /*Set the ktime_t value*/
-                ktime_to_target.tv64 = ns_to_target;
-                /*Start the timer*/
-                hrtimer_start(  &(LAMbS_VICtimer_p->hrtimer), 
-                                ktime_to_target, 
-                                HRTIMER_MODE_REL);
-            }
-            else
-            {
-                /*Cancel the timer*/
-                hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
-            }
+            /*Set the ktime_t value*/
+            ktime_to_target.tv64 = ns_to_target;
+            /*Start the timer*/
+            hrtimer_start(  &(LAMbS_VICtimer_p->hrtimer), 
+                            ktime_to_target, 
+                            HRTIMER_MODE_REL);
         }
-
-    /*Leave the critical section*/
-    local_irq_restore(irq_flags);    
+        else
+        {
+            /*Cancel the timer*/
+            hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
+        }
+    }
 }
 
 /* Cancel a VICtimer. This function should not be called from the argument VICtimer's

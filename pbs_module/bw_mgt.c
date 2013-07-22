@@ -93,7 +93,9 @@ ssize_t bw_mgt_write(   struct file *filep,
     
     s64 allocator_runtime;
     s64 allocator_period;
-        
+    
+    long irq_flags;
+    
     if(sizeof(bw_mgt_cmd_t) != count)
     {
         printk(KERN_INFO    "The argument written through bw_mgt_write by process %d "
@@ -207,9 +209,17 @@ ssize_t bw_mgt_write(   struct file *filep,
                 //check before going to sleep
                 if(allocator_state == ALLOCATOR_LOOP)
                 {
-                    /*Notify LAMbS_mo that the model coefficients have been updated*/
-                    LAMbS_mo_modelupdate_notify();
-                
+                    /*Enter critical section. The following function needs to be executed
+                    with interrupts disabled*/
+                    local_irq_save(irq_flags);
+                    
+                        /*Now that model coefficients have been update, update the current
+                        instruction retirement rate*/
+                        LAMbS_update_current_instrate( LAMbS_current_moi, LAMbS_current_moi);
+                    
+                    /*Exit critical section*/
+                    local_irq_restore(irq_flags);
+                    
                     //assign new bandwidths
                     assign_bandwidths();
 
