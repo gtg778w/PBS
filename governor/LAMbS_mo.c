@@ -67,6 +67,7 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
                 /*Update the current mo and instruction retirement rate*/
                 LAMbS_current_moi = new_moi;
                 
+                /*FIXME*/
                 /*Call mo tranisition notifiers here*/
             local_irq_restore(irq_flags);
 
