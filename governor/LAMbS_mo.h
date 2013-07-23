@@ -9,7 +9,7 @@
 struct LAMbS_motrans_notifier_s;
 
 typedef void (*LAMbS_motrans_callback_t)(   struct LAMbS_motrans_notifier_s *motrans_notifier_p,
-                                            int old_moi, int new_moi);
+                                            s32 old_moi, s32 new_moi);
 
 struct LAMbS_motrans_notifier_s {
     struct list_head        chain_node;
