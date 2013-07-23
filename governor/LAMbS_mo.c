@@ -247,3 +247,28 @@ void LAMbS_mo_uninit(void)
     }
 }
 
+/****************************************************************************************/
+/*Test for the notifier mechanism*/
+
+/*It is assumed that the following function is called with interrupts disabled.*/
+static void LAMbS_motrans_test_callback(
+                                    struct LAMbS_motrans_notifier_s *motrans_notifier_p,
+                                    s32 old_moi, s32 new_moi)
+{
+    printk(KERN_INFO "LAMbS_motrans_test_callback: old_moi=%i new_moi=%i",
+                    old_moi, new_moi);
+}
+
+static struct LAMbS_motrans_notifier_s LAMbS_motrans_test_notifier;
+
+void LAMbS_motrans_notifier_starttest(void)
+{
+    LAMbS_motrans_test_notifier.callback = LAMbS_motrans_test_callback;
+    LAMbS_motrans_register_notifier(&(LAMbS_motrans_test_notifier));
+}
+
+void LAMbS_motrans_notifier_stoptest(void)
+{
+    LAMbS_motrans_unregister_notifier(&(LAMbS_motrans_test_notifier));
+}
+

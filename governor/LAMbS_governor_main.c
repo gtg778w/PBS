@@ -224,6 +224,7 @@ static int __init cpufreq_gov_lambs_init(void) {
     int ret;
     ret = LAMbS_mo_init(0);
     if (!ret) {
+        LAMbS_motrans_notifier_starttest();
         return cpufreq_register_governor(&cpufreq_gov_lambs);
     } else {
 	printk(KERN_ERR "LAMbS_mo_init failed with error %d", ret);
@@ -232,8 +233,9 @@ static int __init cpufreq_gov_lambs_init(void) {
 }
 
 static void __exit cpufreq_gov_lambs_exit(void) {
-    LAMbS_mo_uninit(); 
     cpufreq_unregister_governor(&cpufreq_gov_lambs);
+    LAMbS_motrans_notifier_stoptest();
+    LAMbS_mo_uninit(); 
 }
 
 MODULE_AUTHOR("Michael Giardino <giardino@ece.gatech.edu>");

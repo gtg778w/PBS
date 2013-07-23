@@ -24,4 +24,7 @@ extern s32  LAMbS_current_moi;
 int     LAMbS_mo_init(int verbose);
 void    LAMbS_mo_uninit(void);
 
+void LAMbS_motrans_notifier_starttest(void);
+void LAMbS_motrans_notifier_stoptest(void);
+
 #endif

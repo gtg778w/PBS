@@ -57,7 +57,7 @@ static void LAMbS_mostat_motrans_callback(
 }
 
 /*The Mode of Operation transition notifier used by the mostat mechanism*/
-struct LAMbS_motrans_notifier_s LAMbS_mostat_motrans_notifier;
+static struct LAMbS_motrans_notifier_s LAMbS_mostat_motrans_notifier;
 
 /*This macro should be called with interrupts disabled to prevent the value of 
 LAMbS_current_moi from chaning between the time it is read in the caller and the time
