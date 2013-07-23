@@ -3,9 +3,9 @@
     #Set default values for optional input arguments
     set repetitions="1"
     set LOGDIR="log"
-    set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
+    set PeSoRTADIR="../PeSoRTA"
     set BINDIR="bin/"
-    set SCRIPTSDIR="test_scripts/"
+    set SCRIPTSDIR="LAMbS_VIC_expt_scripts/"
 
     #Process input arguments for repetitions BINDIR LOGDIR and PeSoRTADIR
     if ( $#argv == 1 ) then

@@ -78,15 +78,15 @@
             set ALC_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqcycle"${ALC_logfilesuffix}
             
             #Start the frequency cycling program
-            bin/cpufreq_step 290, 10, 0 &
+            ${BINDIR}/cpufreq_step 290, 10, 0 &
             #Start the allocator
-            bin/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} &
+            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task
-            bin/${APPNAME}_pbsSRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${alpha} -L 2 -R ${SRT_logfile} &
+            ${BINDIR}/${APPNAME}_pbsSRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${alpha} -L 2 -R ${SRT_logfile} &
             #Wait for the allocator task to finish
-            bin/poll_pbs_actv -I
+            ${BINDIR}/poll_pbs_actv -I
 
             #Increment the experiment ID
             @ expt_id += 1
