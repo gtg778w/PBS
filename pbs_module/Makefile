@@ -1,6 +1,7 @@
 ifneq ($(KERNELRELEASE),)
 # call from kernel build system
 
+EXTRA_CFLAGS := -I$(src)/../governor
 obj-m	:= pbs_module.o
 pbs_module-objs := module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o pbs_active.o \
                    pba.o LAMbS.o \
@@ -13,7 +14,7 @@ KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 PWD       := $(shell pwd)
 
 modules:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=`pwd`/ KBUILD_EXTRA_SYMBOLS=`pwd`/../governor/Module.symvers modules
 
 endif
 
