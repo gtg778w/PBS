@@ -34,7 +34,7 @@
  * hrtimer_start()
  */
 
-#include "LAMbS_governor.h"
+#include "LAMbS_governor_main.h"
 
 
 #define MIN_THRESH 100

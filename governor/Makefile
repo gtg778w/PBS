@@ -1,4 +1,4 @@
-SRCS	= LAMbS_mo.c LAMbS_molookup.c LAMbS_mostat.c LAMbS_governor.c
+SRCS	= LAMbS_mo.c LAMbS_molookup.c LAMbS_mostat.c LAMbS_governor_main.c
 
 obj-m += LAMbS_governor.o
 LAMbS_governor-objs := $(SRCS:.c=.o)
