@@ -22,14 +22,39 @@ EXPORT_SYMBOL
     smp_processor_id
 */ 
 
-#include "LAMbS_molookup.h"
-#include "LAMbS_mostat.h"
+#include "LAMbS_mo.h"
 
 s32 LAMbS_current_moi;
 EXPORT_SYMBOL(LAMbS_current_moi);
 
-static int LAMbS_motrans_notifier(  struct notifier_block *nb,
-                                    unsigned long val, void *data)
+static struct list_head motrans_notifier_chain;
+
+/*Insert a LAMbS_motrans_notifier_s object into the notifier chain*/
+void LAMbS_motrans_register_notifier(struct LAMbS_motrans_notifier_s *notifier)
+{
+    unsigned long irq_flags;
+    
+    local_irq_save(irq_flags);
+
+    list_add(&(notifier->chain_node), &(motrans_notifier_chain));
+
+    local_irq_restore(irq_flags);
+}
+
+/*Remove a LAMbS_motrans_notifier_s object from the notifier chain*/
+void LAMbS_motrans_unregister_notifier(struct LAMbS_motrans_notifier_s *notifier)
+{
+    unsigned long irq_flags;
+    
+    local_irq_save(irq_flags);
+
+    list_del(&(notifier->chain_node));
+
+    local_irq_restore(irq_flags);
+}
+
+static int _freqchange_notifier(  struct notifier_block *nb,
+                                  unsigned long val, void *data)
 {
     int ret = 0;
     
@@ -40,6 +65,11 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
     struct cpufreq_freqs *freq = data;
     u32 old_mo, new_mo;
     s32 old_moi, new_moi;    
+
+    struct list_head *list_node_next;
+    struct list_head *temp_node;
+
+    struct LAMbS_motrans_notifier_s *motrans_notifier_next;
 
     unsigned long irq_flags;
         
@@ -59,16 +89,34 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
             old_moi = LAMbS_molookup(old_mo);
             new_moi = LAMbS_molookup(new_mo);
 
+            /*Enter critical section*/
             local_irq_save(irq_flags);
             
-                /*Perform the update operation for the mostat mechanism*/
-                LAMbS_mostat_transition_p(old_moi, new_moi);
-                
                 /*Update the current mo and instruction retirement rate*/
                 LAMbS_current_moi = new_moi;
                 
-                /*FIXME*/
-                /*Call mo tranisition notifiers here*/
+                /*Call motrans_notifiers registered in the chain and call the 
+                corresponding callbacks*/
+                list_for_each_safe( list_node_next, 
+                                    temp_node, 
+                                    &(motrans_notifier_chain))
+                {
+                    /*Compute the pointer to the motrans notifier using the pointer to the
+                    list head*/
+                    motrans_notifier_next = container_of(   list_node_next, 
+                                                            struct LAMbS_motrans_notifier_s, 
+                                                            chain_node);
+                                                        
+                    /*Call the callback function*/
+                    motrans_notifier_next->callback(    motrans_notifier_next,
+                                                        old_moi,
+                                                        new_moi);
+                }
+                
+                /*Perform the update operation for the mostat mechanism*/
+                LAMbS_mostat_transition_p(old_moi, new_moi);
+
+            /*Exit critical section*/
             local_irq_restore(irq_flags);
 
             break;
@@ -90,9 +138,9 @@ static int LAMbS_motrans_notifier(  struct notifier_block *nb,
     return ret;
 }
 
-static struct notifier_block LAMbS_motrans_notifier_block = 
+static struct notifier_block _freqchange_notifier_block = 
 {
-    .notifier_call = LAMbS_motrans_notifier
+    .notifier_call = _freqchange_notifier
 };
 
 static int LAMbS_mo_setup = 0;
@@ -128,8 +176,11 @@ int LAMbS_mo_init(int verbose)
         goto error1;
     }
 
-    /*Setup the MO (frequency) change notifier*/
-    ret = cpufreq_register_notifier(    &LAMbS_motrans_notifier_block,
+    /*Initialize the linked list head, motransition_notifier_chain*/
+    INIT_LIST_HEAD(&motrans_notifier_chain);
+
+    /*Setup the frequency change notifier*/
+    ret = cpufreq_register_notifier(    &_freqchange_notifier_block,
                                         CPUFREQ_TRANSITION_NOTIFIER);
     if(0 != ret)
     {
@@ -172,7 +223,7 @@ int LAMbS_mo_init(int verbose)
 error2:
     LAMbS_current_moi = 0;
     /*Remove the MO(frequency) change notifier*/
-    cpufreq_unregister_notifier(    &LAMbS_motrans_notifier_block,
+    cpufreq_unregister_notifier(    & _freqchange_notifier_block,
                                     CPUFREQ_TRANSITION_NOTIFIER);
 error1:
     /*cleanup the MO lookup table*/
@@ -190,9 +241,9 @@ void LAMbS_mo_uninit(void)
         /*Cleanup the mostat mechanism*/
         LAMbS_mostat_uninit();
 
-        /*Remove the MO(frequency) change notifier*/
-        cpufreq_unregister_notifier(    &LAMbS_motrans_notifier_block,
-                                        CPUFREQ_TRANSITION_NOTIFIER);
+            /*Remove the MO(frequency) change notifier*/
+            cpufreq_unregister_notifier(    & _freqchange_notifier_block,
+                                            CPUFREQ_TRANSITION_NOTIFIER);
         
         /*Clean up the MO lookup table*/
         LAMbS_molookup_uninit();
