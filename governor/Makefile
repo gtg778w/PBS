@@ -1,8 +1,7 @@
 SRCS	= LAMbS_mo.c LAMbS_molookup.c LAMbS_mostat.c LAMbS_governor.c
-OBJS	= $(SRCS:.c=.o)
 
-obj-m += $(OBJS)
-
+obj-m += LAMbS_governor.o
+LAMbS_governor-objs := $(SRCS:.c=.o)
 all:
 	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
