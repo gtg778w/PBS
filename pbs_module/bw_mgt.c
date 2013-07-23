@@ -9,6 +9,7 @@ and allocator task.
 #include "jb_mgt.h"
 #include "pbsAllocator_cmd.h"
 #include "pbs_mmap.h"
+#include "LAMbS_models.h"
 #include "LAMbS_mo.h"
 
 /**********************************************************************
@@ -94,7 +95,7 @@ ssize_t bw_mgt_write(   struct file *filep,
     s64 allocator_runtime;
     s64 allocator_period;
     
-    long irq_flags;
+    unsigned long irq_flags;
     
     if(sizeof(bw_mgt_cmd_t) != count)
     {
@@ -216,7 +217,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                         /*Now that model coefficients have been update, update the current
                         instruction retirement rate*/
                         LAMbS_update_current_instrate( LAMbS_current_moi, LAMbS_current_moi);
-                    
+
                     /*Exit critical section*/
                     local_irq_restore(irq_flags);
                     

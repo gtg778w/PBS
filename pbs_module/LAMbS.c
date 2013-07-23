@@ -12,6 +12,7 @@
 #include "LAMbS_icount.h"
 #include "LAMbS_energy.h"
 #include "LAMbS_models.h"
+#include "LAMbS_mostat.h"
 #include "LAMbS_VIC.h"
 #include "LAMbS_VICtimer.h"
 

@@ -213,8 +213,6 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
 */
 void LAMbS_VICtimer_motransition(void)
 {
-    unsigned long irq_flags;
-
     s64 instruction_ret_rate_inv;
     
     struct list_head *next_actvlist_node;

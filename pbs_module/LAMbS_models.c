@@ -19,6 +19,8 @@ __free_pages
 */
 
 #include "LAMbS_models.h"
+#include "LAMbS_mo.h"
+#include "LAMbS_VICtimer.h"
 
 struct  page    *LAMbS_models_pages = NULL;
 

@@ -22,7 +22,7 @@ extern u64  *om_schedule;
 extern u64  LAMbS_current_instretirementrate;
 extern u64  LAMbS_current_instretirementrate_inv;
 
-void    LAMbS_update_current_retrate(    s32 old_moi,    s32 new_moi);
+void    LAMbS_update_current_instrate(    s32 old_moi,    s32 new_moi);
 
 int     LAMbS_models_alloc_pages(void);
 void    LAMbS_models_free_pages(void);
