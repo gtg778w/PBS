@@ -112,9 +112,6 @@ static int _freqchange_notifier(  struct notifier_block *nb,
                                                         old_moi,
                                                         new_moi);
                 }
-                
-                /*Perform the update operation for the mostat mechanism*/
-                LAMbS_mostat_transition_p(old_moi, new_moi);
 
             /*Exit critical section*/
             local_irq_restore(irq_flags);

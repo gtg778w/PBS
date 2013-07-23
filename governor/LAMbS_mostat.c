@@ -39,10 +39,10 @@ struct _mostat_s
 
 struct _mostat_s _mostat;
 
-void LAMbS_mostat_transition_dummy(s32 old_moi, s32 new_moi){}
-
 /*It is assumed that the following function is called with interrupts disabled.*/
-void LAMbS_mostat_transition(s32 old_moi, s32 new_moi)
+static void LAMbS_mostat_motrans_callback(
+                                    struct LAMbS_motrans_notifier_s *motrans_notifier_p,
+                                    s32 old_moi, s32 new_moi)
 {
     u64 now;
     u64 time_since_last_transition;
@@ -56,14 +56,16 @@ void LAMbS_mostat_transition(s32 old_moi, s32 new_moi)
     _mostat.stat[old_moi] += time_since_last_transition;
 }
 
-void (*LAMbS_mostat_transition_p)(s32 old_moi, s32 new_moi) = 
-    LAMbS_mostat_transition_dummy;
+/*The Mode of Operation transition notifier used by the mostat mechanism*/
+struct LAMbS_motrans_notifier_s LAMbS_mostat_motrans_notifier;
 
 /*This macro should be called with interrupts disabled to prevent the value of 
 LAMbS_current_moi from chaning between the time it is read in the caller and the time
 it is checked in LAMbS_mostat_transition */
-#define _LAMbS_mostat_update() LAMbS_mostat_transition_p(   LAMbS_current_moi, \
-                                                            LAMbS_current_moi)
+#define _LAMbS_mostat_update() LAMbS_mostat_motrans_callback(   \
+                                                        &LAMbS_mostat_motrans_notifier,\
+                                                        LAMbS_current_moi, \
+                                                        LAMbS_current_moi)
 
 /*Look-aside cache of mostat variables. 
 If the number of MO is different per cpu, this should 
@@ -91,7 +93,8 @@ int LAMbS_mostat_init(void)
     local_irq_save(irq_flags);
 
         _mostat.time_stamp = sched_clock();
-        LAMbS_mostat_transition_p = LAMbS_mostat_transition;
+        LAMbS_mostat_motrans_notifier.callback = LAMbS_mostat_motrans_callback;
+        LAMbS_motrans_register_notifier(&(LAMbS_mostat_motrans_notifier));
     
     /*Restoring interrupts after critical section*/
     local_irq_restore(irq_flags);    
@@ -110,7 +113,7 @@ int LAMbS_mostat_init(void)
     return 0;
 
 error0:
-    LAMbS_mostat_transition_p = LAMbS_mostat_transition_dummy;
+    LAMbS_motrans_unregister_notifier(&(LAMbS_mostat_motrans_notifier));
     return ret;
 }
 
@@ -120,7 +123,7 @@ void LAMbS_mostat_uninit(void)
     kmem_cache_destroy(LAMbS_mostat_slab_cache);
     
     /*Turn-off the mostat transition callback*/
-    LAMbS_mostat_transition_p = LAMbS_mostat_transition_dummy;
+    LAMbS_motrans_unregister_notifier(&(LAMbS_mostat_motrans_notifier));
 }
 
 LAMbS_mostat_t* LAMbS_mostat_alloc(void)
