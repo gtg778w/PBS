@@ -40,6 +40,7 @@ void LAMbS_motrans_register_notifier(struct LAMbS_motrans_notifier_s *notifier)
 
     local_irq_restore(irq_flags);
 }
+EXPORT_SYMBOL(LAMbS_motrans_register_notifier);
 
 /*Remove a LAMbS_motrans_notifier_s object from the notifier chain*/
 void LAMbS_motrans_unregister_notifier(struct LAMbS_motrans_notifier_s *notifier)
@@ -52,6 +53,7 @@ void LAMbS_motrans_unregister_notifier(struct LAMbS_motrans_notifier_s *notifier
 
     local_irq_restore(irq_flags);
 }
+EXPORT_SYMBOL(LAMbS_motrans_unregister_notifier);
 
 static int _freqchange_notifier(  struct notifier_block *nb,
                                   unsigned long val, void *data)
