@@ -127,7 +127,7 @@ int cpufreq_change_frequency(int setting_index)
     }
     
     /*Set the governor to the userspace governor*/
-    governor_file_p = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_setspeed", "w");
+    governor_file_p = fopen("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor", "w");
     if(NULL == governor_file_p)
     {
         fprintf(stderr, "Failed to open file "
