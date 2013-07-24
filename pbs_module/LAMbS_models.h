@@ -13,6 +13,11 @@
     LAMbS_mo_struct
 */
 
+#include "LAMbS_mo.h"
+/*
+    LAMbS_motrans_notifier_s
+*/
+
 extern struct  page *LAMbS_models_pages;
 
 extern u64  *instruction_retirement_rate;
@@ -22,7 +27,14 @@ extern u64  *om_schedule;
 extern u64  LAMbS_current_instretirementrate;
 extern u64  LAMbS_current_instretirementrate_inv;
 
-void    LAMbS_update_current_instrate(    s32 old_moi,    s32 new_moi);
+extern struct LAMbS_motrans_notifier_s LAMbS_models_motrans_notifier;
+void    _LAMbS_models_motrans_callback(  
+                                struct LAMbS_motrans_notifier_s *motrans_notifier_p,
+                                s32 old_moi,    s32 new_moi);
+                                
+#define LAMbS_update_current_instrate() \
+            _LAMbS_models_motrans_callback( &LAMbS_models_motrans_notifier,\
+                                            LAMbS_current_moi, LAMbS_current_moi)
 
 int     LAMbS_models_alloc_pages(void);
 void    LAMbS_models_free_pages(void);

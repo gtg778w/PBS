@@ -19,7 +19,6 @@ __free_pages
 */
 
 #include "LAMbS_models.h"
-#include "LAMbS_mo.h"
 #include "LAMbS_VICtimer.h"
 
 struct  page    *LAMbS_models_pages = NULL;
@@ -39,7 +38,9 @@ change in the cirrent mode of operation or an update to the model coefficients
 
 This function should be called with interrupts disabled
 */
-void    LAMbS_update_current_instrate(    s32 old_moi,    s32 new_moi)
+void    _LAMbS_models_motrans_callback(  
+                                struct LAMbS_motrans_notifier_s *motrans_notifier_p,
+                                s32 old_moi,    s32 new_moi)
 {    
     LAMbS_current_instretirementrate = 
                             instruction_retirement_rate[new_moi];
@@ -49,14 +50,15 @@ void    LAMbS_update_current_instrate(    s32 old_moi,    s32 new_moi)
     LAMbS_VICtimer_motransition();
 }
 
-/*FIXME*/
 /*
 Define a notifier_block varriable with LAMbS_update_current_instrate as the callback 
 function
 */
+struct LAMbS_motrans_notifier_s LAMbS_models_motrans_notifier;
 
 /*Initialize the model coefficients and current instruction retirement rate and 
-corresponding inverse*/
+corresponding inverse
+*/
 void LAMbS_models_init(void)
 {
     s32 moi;
@@ -80,6 +82,15 @@ void LAMbS_models_init(void)
     local_irq_restore(irq_flags);
 }
 
+/*
+    - Allocate pages for the model coefficients.
+    - Setup the coefficients arrays.
+    - Initialize the coefficients arrays.
+    - Register the motrans notifier object.
+        - The motrans callback function, "LAMbS_update_current_instrate", calls the 
+          VICtimer callback function. Therefore the LAMbS_VICtimer_mechanism_init should 
+          be called before LAMbS_models_alloc_pages.
+*/
 int LAMbS_models_alloc_pages(void)
 {
     int ret;
@@ -122,8 +133,9 @@ int LAMbS_models_alloc_pages(void)
     /*Initialize the arrays.*/
     LAMbS_models_init();
     
-    /*FIXME*/
-    /*register mo transition notifier block defined above this function*/
+    /*Register the motrans notifier*/
+    LAMbS_models_motrans_notifier.callback = _LAMbS_models_motrans_callback;
+    LAMbS_motrans_register_notifier(&(LAMbS_models_motrans_notifier));
     
     return 0;
     
@@ -144,6 +156,9 @@ void LAMbS_models_process_omschedule(void)
 
 void LAMbS_models_free_pages(void)
 {
+    /*Unregister the motrans_notifier object*/
+    LAMbS_motrans_unregister_notifier(&(LAMbS_models_motrans_notifier));
+
     /*Set all the array addresses to NULL*/
     instruction_retirement_rate = NULL;
     instruction_retirement_rate_inv = NULL;

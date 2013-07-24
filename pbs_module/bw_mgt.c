@@ -216,7 +216,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                     
                         /*Now that model coefficients have been update, update the current
                         instruction retirement rate*/
-                        LAMbS_update_current_instrate( LAMbS_current_moi, LAMbS_current_moi);
+                        LAMbS_update_current_instrate();
 
                     /*Exit critical section*/
                     local_irq_restore(irq_flags);

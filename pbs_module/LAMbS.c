@@ -26,11 +26,6 @@ LAMbS_mostat_t *global_mostat_p;
 LAMbS_icount_t global_icount;
 LAMbS_energy_t global_energy;
 
-/*********************************************************************
- * debug? Count kernel instructions and maybe other things later 
- *********************************************************************/
-
-
 /**********************************************************************
 
 Measurement-related functions
@@ -114,21 +109,21 @@ int LAMbS_init(void)
         printk(KERN_INFO "LAMbS_init: LAMbS_energy_init failed");
         goto error1;
     }
-    
-    ret = LAMbS_models_alloc_pages();
-    if(0 != ret)
-    {
-        printk(KERN_INFO "LAMbS_init: LAMbS_models_alloc_pages failed");
-        goto error2;
-    }
-    
+        
     ret = LAMbS_VIC_init();
     if(0 != ret)
     {
         printk(KERN_INFO "LAMbS_init: LAMbS_VIC_init failed");
-        goto error3;        
+        goto error2; 
     }
 
+    ret = LAMbS_VICtimer_mechanism_init();
+    if(0 != ret)
+    {
+        printk(KERN_INFO "LAMbS_init: LAMbS_VICtimer_mechanism_init failed");
+        goto error3;
+    }
+    
     ret = LAMbS_measurements_alloc();
     if(0 != ret)
     {
@@ -136,10 +131,10 @@ int LAMbS_init(void)
         goto error4;
     }
     
-    ret = LAMbS_VICtimer_mechanism_init();
+    ret = LAMbS_models_alloc_pages();
     if(0 != ret)
     {
-        printk(KERN_INFO "LAMbS_init: LAMbS_VICtimer_mechanism_init failed");
+        printk(KERN_INFO "LAMbS_init: LAMbS_models_alloc_pages failed");
         goto error5;
     }
     
@@ -148,9 +143,9 @@ int LAMbS_init(void)
 error5:
     LAMbS_measurements_free();
 error4:
-    LAMbS_VIC_uninit();
+    LAMbS_VICtimer_mechanism_clear();    
 error3:
-    LAMbS_models_free_pages();
+    LAMbS_VIC_uninit();
 error2:
     LAMbS_energy_uninit();
 error1:
@@ -161,16 +156,16 @@ error0:
 
 void LAMbS_uninit(void)
 {
-    LAMbS_VICtimer_mechanism_clear();
+    LAMbS_models_free_pages();
 
     LAMbS_measurements_free();
 
+    LAMbS_VICtimer_mechanism_clear();    
+
     LAMbS_VIC_uninit();
 
-    LAMbS_models_free_pages();
-    
     LAMbS_energy_uninit();
-    
+
     LAMbS_icount_uninit();
 }
 
