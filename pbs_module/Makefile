@@ -6,7 +6,7 @@ obj-m	:= pbs_module.o
 pbs_module-objs := module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o pbs_active.o \
                    pba.o LAMbS.o \
                    LAMbS_icount.o LAMbS_energy.o LAMbS_models.o LAMbS_VIC.o \
-                   LAMbS_VICtimer.o
+                   LAMbS_VICtimer.o LAMbS_VICtimer_test.o
                    
 else
 
