@@ -25,7 +25,7 @@
 #include <linux/printk.h>
 #include <linux/ktime.h>
 
-/* ktime_t casting (64b) */
+/* ktime_set() */
 
 #include <linux/hrtimer.h>
 

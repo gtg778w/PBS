@@ -2,6 +2,7 @@ SRCS	= LAMbS_mo.c LAMbS_molookup.c LAMbS_mostat.c LAMbS_governor_main.c
 TESTSRC = freq_change_test.c
 
 obj-m += LAMbS_governor.o
+obj-m += freq_change_test.o
 
 LAMbS_governor-objs := $(SRCS:.c=.o)
 
