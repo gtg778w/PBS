@@ -25,21 +25,16 @@ u64 test_sched[32];
 int rp_count = 0;
 
 
-static int __init change_freq(void) {
+static int __init test_setup(void) {
     u64 per_mo;
     int i;
 
     per_mo = (u64)RP/LAMbS_mo_struct.count;
-    printk(KERN_ALERT "using per_mo of %d ns", per_mo);
+    printk(KERN_ALERT "using per_mo of %llu ns", per_mo);
     for (i = 0; i < LAMbS_mo_struct.count; i++) {
 	test_sched[i] = per_mo;
     }
-
-    hrtimer_init(&rp_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-    printk(KERN_ALERT "hrtimer_init: rp_timer initialized");
-    rp_timer.function = &next_rp;
-    next_rp(&rp_timer);
-
+    change_freq(); 
     return 0;
 }
 
@@ -47,13 +42,24 @@ static void __exit end_count(void) {
     printk(KERN_ALERT "test module ended");
 }
 
+static void change_freq(void) {
+
+    hrtimer_init(&rp_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+    printk(KERN_ALERT "hrtimer_init: rp_timer initialized");
+    rp_timer.function = &next_rp;
+    hrtimer_start(&rp_timer, ktime_set(0, RP), HRTIMER_MODE_REL);
+
+    next_rp(&rp_timer);
+
+}
+
 
 enum hrtimer_restart next_rp(struct hrtimer* timer) {
 
     if (rp_count < RP_COUNT) {
 	rp_count++;
-	hrtimer_start(&rp_timer, ktime_set(0, RP), HRTIMER_MODE_REL);
-	printk(KERN_ALERT "hrtimer_start: rp_timer started");
+	hrtimer_forward_now(&rp_timer, ktime_set(0, RP));
+	printk(KERN_ALERT "hrtimer_forward_now: rp_timer started");
 	LAMbS_cpufreq_sched(test_sched);
 	return HRTIMER_RESTART;
     } else {
@@ -62,7 +68,7 @@ enum hrtimer_restart next_rp(struct hrtimer* timer) {
     }
 }
 
-module_init(change_freq);
+module_init(test_setup);
 module_exit(end_count);
 
 MODULE_LICENSE("GPL");

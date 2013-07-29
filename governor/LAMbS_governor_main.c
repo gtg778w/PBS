@@ -79,7 +79,7 @@ enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     for( ; moi < LAMbS_mo_struct.count; moi++) {
 	if (schedule[moi] > min_trans_thresh) {
 	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
-	    hrtimer_start(&LAMbS_sched_timer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
+	    hrtimer_forward_now(&LAMbS_sched_timer, ktime_set(0,schedule[moi]));
 	    return HRTIMER_NORESTART;
 	}
     }
