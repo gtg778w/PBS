@@ -80,6 +80,7 @@ void LAMbS_models_init(void)
                                 instruction_retirement_rate_inv[LAMbS_current_moi];
 
     local_irq_restore(irq_flags);
+    
 }
 
 /*

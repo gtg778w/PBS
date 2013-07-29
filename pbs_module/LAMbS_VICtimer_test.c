@@ -30,18 +30,22 @@ and bugs
 static int test_started = 0;
 static struct LAMbS_VICtimer_s test_VICtimer;
 
-static int  VICtimer_test_length, VICtimer_test_index;
-static u64  VICtimer_test_interval; 
-static u64  *VICtimer_test_target_VIC, *VICtimer_test_callback_VIC;
-static u64  *VICtimer_test_target_ns,  *VICtimer_test_callback_ns;
-static u64  *VICtimer_test_instrateinv;
+static int  VICtimer_test_length, VICtimer_test_index, VICtimer_test_rpindex;
+static s64  VICtimer_test_interval;
+static s64  *VICtimer_test_rpindex_array;
+static s64  *VICtimer_test_target_VIC, *VICtimer_test_callback_VIC;
+static s64  *VICtimer_test_target_ns,  *VICtimer_test_callback_ns;
+static s64  *VICtimer_test_instrateinv;
 
 static enum LAMbS_VICtimer_restart 
     LAMbS_VICtimer_test_callback(   struct LAMbS_VICtimer_s* VICtimer_p,
                                     u64 VIC_current)
 {
     enum LAMbS_VICtimer_restart ret;
-    u64 next_target;
+    s64 next_target;
+
+    /*Log the rpindex*/
+    VICtimer_test_rpindex_array[VICtimer_test_index] = VICtimer_test_rpindex;
 
     /*Log the target time (ns) and callback time (ns)*/        
     VICtimer_test_target_ns[VICtimer_test_index] =  
@@ -57,9 +61,8 @@ static enum LAMbS_VICtimer_restart
     VICtimer_test_instrateinv[VICtimer_test_index] = LAMbS_current_instretirementrate_inv;
     
     /*Set the next target as the current target plus the test interval*/
-    
     next_target =   VIC_current + VICtimer_test_interval;
-                    
+    
     VICtimer_p->target_VIC = next_target;
     
     /*Increment the test index*/
@@ -78,28 +81,76 @@ static enum LAMbS_VICtimer_restart
     return ret;
 }
 
-int LAMbS_VICtimer_start_test(int test_length, u64 VIC_interval)
+/*
+Cancel the hrtimer associated with the VIC timer
+*/
+void LAMbS_VICtimer_test_stop(void)
+{
+    /*Cancel the timer if it was acive before*/
+    LAMbS_VICtimer_cancel(&test_VICtimer);
+}
+
+/*
+    Start the test for the next reservation period
+*/
+int LAMbS_VICtimer_test_start(void)
 {
     int ret;
+
+    /*Check that the test can be started*/
+    if( (VICtimer_test_index >= VICtimer_test_length) || 
+        (0 == test_started) )
+    {
+        goto error0;
+    }
     
+    /*Increment the reservation period*/
+    VICtimer_test_rpindex++;
+    
+    /*Start the timer with a relative target of VICtimer_test_interval*/
+    ret = LAMbS_VICtimer_start( &test_VICtimer,
+                                VICtimer_test_interval,
+                                LAMbS_VICTIMER_REL);
+    if(ret < 0)
+    {
+        printk(KERN_INFO    "LAMbS_VICtimer_start_test: LAMbS_VICtimer_start failed!");
+        goto error0;
+    }
+    else if(ret == 1)
+    {
+        printk(KERN_INFO    "LAMbS_VICtimer_start_test: The VIC interval is too short. "
+                            "LAMbS_VICtimer_start failed!");
+        goto error0;
+    }
+    
+    return 0;
+error0:
+    return -1;
+}
+
+/*
+Allocate space for and initialize the LAMbS_VICtimer test
+*/
+int LAMbS_VICtimer_test_init(int test_length, u64 VIC_interval)
+{
     /*Test that the test has not already started*/
     if(0 != test_started)
     {
-        printk(KERN_INFO    "LAMbS_VICtimer_start_test: test is already in progress. "
+        printk(KERN_INFO    "LAMbS_VICtimer_test_init: test is already in progress. "
                             "Call LAMbS_VICtimer_stop_test first.");
         goto error0;
     }
     
     /*Allocate space for the test results*/
-    VICtimer_test_target_VIC = kmalloc( (sizeof(u64) * test_length *5),
-                                        GFP_KERNEL);
-    if(NULL == VICtimer_test_target_VIC)
+    VICtimer_test_rpindex_array = kmalloc(  (sizeof(u64) * test_length *6),
+                                            GFP_KERNEL);
+    if(NULL == VICtimer_test_rpindex_array)
     {
-        printk(KERN_INFO    "LAMbS_VICtimer_start_test: kmalloc failed for "
-                            "VICtimer_test_target_VIC");
-        ret = -ENOMEM;
+        printk(KERN_INFO    "LAMbS_VICtimer_test_init: kmalloc failed for "
+                            "VICtimer_test_rpindex_array");
         goto error0;
     }
+    VICtimer_test_target_VIC =      &(VICtimer_test_rpindex_array[test_length]);
     VICtimer_test_callback_VIC =    &(VICtimer_test_target_VIC[test_length]);
     VICtimer_test_target_ns =       &(VICtimer_test_callback_VIC[test_length]);
     VICtimer_test_callback_ns =     &(VICtimer_test_target_ns[test_length]);
@@ -108,45 +159,19 @@ int LAMbS_VICtimer_start_test(int test_length, u64 VIC_interval)
     /*Initialize the varriables for the experiment*/
     VICtimer_test_length = test_length;
     VICtimer_test_index  = 0;
+    VICtimer_test_rpindex= 0;
     
     /*Set the interval length*/
     VICtimer_test_interval  = VIC_interval;
-    
+
     /*Initialize the timer*/
     LAMbS_VICtimer_init( &test_VICtimer);
     test_VICtimer.function = LAMbS_VICtimer_test_callback;
-    
-    /*Start the timer with a relative target*/
-    ret = LAMbS_VICtimer_start( &test_VICtimer,
-                                VIC_interval,
-                                LAMbS_VICTIMER_REL);
-    if(ret < 0)
-    {
-        printk(KERN_INFO    "LAMbS_VICtimer_start_test: LAMbS_VICtimer_start failed!");
-        goto error1;
-    }
-    else if(ret == 1)
-    {
-        printk(KERN_INFO    "LAMbS_VICtimer_start_test: The VIC interval is too short. "
-                            "LAMbS_VICtimer_start failed!");
-        goto error1;
-    }
-    
-    printk(KERN_INFO    "LAMbS_VICtimer_start_test: VIC = %lu",
-                        (long unsigned)LAMbS_VIC_get(NULL));
-    
+
     test_started = 1;
     
     return 0;
-
-error1:
-    /*Reset the test length to 0*/
-    VICtimer_test_length = 0;
-    /*Free the memory allocated for the test*/    
-    kfree(VICtimer_test_target_VIC);
-    /*Set the pointers to NULL*/
-    VICtimer_test_target_VIC = NULL;
-    VICtimer_test_callback_VIC = NULL;
+    
 error0:
     return -1;
 }
@@ -245,7 +270,8 @@ static int _LAMbS_VICtimer_test_write_log(  s64 *max_VIC_error_p,
         /*Create the text to write to file*/
         string_len = snprintf(  string_buffer, 
                                 (size_t)256, 
-                                "\t%lu,\t%lu,\t%li,\t%lu,\t%lu,\t%li,\t0x%lx\n", 
+                                "\t%i,\t%lu,\t%lu,\t%li,\t%lu,\t%lu,\t%li,\t%li\n",
+                                (int)VICtimer_test_rpindex_array[i],
                                 (unsigned long)VICtimer_test_target_VIC[i],
                                 (unsigned long)VICtimer_test_callback_VIC[i],
                                 (long)VIC_error,
@@ -288,22 +314,21 @@ exit0:
     return ret;
 }
 
-int LAMbS_VICtimer_stop_test(void)
+int LAMbS_VICtimer_test_uninit(void)
 {
     int ret;
     
     s64 max_VIC_error, min_VIC_error;
     s64 max_ns_error,  min_ns_error;
     
-    
-    if(1 != test_started)
+    if(0 == test_started)
     {
         printk(KERN_INFO    "LAMbS_VICtimer_stop_test: the test is currently not in "
                             "progress. Call LAMbS_VICtimer_start_test to start the test");
         return -1;
     }
 
-    /*Cancel the VICtimer*/
+    /*Cancel the VICtimer if it is still running*/
     ret = LAMbS_VICtimer_cancel(&test_VICtimer);
     
     /*Write the VICtimer test results to a log file*/

@@ -44,8 +44,10 @@ void LAMbS_VICtimer_init(   LAMbS_VICtimer_t *LAMbS_VICtimer_p);
 int LAMbS_VICtimer_mechanism_init(void);
 void LAMbS_VICtimer_mechanism_clear(void);
 
-int LAMbS_VICtimer_start_test(int test_length, u64 VIC_interval);
-int LAMbS_VICtimer_stop_test(void);
+int LAMbS_VICtimer_test_init(int test_length, u64 VIC_interval);
+int LAMbS_VICtimer_test_start(void);
+void LAMbS_VICtimer_test_stop(void);
+int LAMbS_VICtimer_test_uninit(void);
 
 #endif
 

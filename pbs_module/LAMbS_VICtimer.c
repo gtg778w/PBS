@@ -125,11 +125,11 @@ static enum LAMbS_VICtimer_restart
                 /*The timer will not restart*/
                 ret = LAMbS_VICTIMER_NORESTART;
                 
-                /*Change the state of the timer to INACTIVE*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
-                
                 /*Remove the timer from the active list*/
                 list_del(&(LAMbS_VICtimer_p->activelist_entry));
+                
+                /*Change the state of the timer to INACTIVE*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
                 
                 /*Break out of the loop*/
                 break;
@@ -184,6 +184,7 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
         if( LAMbS_VICTIMER_RESTART == callback_ret )
         {
             /*Reset the timer with the new relative target ns_to_target*/
+            /*ns_to_target should be greater than LAMbS_VICTIMER_THRESHOLD*/
             ns_to_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
             ktime_to_target.tv64 = ns_to_target;
             hrtimer_forward_now(timer, ktime_to_target);
@@ -191,6 +192,9 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
         }
         else
         {
+            /*LAMbS_VICtimer_check_callback deletes the timer from the active list*/
+            
+            
             /*The timer should not be restarted*/
             ret = HRTIMER_NORESTART;
         }
@@ -210,11 +214,15 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
       VIC_timer functions set the NEED_RESCHED flag for the task, the task would be 
       recheduled at least during return from interrupt or syscall, if not earlier 
       (inshallah).
+      
+    - This function is called from _LAMbS_models_motrans_callback, which is hopefully 
+      called with interrupts disabled (inshallah).
+      
+    Forgive me if the inshallas offend you, but I'm hitting a little in the dark here
+    and I can use all the divine help I can get.
 */
 void LAMbS_VICtimer_motransition(void)
 {
-    s64 instruction_ret_rate_inv;
-    
     struct list_head *next_actvlist_node;
     struct list_head *temp_node;
     
@@ -224,18 +232,19 @@ void LAMbS_VICtimer_motransition(void)
     s64  ns_to_target;
     ktime_t ktime_to_target;
     
-    /*Get the new instruction retirement rate*/
-    instruction_ret_rate_inv = LAMbS_current_instretirementrate_inv;
-    
     /*Loop through the list of active VIC timers and reset their targets
     or call their callbacks as appropriate*/
     list_for_each_safe(next_actvlist_node, temp_node, &LAMbS_VICtimer_activelist)
     {
+
         /*Get the address of the timer based on the address of the linked list node*/
         LAMbS_VICtimer_p = container_of(    next_actvlist_node, 
                                             struct LAMbS_VICtimer_s, 
                                             activelist_entry);
                                             
+        /*Cancel the timer*/
+        hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
+
         /*Check the status of the timer and take appropriate action*/
         timer_reset = LAMbS_VICtimer_check_callback(LAMbS_VICtimer_p,
                                                     &ns_to_target);
@@ -249,11 +258,6 @@ void LAMbS_VICtimer_motransition(void)
             hrtimer_start(  &(LAMbS_VICtimer_p->hrtimer), 
                             ktime_to_target, 
                             HRTIMER_MODE_REL);
-        }
-        else
-        {
-            /*Cancel the timer*/
-            hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
         }
     }
 }
@@ -285,11 +289,11 @@ int LAMbS_VICtimer_cancel(  LAMbS_VICtimer_t *LAMbS_VICtimer_p)
                 /*Cancel the hrtimer*/
                 hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
                 
-                /*Change the state of the timer to INACTIVE*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
-                
                 /*Remove the timer from the active list*/
                 list_del(&(LAMbS_VICtimer_p->activelist_entry));
+                
+                /*Change the state of the timer to INACTIVE*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
                 
                 ret = 1;
                 break;
@@ -349,13 +353,33 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
     
     unsigned long irq_flags;
     
-    /*Check that this is not a misbehaving timer*/
-    if( LAMbS_VICTIMER_CALLBACK_STORM == LAMbS_VICtimer_p->state )
+    switch(LAMbS_VICtimer_p->state)
     {
-        printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer in state "
-                         "LAMbS_VICTIMER_CALLBACK_STORM");
-        ret = -1;
-        goto exit0;
+        case LAMbS_VICTIMER_HRTARMED:
+            LAMbS_VICtimer_cancel(LAMbS_VICtimer_p);
+            
+        case LAMbS_VICTIMER_INACTIVE:            
+            break;
+            
+        case LAMbS_VICTIMER_CALLBACK:
+            /*The VICtimer should not be started from its own callback function*/
+            printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer in state "
+                            "LAMbS_VICTIMER_CALLBACK");
+            ret = -1;
+            goto exit0;
+            
+        case LAMbS_VICTIMER_CALLBACK_STORM:
+            /*This timer is a misbehaving timer. Refuse to start it.*/
+            printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer in state "
+                             "LAMbS_VICTIMER_CALLBACK_STORM");
+            ret = -1;
+            goto exit0;
+            
+        default:
+            printk(KERN_INFO "LAMbS_VICtimer_start: attempt to arm a VICtimer in unknown "
+                             "state ");
+            ret = -1;
+            goto exit0;
     }
     
     /*Enter critical section.*/
@@ -382,11 +406,8 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
                 printk(KERN_INFO    "LAMbS_VICtimer_start: unknown mode (%i) passed as "
                                     "argument. ", mode);
                 ret = -1;
-                goto exit0;
+                goto exit1;
         }
-
-        /*update the LAMbS_VICtimer_t structure with the target_VIC*/
-        LAMbS_VICtimer_p->target_VIC = target_VIC;
 
         /*Compute the ns remaining to target*/
         ns_to_target  =  
@@ -404,6 +425,12 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         
         /*Subtract half of the threshold*/
         ns_to_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
+        
+        /*update the LAMbS_VICtimer_t structure with the target_VIC*/
+        LAMbS_VICtimer_p->target_VIC = target_VIC;
+        
+        /*Set the state of the timer to active*/
+        LAMbS_VICtimer_p->state = LAMbS_VICTIMER_HRTARMED;
         
         /*Set the VIC timer to active state and add it to the active queue*/
         list_add(   &(LAMbS_VICtimer_p->activelist_entry), 
@@ -495,7 +522,6 @@ void LAMbS_VICtimer_mechanism_clear(void)
             
             /*Set the state to INACTIVE*/
             LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
-            
         }
     
     /*Leave the critical section*/
