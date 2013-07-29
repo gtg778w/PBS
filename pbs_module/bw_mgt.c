@@ -169,6 +169,16 @@ ssize_t bw_mgt_write(   struct file *filep,
             if(ret == 0)
             {
                 allocator_state = ALLOCATOR_START;
+                /*FIXME*/
+                {
+                    int ret;
+                    
+                    ret = LAMbS_VICtimer_test_init(5000, 3000000);
+                    if(ret < 0)
+                    {
+                        printk(KERN_INFO "LAMbS_models_init: LAMbS_VICtimer_test_init failed");
+                    }
+                }
             }
             else
             {
@@ -210,17 +220,27 @@ ssize_t bw_mgt_write(   struct file *filep,
                 //check before going to sleep
                 if(allocator_state == ALLOCATOR_LOOP)
                 {
-                    /*Enter critical section. The following function needs to be executed
-                    with interrupts disabled*/
+                    //FIXME
+                    {
+                        LAMbS_VICtimer_test_stop();
+                    }
+                    
+                    /*Enter critical section. The following function needs to be 
+                    executed with interrupts disabled*/
                     local_irq_save(irq_flags);
                     
-                        /*Now that model coefficients have been update, update the current
-                        instruction retirement rate*/
+                        /*Now that model coefficients have been update, update the 
+                        current instruction retirement rate*/
                         LAMbS_update_current_instrate();
 
                     /*Exit critical section*/
-                    local_irq_restore(irq_flags);
+                    local_irq_restore(irq_flags);                        
                     
+                    //FIXME
+                    {
+                        LAMbS_VICtimer_test_start();
+                    }
+                                    
                     //assign new bandwidths
                     assign_bandwidths();
 
@@ -256,6 +276,11 @@ ssize_t bw_mgt_write(   struct file *filep,
             if(ALLOCATOR_LOOP == allocator_state)
             {
                 stop_pbs_timing(0);
+                /*FIXME*/
+                {
+                    LAMbS_VICtimer_test_uninit();
+                }
+
                 preempt_enable();
             }
             else 
