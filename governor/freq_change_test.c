@@ -44,7 +44,7 @@ static int __init test_setup(void) {
 }
 
 static void __exit end_count(void) {
-    printk(KERN_ALERT "test module ended");
+    printk(KERN_ALERT "test module ended\n");
 }
 /*
 static void change_freq(void) {

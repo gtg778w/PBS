@@ -77,7 +77,7 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 
 enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     /* number of transitions count? */
-    while (moi < LAMbS_mo_struct.count) {
+    while (moi < LAMbS_mo_struct.count - 1) {
 	printk(KERN_ALERT "in schedule_next_moi: schedule[%d] = %llu\n", moi, schedule[moi]);
 	if (schedule[moi] > min_trans_thresh) {
 	    moi++;
@@ -266,6 +266,7 @@ static int __init cpufreq_gov_lambs_init(void) {
 static void __exit cpufreq_gov_lambs_exit(void) {
     cpufreq_unregister_governor(&cpufreq_gov_lambs);
     LAMbS_mo_uninit(); 
+    printk(KERN_ALERT "LAMbS_governor removed successfully\n");
 }
 
 MODULE_AUTHOR("Michael Giardino <giardino@ece.gatech.edu>");
