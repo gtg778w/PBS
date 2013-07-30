@@ -77,16 +77,21 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 
 enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     /* number of transitions count? */
-    for( ; moi < LAMbS_mo_struct.count; moi++) {
+    while (moi < LAMbS_mo_struct.count) {
 	printk(KERN_ALERT "in schedule_next_moi: schedule[%d] = %llu\n", moi, schedule[moi]);
 	if (schedule[moi] > min_trans_thresh) {
+	    moi++;
 	    hrtimer_forward_now(&LAMbS_sched_timer, ktime_set(0,schedule[moi]));
 	    printk(KERN_ALERT "hrtimer restarted\n");
 	    
 	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
 	    printk(KERN_ALERT "hrtimer: schedule[%d] = %llu ns @ %d kHz\n", moi, schedule[moi], LAMbS_mo_struct.table[moi]);
 	    return HRTIMER_RESTART;
+	} else {
+	    moi++;
+	    continue;
 	}
+
     }
     return HRTIMER_NORESTART;
 }
@@ -117,7 +122,7 @@ EXPORT_SYMBOL_GPL(LAMbS_cpufreq_sched);
  */
 
 int LAMbS_freq_set(u32 freq) {
-    int ret = -EINVAL;
+    /*int ret = -EINVAL;
 
     printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy_p->cpu, freq);
 
@@ -129,7 +134,7 @@ int LAMbS_freq_set(u32 freq) {
 
     per_cpu(cpu_set_freq, policy_p->cpu) = freq;
 
-    /* pretty sure this isn't needed. __cpufreq_driver_target does this 
+     pretty sure this isn't needed. __cpufreq_driver_target does this 
     
     if (freq < per_cpu(cpu_min_freq, policy->cpu)) {
 	freq = per_cpu(cpu_min_freq, policy->cpu);
@@ -137,13 +142,16 @@ int LAMbS_freq_set(u32 freq) {
     if (freq > per_cpu(cpu_max_freq, policy->cpu)) {
 	freq = per_cpu(cpu_max_freq, policy->cpu);
     }
-    */
+    
 
-    ret = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
+    r = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
 
 err:
     mutex_unlock(&setfreq_mutex);
     return ret;
+    */
+    printk(KERN_ALERT "Not actually changing frequency, but this is where it would happen: %d kHz\n", freq);
+    return 0;
 }
 EXPORT_SYMBOL_GPL(LAMbS_freq_set);
 /* from Documentation/cpu-freq/governors.txt
