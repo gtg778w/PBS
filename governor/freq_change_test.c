@@ -18,7 +18,7 @@
 #include "LAMbS_molookup.h"
 
 #define RP 20000000
-#define RP_COUNT 4
+#define RP_COUNT 1
 
 struct hrtimer rp_timer;
 u64 test_sched[32];
@@ -30,7 +30,7 @@ static int __init test_setup(void) {
     int i;
 
     per_mo = (u64)RP/LAMbS_mo_struct.count;
-    printk(KERN_ALERT "using per_mo of %llu ns", per_mo);
+    printk(KERN_ALERT "using per_mo of %llu ns\n", per_mo);
     for (i = 0; i < LAMbS_mo_struct.count; i++) {
 	test_sched[i] = per_mo;
     }
@@ -45,7 +45,7 @@ static void __exit end_count(void) {
 static void change_freq(void) {
 
     hrtimer_init(&rp_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-    printk(KERN_ALERT "hrtimer_init: rp_timer initialized");
+    printk(KERN_ALERT "hrtimer_init: rp_timer initialized\n");
     rp_timer.function = &next_rp;
     hrtimer_start(&rp_timer, ktime_set(0, RP), HRTIMER_MODE_REL);
 
@@ -59,11 +59,10 @@ enum hrtimer_restart next_rp(struct hrtimer* timer) {
     if (rp_count < RP_COUNT) {
 	rp_count++;
 	hrtimer_forward_now(&rp_timer, ktime_set(0, RP));
-	printk(KERN_ALERT "hrtimer_forward_now: rp_timer started");
+	printk(KERN_ALERT "hrtimer_forward_now: rp_timer started\n");
 	LAMbS_cpufreq_sched(test_sched);
 	return HRTIMER_RESTART;
     } else {
-	end_count();
 	return HRTIMER_NORESTART;
     }
 }

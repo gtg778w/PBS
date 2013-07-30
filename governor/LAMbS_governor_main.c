@@ -53,6 +53,7 @@ struct cpufreq_policy *policy_p;
 u64 min_trans_thresh = MIN_THRESH;
 int moi;
 u64* schedule;
+int running = 0;
 
 static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
 				  void *data) {
@@ -77,22 +78,34 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     /* number of transitions count? */
     for( ; moi < LAMbS_mo_struct.count; moi++) {
+	printk(KERN_ALERT "in schedule_next_moi: schedule[%d] = %llu\n", moi, schedule[moi]);
 	if (schedule[moi] > min_trans_thresh) {
-	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
 	    hrtimer_forward_now(&LAMbS_sched_timer, ktime_set(0,schedule[moi]));
-	    return HRTIMER_NORESTART;
+	    printk(KERN_ALERT "hrtimer restarted\n");
+	    
+	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
+	    printk(KERN_ALERT "hrtimer: schedule[%d] = %llu ns @ %d kHz\n", moi, schedule[moi], LAMbS_mo_struct.table[moi]);
+	    return HRTIMER_RESTART;
 	}
     }
     return HRTIMER_NORESTART;
 }
 
 void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
+    int i;
+    int active;
     moi = 0;
     schedule = LAMbS_mo_schedule;
-    /* setup function called when timer expires */
-    LAMbS_sched_timer.function = &schedule_next_moi;
-
-    schedule_next_moi(&LAMbS_sched_timer);
+    
+    for(i = 0; i < LAMbS_mo_struct.count; i++) {
+	printk(KERN_ALERT "schedule[%d] = %llu ns\n", i, schedule[i]);
+    }
+    active = hrtimer_start(&LAMbS_sched_timer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
+    if (active) {
+        printk(KERN_ALERT "hrtimer already active\n");
+    } else {
+	printk(KERN_ALERT "hrtimer started for first time\n");
+    }
 }
 
 
@@ -164,20 +177,24 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_cur_freq, cpu) = policy->cur;
 	per_cpu(cpu_set_freq, cpu) = policy->cur;
 	
+	mutex_unlock(&setfreq_mutex);
+	
 	printk(KERN_NOTICE "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
 	    cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
 	    per_cpu(cpu_cur_freq, cpu));
-	mutex_unlock(&setfreq_mutex);
-	
+
 	/* keep local pointer for frequency setting */
 	policy_p = policy;
 
 	/* initialize timer */
 	hrtimer_init(&LAMbS_sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	/* setup function called when timer expires */
+	LAMbS_sched_timer.function = &schedule_next_moi;
 	
 	break;
     case CPUFREQ_GOV_STOP:
 	mutex_lock(&setfreq_mutex);
+	
 	/* one core only! */
 	cpufreq_unregister_notifier(&lambs_cpufreq_notifier_block,
 				    CPUFREQ_TRANSITION_NOTIFIER);
@@ -185,14 +202,19 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_max_freq, cpu) = 0;
 	per_cpu(cpu_min_freq, cpu) = 0;
 	per_cpu(cpu_set_freq, cpu) = 0;
-	printk(KERN_NOTICE "managing cpu %u stopped\n", cpu);
+	
 	mutex_unlock(&setfreq_mutex);
+	
+	printk(KERN_NOTICE "managing cpu %u stopped\n", cpu);
+
 	break;
     case CPUFREQ_GOV_LIMITS:
-	mutex_lock(&setfreq_mutex);
 	printk(KERN_NOTICE "limit event for cpu %u: %u - %u kHz, currently %u kHz, "
 		 "last set to %u kHz\n", cpu, policy->min, policy->max,
 		 per_cpu(cpu_cur_freq, cpu), per_cpu(cpu_set_freq, cpu));
+	
+	mutex_lock(&setfreq_mutex);
+	
 	if (policy->max < per_cpu(cpu_set_freq, cpu)) {
 	    __cpufreq_driver_target(policy, policy->max, CPUFREQ_RELATION_H);
 	} else if (policy->min > per_cpu(cpu_set_freq, cpu)) {
@@ -204,7 +226,9 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_min_freq, cpu) = policy->min;
 	per_cpu(cpu_max_freq, cpu) = policy->max;
 	per_cpu(cpu_cur_freq, cpu) = policy->cur;
+	
 	mutex_unlock(&setfreq_mutex);
+	
 	break;
     }
     return rc;
