@@ -1,5 +1,4 @@
 #!/bin/bash
-insmod gov_test/gov_test.ko
+insmod ../governor/LAMbS_governor.ko
 echo lambs > /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-insmod gov_test/freq_change_test.ko
-
+insmod ../governor/freq_change_test.ko
