@@ -1,6 +1,7 @@
 #ifndef LAMBS_GOVERNOR_H
 #define LAMBS_GOVERNOR_H
 
+#include <linux/interrupt.h>
 #include "LAMbS_mo.h"
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"

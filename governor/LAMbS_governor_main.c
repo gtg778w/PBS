@@ -77,16 +77,32 @@ static struct notifier_block lambs_cpufreq_notifier_block = {
 
 enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
     /* number of transitions count? */
-    for( ; moi < LAMbS_mo_struct.count; moi++) {
+    while (moi < LAMbS_mo_struct.count - 1) {
 	printk(KERN_ALERT "in schedule_next_moi: schedule[%d] = %llu\n", moi, schedule[moi]);
 	if (schedule[moi] > min_trans_thresh) {
+	    moi++;
+	    if (irqs_disabled()) 
+		printk(KERN_ALERT "irqs_disabled in schedule_next_moi before timer\n");
+	    else
+		printk(KERN_ALERT "irqs_enabled in schedule_next_moi before timer\n");
+	    
 	    hrtimer_forward_now(&LAMbS_sched_timer, ktime_set(0,schedule[moi]));
 	    printk(KERN_ALERT "hrtimer restarted\n");
 	    
-	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
-	    printk(KERN_ALERT "hrtimer: schedule[%d] = %llu ns @ %d kHz\n", moi, schedule[moi], LAMbS_mo_struct.table[moi]);
+	    if(irqs_disabled()) {
+		printk(KERN_ALERT "irqs_disabled() in schedule_next_moi: schedule[%d]\n", moi);
+	
+	    } else {
+		printk(KERN_ALERT "irqs_enabled() in schedule_next_moi: schedule[%d]\n", moi);
+	    	LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
+		printk(KERN_ALERT "hrtimer: schedule[%d] = %llu ns @ %d kHz\n", moi, schedule[moi], LAMbS_mo_struct.table[moi]);
+	    }
 	    return HRTIMER_RESTART;
+	} else {
+	    moi++;
+	    continue;
 	}
+
     }
     return HRTIMER_NORESTART;
 }
@@ -100,12 +116,21 @@ void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
     for(i = 0; i < LAMbS_mo_struct.count; i++) {
 	printk(KERN_ALERT "schedule[%d] = %llu ns\n", i, schedule[i]);
     }
+    if (irqs_disabled()) 
+	printk(KERN_ALERT "irqs_disabled in LAMbS_cpufreq_sched() before timer start\n");
+    else
+	printk(KERN_ALERT "irqs_enabled in LAMbS_cpufreq_sched() before timer start\n");
+    
     active = hrtimer_start(&LAMbS_sched_timer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
     if (active) {
         printk(KERN_ALERT "hrtimer already active\n");
     } else {
 	printk(KERN_ALERT "hrtimer started for first time\n");
     }
+    if (irqs_disabled()) 
+	printk(KERN_ALERT "irqs_disabled in LAMbS_cpufreq_sched()\n");
+    else
+	printk(KERN_ALERT "irqs_enabled in LAMbS_cpufreq_sched()\n");
 }
 
 
@@ -129,7 +154,7 @@ int LAMbS_freq_set(u32 freq) {
 
     per_cpu(cpu_set_freq, policy_p->cpu) = freq;
 
-    /* pretty sure this isn't needed. __cpufreq_driver_target does this 
+     /*pretty sure this isn't needed. __cpufreq_driver_target does this 
     
     if (freq < per_cpu(cpu_min_freq, policy->cpu)) {
 	freq = per_cpu(cpu_min_freq, policy->cpu);
@@ -137,13 +162,16 @@ int LAMbS_freq_set(u32 freq) {
     if (freq > per_cpu(cpu_max_freq, policy->cpu)) {
 	freq = per_cpu(cpu_max_freq, policy->cpu);
     }
-    */
+   */ 
 
     ret = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
 
 err:
     mutex_unlock(&setfreq_mutex);
     return ret;
+    
+    printk(KERN_ALERT "Not actually changing frequency, but this is where it would happen: %d kHz\n", freq);
+    return 0;
 }
 EXPORT_SYMBOL_GPL(LAMbS_freq_set);
 /* from Documentation/cpu-freq/governors.txt
@@ -163,8 +191,18 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
     
     switch (event) {
     case CPUFREQ_GOV_START:
+	if (irqs_disabled()) 
+	    printk(KERN_ALERT "irqs_disabled in init() before mutex\n");
+	else
+	    printk(KERN_ALERT "irqs_enabled in init() before mutex\n");
+	    
 	mutex_lock(&setfreq_mutex);
 /* one processor only! */
+	if (irqs_disabled()) 
+	    printk(KERN_ALERT "irqs_disabled in init() after mutex\n");
+	else
+	    printk(KERN_ALERT "irqs_enabled in init() after mutex\n");
+	
 	cpufreq_register_notifier(&lambs_cpufreq_notifier_block, 
 				    CPUFREQ_TRANSITION_NOTIFIER);
 	
@@ -178,7 +216,11 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_set_freq, cpu) = policy->cur;
 	
 	mutex_unlock(&setfreq_mutex);
-	
+	if (irqs_disabled()) 
+	    printk(KERN_ALERT "irqs_disabled in init() after unlock\n");
+	else
+	    printk(KERN_ALERT "irqs_enabled in init() after unlock\n");
+
 	printk(KERN_NOTICE "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
 	    cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
 	    per_cpu(cpu_cur_freq, cpu));
@@ -190,7 +232,10 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	hrtimer_init(&LAMbS_sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	/* setup function called when timer expires */
 	LAMbS_sched_timer.function = &schedule_next_moi;
-	
+	if (irqs_disabled()) 
+	    printk(KERN_ALERT "irqs_disabled in init() after timer setup\n");
+	else
+	    printk(KERN_ALERT "irqs_enabled in init() after timer setup\n");
 	break;
     case CPUFREQ_GOV_STOP:
 	mutex_lock(&setfreq_mutex);
@@ -258,6 +303,7 @@ static int __init cpufreq_gov_lambs_init(void) {
 static void __exit cpufreq_gov_lambs_exit(void) {
     cpufreq_unregister_governor(&cpufreq_gov_lambs);
     LAMbS_mo_uninit(); 
+    printk(KERN_ALERT "LAMbS_governor removed successfully\n");
 }
 
 MODULE_AUTHOR("Michael Giardino <giardino@ece.gatech.edu>");

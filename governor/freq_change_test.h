@@ -6,6 +6,6 @@ extern struct LAMbS_mo_struct LAMbS_mo_struct;
 
 static int __init test_setup(void);
 static void __exit end_count(void);
-static void change_freq(void);
+/*static void change_freq(void);*/
 enum hrtimer_restart next_rp(struct hrtimer* timer);
 
