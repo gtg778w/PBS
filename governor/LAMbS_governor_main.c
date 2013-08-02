@@ -121,19 +121,21 @@ void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
     
     for(i = 0; i < LAMbS_mo_struct.count; i++) {
 	printk(KERN_ALERT "schedule[%d] = %llu ns\n", i, schedule[i]);
-	if (schedule[i] < maximum_transition_latency) {
+	if (schedule[i] && (schedule[i] < maximum_transition_latency)) {
 	    leftovers += schedule[i];
 	    schedule[i] = 0;
 	    printk(KERN_ALERT "schedule[%d] below threshold, zeroed and added to leftovers\n",i);
 	} else {
-	    schedule[i] += leftovers;
-	    leftovers = 0;
-	    printk(KERN_ALERT "%lldns added to schedule[%d] and leftovers zeroed\n", leftovers, i);
+	    if (leftovers && schedule[i]) {
+		schedule[i] += leftovers;
+		printk(KERN_ALERT "%lluns added to schedule[%d] and leftovers zeroed\n", leftovers, i);
+		leftovers = 0;
+	    }
 	}
     }
 
     if (leftovers) {
-	printk(KERN_ALERT "WARNING: %lldns leftover! Not assigned to any MO\n", leftovers);
+	printk(KERN_ALERT "WARNING: %lluns leftover! Not assigned to any MO\n", leftovers);
     }
 
     active = tasklet_hrtimer_start(&LAMbS_tasklet_hrtimer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
@@ -237,10 +239,10 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	/* try to get maximum transition latency or just use default of 10us */
 	if (policy->cpuinfo.transition_latency) {
 	    maximum_transition_latency = (u64)policy->cpuinfo.transition_latency;
-	    printk(KERN_ALERT, "policy->cpuinfo.transition_latency = %llu set as threshold", maximum_transition_latency);
+	    printk(KERN_ALERT "policy->cpuinfo.transition_latency = %llu set as threshold", maximum_transition_latency);
 	} else {
 	    maximum_transition_latency = MIN_THRESH;
-	    printk(KERN_ALERT, "policy->cpuinfo.transition_latency = NULL, %llu is default", maximum_transition_latency);
+	    printk(KERN_ALERT "policy->cpuinfo.transition_latency = NULL, %llu is default", maximum_transition_latency);
 	}
 
 	/* initialize timer */
