@@ -51,9 +51,10 @@ static DEFINE_PER_CPU(unsigned int, cpu_set_freq);  /* desired frequency */
 static DEFINE_PER_CPU(unsigned int, cpu_is_managed); /* governor represents cpu */
 
 static DEFINE_MUTEX(setfreq_mutex);
-
+/*
 struct hrtimer LAMbS_sched_timer;
-struct tasklet_hrtimer LAMbS_tasklet;
+*/
+struct tasklet_hrtimer LAMbS_tasklet_hrtimer;
 
 struct cpufreq_policy *policy_p;
 u64 min_trans_thresh = MIN_THRESH;
@@ -69,8 +70,7 @@ static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
     }
 
     if (val == CPUFREQ_POSTCHANGE) {
-	printk(KERN_NOTICE "saving cpu_cur_freq of cpu %u to be %u kHz\n",
-		 freq->cpu, freq->new);
+	printk(KERN_NOTICE "saving cpu_cur_freq of cpu %u to be %u kHz\n", freq->cpu, freq->new);
 	per_cpu(cpu_cur_freq, freq->cpu) = freq->new;
     }
     return 0;
@@ -89,7 +89,7 @@ enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
 	printk(KERN_ALERT "in schedule_next_moi: schedule[%d] = %llu\n", moi, schedule[moi]);
 	if (schedule[moi] > min_trans_thresh) {
 	    moi++;
-	    hrtimer_forward_now(&LAMbS_sched_timer, ktime_set(0,schedule[moi]));
+	    hrtimer_forward_now(timer, ktime_set(0,schedule[moi]));
 	    printk(KERN_ALERT "hrtimer restarted\n");
 	    LAMbS_freq_set(LAMbS_mo_struct.table[moi]);
 	    printk(KERN_ALERT "hrtimer: schedule[%d] = %llu ns @ %d kHz\n", moi, schedule[moi], LAMbS_mo_struct.table[moi]);
@@ -101,6 +101,13 @@ enum hrtimer_restart schedule_next_moi(struct hrtimer* timer) {
 	}
 
     }
+    
+    /* 
+     * if we make it to the end of the schedule, cancel the timer because
+     * it will be restarted next LAMbS_cpufreq_sched()
+     */
+
+    tasklet_hrtimer_cancel(&LAMbS_tasklet_hrtimer);
     return HRTIMER_NORESTART;
 }
 
@@ -114,18 +121,13 @@ void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
 	printk(KERN_ALERT "schedule[%d] = %llu ns\n", i, schedule[i]);
     }
 
-    active = hrtimer_start(&LAMbS_sched_timer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
+    active = tasklet_hrtimer_start(&LAMbS_tasklet_hrtimer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
+
     if (active) {
         printk(KERN_ALERT "hrtimer already active\n");
     } else {
 	printk(KERN_ALERT "hrtimer started for first time\n");
     }
-    /*
-    if (irqs_disabled()) 
-	printk(KERN_ALERT "irqs_disabled in LAMbS_cpufreq_sched()\n");
-    else
-	printk(KERN_ALERT "irqs_enabled in LAMbS_cpufreq_sched()\n");
-    */
 }
 
 
@@ -160,7 +162,7 @@ int LAMbS_freq_set(u32 freq) {
     }
    */ 
 
-    ret = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
+    ret = cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
 
 err:
     /*mutex_unlock(&setfreq_mutex);*/
@@ -213,9 +215,12 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	policy_p = policy;
 
 	/* initialize timer */
-	hrtimer_init(&LAMbS_sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	/* setup function called when timer expires */
+	
+	tasklet_hrtimer_init(&LAMbS_tasklet_hrtimer, &schedule_next_moi, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+
+	/* setup function called when timer expires 
 	LAMbS_sched_timer.function = &schedule_next_moi;
+	*/
 
 	break;
     case CPUFREQ_GOV_STOP:
@@ -232,7 +237,9 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	per_cpu(cpu_set_freq, cpu) = 0;
 	
 	mutex_unlock(&setfreq_mutex);
-	
+
+	tasklet_hrtimer_cancel(&LAMbS_tasklet_hrtimer);
+
 	printk(KERN_NOTICE "managing cpu %u stopped\n", cpu);
 
 	break;
