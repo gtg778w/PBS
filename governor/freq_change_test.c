@@ -17,7 +17,7 @@
 #include "freq_change_test.h"
 #include "LAMbS_molookup.h"
 
-#define RP 20000000
+#define RP 200000000
 #define RP_COUNT 2
 
 struct hrtimer rp_timer;
@@ -56,7 +56,12 @@ static void change_freq(void) {
 */
 
 enum hrtimer_restart next_rp(struct hrtimer* timer) {
-
+    /*
+    if (irqs_disabled()) 
+	printk(KERN_ALERT "irqs_disabled in next_rp (callback function)\n");
+    else
+	printk(KERN_ALERT "irqs_enabled in next_rp (Callback function)\n");
+    */
     if (rp_count < RP_COUNT) {
 	rp_count++;
 	hrtimer_forward_now(&rp_timer, ktime_set(0, RP));

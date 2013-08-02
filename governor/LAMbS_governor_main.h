@@ -6,7 +6,9 @@
 #include "LAMbS_molookup.h"
 #include "LAMbS_mostat.h"
 
-static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val, void *data);
+/*
+ * static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val, void *data);
+ */
 enum hrtimer_restart schedule_next_moi(struct hrtimer* timer);
 void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]);
 static int LAMbS_freq_set(u32 freq);
