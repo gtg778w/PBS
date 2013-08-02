@@ -34,7 +34,7 @@
  * hrtimer_start()
  */
 
-#include <interrupt.h>
+#include <linux/interrupt.h>
 
 /* tasklets */
 
