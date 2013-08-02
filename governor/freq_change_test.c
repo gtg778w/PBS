@@ -17,7 +17,7 @@
 #include "freq_change_test.h"
 #include "LAMbS_molookup.h"
 
-#define RP 200000000
+#define RP 2000000000
 #define RP_COUNT 2
 
 struct hrtimer rp_timer;

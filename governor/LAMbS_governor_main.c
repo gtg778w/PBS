@@ -162,7 +162,7 @@ int LAMbS_freq_set(u32 freq) {
     }
    */ 
 
-    ret = cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
+    ret = __cpufreq_driver_target(policy_p, freq, CPUFREQ_RELATION_L);
 
 err:
     /*mutex_unlock(&setfreq_mutex);*/
