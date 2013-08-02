@@ -43,23 +43,23 @@ static enum LAMbS_VICtimer_restart
     
     s64 VIC_to_target;
     s64 ns_to_target;
-
+    
     int callback_count;
-
+    
     /*Get the target VIC*/
     target_VIC  = LAMbS_VICtimer_p->target_VIC;
-        
+    
     /*Get the current VIC value*/
     current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
-        
+    
     /*Compute the VIC remaining to target VIC*/
     VIC_to_target = target_VIC - current_VIC;
-        
+    
     /*Compute the ns remaining to target*/
     ns_to_target  = LAMBS_models_multiply_shift(VIC_to_target, 
                                                 LAMbS_current_instretirementrate_inv, 
                                                 LAMbS_MODELS_FIXEDPOINT_SHIFT);
-        
+    
     /*Check if the timer is within the threshold of the 
     target or overshot it*/
     if( ns_to_target < LAMbS_VICTIMER_THRESHOLD )
@@ -165,9 +165,10 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
     
     LAMbS_VICtimer_t *LAMbS_VICtimer_p;
 
-    s64 ns_to_target;
-    ktime_t ktime_to_target;
-    
+    s64 ns_to_target, ns_to_soft_target;
+
+    s64 ns_current, ns_soft_target;
+
     /*Enter critical section. Note, timer callback functions should diable interrupts
     anyway, but just in case*/
     local_irq_save(irq_flags);
@@ -183,11 +184,16 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
         /*If the timer has to be rearmed*/
         if( LAMbS_VICTIMER_RESTART == callback_ret )
         {
-            /*Reset the timer with the new relative target ns_to_target*/
-            /*ns_to_target should be greater than LAMbS_VICTIMER_THRESHOLD*/
-            ns_to_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
-            ktime_to_target.tv64 = ns_to_target;
-            hrtimer_forward_now(timer, ktime_to_target);
+            ns_current = (timer->base->get_time()).tv64;
+            /*Compute the time to soft target and the time to target minus half of the 
+            threshold*/
+            ns_to_soft_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
+            /*Compute the soft target as the current time plus the soft time to target*/
+            ns_soft_target = ns_current + ns_to_soft_target;
+            
+            hrtimer_set_expires_range(  timer, 
+                                        (ktime_t){.tv64=ns_soft_target}, 
+                                        (ktime_t){.tv64=(LAMbS_VICTIMER_THRESHOLD/2)});
             ret = HRTIMER_RESTART;
         }
         else
@@ -229,8 +235,8 @@ void LAMbS_VICtimer_motransition(void)
     LAMbS_VICtimer_t *LAMbS_VICtimer_p;
     
     enum LAMbS_VICtimer_restart timer_reset;
-    s64  ns_to_target;
-    ktime_t ktime_to_target;
+    s64  ns_to_target, ns_to_soft_target;
+    
     
     /*Loop through the list of active VIC timers and reset their targets
     or call their callbacks as appropriate*/
@@ -252,12 +258,14 @@ void LAMbS_VICtimer_motransition(void)
         /*Reset the timer if necessary*/
         if(LAMbS_VICTIMER_RESTART == timer_reset)
         {
-            /*Set the ktime_t value*/
-            ktime_to_target.tv64 = ns_to_target;
+            /*Compute the soft target*/
+            ns_to_soft_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
+            
             /*Start the timer*/
-            hrtimer_start(  &(LAMbS_VICtimer_p->hrtimer), 
-                            ktime_to_target, 
-                            HRTIMER_MODE_REL);
+            hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
+                                    (ktime_t){.tv64=ns_to_soft_target},
+                                    (LAMbS_VICTIMER_THRESHOLD/2), 
+                                    HRTIMER_MODE_REL);
         }
     }
 }
@@ -348,8 +356,7 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
     s64 current_VIC_timestamp;
     
     s64 VIC_to_target;
-    s64 ns_to_target;
-    ktime_t ktime_to_target;
+    s64 ns_to_target, ns_to_soft_target;
     
     unsigned long irq_flags;
     
@@ -422,10 +429,7 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
             ret = 1;
             goto exit1;
         }
-        
-        /*Subtract half of the threshold*/
-        ns_to_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
-        
+                
         /*update the LAMbS_VICtimer_t structure with the target_VIC*/
         LAMbS_VICtimer_p->target_VIC = target_VIC;
         
@@ -436,10 +440,14 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         list_add(   &(LAMbS_VICtimer_p->activelist_entry), 
                     &(LAMbS_VICtimer_activelist));
         
-        /*Start the timer*/
-        ktime_to_target.tv64 = ns_to_target;
-        hrtimer_start(&(LAMbS_VICtimer_p->hrtimer), ktime_to_target, HRTIMER_MODE_REL);
+        /*Compute the soft target*/
+        ns_to_soft_target = ns_to_target - (LAMbS_VICTIMER_THRESHOLD/2);
         
+        /*Start the timer*/
+        hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
+                                (ktime_t){.tv64=ns_to_soft_target},
+                                (LAMbS_VICTIMER_THRESHOLD/2), 
+                                HRTIMER_MODE_REL);
 exit1:
     /*Leave the critical section*/
     local_irq_restore(irq_flags);

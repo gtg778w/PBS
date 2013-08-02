@@ -173,7 +173,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                 {
                     int ret;
                     
-                    ret = LAMbS_VICtimer_test_init(5000, 3000000);
+                    ret = LAMbS_VICtimer_test_init(5000, 1000000);
                     if(ret < 0)
                     {
                         printk(KERN_INFO "LAMbS_models_init: LAMbS_VICtimer_test_init failed");
