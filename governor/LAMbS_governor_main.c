@@ -71,7 +71,7 @@ static int LAMbS_cpufreq_notifier(struct notifier_block *nb, unsigned long val,
     }
 
     if (val == CPUFREQ_POSTCHANGE) {
-	printk(KERN_NOTICE "saving cpu_cur_freq of cpu %u to be %u kHz\n", freq->cpu, freq->new);
+	/*printk(KERN_NOTICE "saving cpu_cur_freq of cpu %u to be %u kHz\n", freq->cpu, freq->new);*/
 	per_cpu(cpu_cur_freq, freq->cpu) = freq->new;
     }
     return 0;
@@ -120,22 +120,22 @@ void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
     schedule = LAMbS_mo_schedule;
     
     for(i = 0; i < LAMbS_mo_struct.count; i++) {
-	printk(KERN_ALERT "schedule[%d] = %llu ns\n", i, schedule[i]);
+	printk(KERN_DEBUG "schedule[%d] = %llu ns\n", i, schedule[i]);
 	if (schedule[i] && (schedule[i] < maximum_transition_latency)) {
 	    leftovers += schedule[i];
 	    schedule[i] = 0;
-	    printk(KERN_ALERT "schedule[%d] below threshold, zeroed and added to leftovers\n",i);
+	    printk(KERN_NOTICE "schedule[%d] below threshold, zeroed and added to leftovers\n",i);
 	} else {
 	    if (leftovers && schedule[i]) {
 		schedule[i] += leftovers;
-		printk(KERN_ALERT "%lluns added to schedule[%d] and leftovers zeroed\n", leftovers, i);
+		printk(KERN_NOTICE "%lluns added to schedule[%d] and leftovers zeroed\n", leftovers, i);
 		leftovers = 0;
 	    }
 	}
     }
 
     if (leftovers) {
-	printk(KERN_ALERT "WARNING: %lluns leftover! Not assigned to any MO\n", leftovers);
+	printk(KERN_WARNING "WARNING: %lluns leftover! Not assigned to any MO\n", leftovers);
     }
 
     active = tasklet_hrtimer_start(&LAMbS_tasklet_hrtimer, ktime_set(0,schedule[moi]), HRTIMER_MODE_REL);
@@ -144,9 +144,9 @@ void LAMbS_cpufreq_sched(u64 LAMbS_mo_schedule[]) {
     /* debug: check to see if schedule finished and timer was cancelled */
 
     if (active) {
-        printk(KERN_ALERT "hrtimer already active\n");
+        printk(KERN_DEBUG "hrtimer already active\n");
     } else {
-	printk(KERN_ALERT "hrtimer started for first time\n");
+	printk(KERN_DEBUG "hrtimer started for first time\n");
     }
     
 }
@@ -164,7 +164,7 @@ int LAMbS_freq_set(u32 freq) {
     int ret = -EINVAL;
 
     if (!per_cpu(cpu_is_managed, policy_p->cpu)) {
-	printk(KERN_NOTICE "freq not set: cpu_is_managed for cpu %u = false\n", policy_p->cpu);
+	printk(KERN_ALERT "freq not set: cpu_is_managed for cpu %u = false\n", policy_p->cpu);
 	goto err;
     }
 
@@ -187,7 +187,7 @@ err:
     if (ret) {
 	printk(KERN_ALERT "LAMbS_cpufreq_set NOT set on cpu%u, freq %ukHz (return: %d", policy_p->cpu, freq, ret);
     } else {
-	printk(KERN_NOTICE "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy_p->cpu, freq);
+	printk(KERN_INFO "LAMbS_cpufreq_set for cpu %u, freq %u kHz\n", policy_p->cpu, freq);
     }
     return ret;
 }
@@ -229,7 +229,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	
 	/*mutex_unlock(&setfreq_mutex);*/
 
-	printk(KERN_NOTICE "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
+	printk(KERN_INFO "managing cpu %u started (%u - %u kHz, currently %u kHz)\n",
 	    cpu, per_cpu(cpu_min_freq, cpu), per_cpu(cpu_max_freq, cpu),
 	    per_cpu(cpu_cur_freq, cpu));
 
@@ -239,10 +239,10 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 	/* try to get maximum transition latency or just use default of 10us */
 	if (policy->cpuinfo.transition_latency) {
 	    maximum_transition_latency = (u64)policy->cpuinfo.transition_latency;
-	    printk(KERN_ALERT "policy->cpuinfo.transition_latency = %llu set as threshold", maximum_transition_latency);
+	    printk(KERN_INFO "policy->cpuinfo.transition_latency = %llu set as threshold", maximum_transition_latency);
 	} else {
 	    maximum_transition_latency = MIN_THRESH;
-	    printk(KERN_ALERT "policy->cpuinfo.transition_latency = NULL, %llu is default", maximum_transition_latency);
+	    printk(KERN_INFO "policy->cpuinfo.transition_latency = NULL, %llu is default", maximum_transition_latency);
 	}
 
 	/* initialize timer */
@@ -265,7 +265,7 @@ static int cpufreq_governor_lambs(struct cpufreq_policy *policy, unsigned int ev
 
 	tasklet_hrtimer_cancel(&LAMbS_tasklet_hrtimer);
 
-	printk(KERN_NOTICE "managing cpu %u stopped\n", cpu);
+	printk(KERN_INFO "managing cpu %u stopped\n", cpu);
 
 	break;
     case CPUFREQ_GOV_LIMITS:
@@ -310,7 +310,7 @@ static int __init cpufreq_gov_lambs_init(void) {
     if (!ret) {
         return cpufreq_register_governor(&cpufreq_gov_lambs);
     } else {
-	printk(KERN_ERR "LAMbS_mo_init failed with error %d", ret);
+	printk(KERN_ALERT "LAMbS_mo_init failed with error %d", ret);
 	return ret;
     }
 }
@@ -318,7 +318,7 @@ static int __init cpufreq_gov_lambs_init(void) {
 static void __exit cpufreq_gov_lambs_exit(void) {
     cpufreq_unregister_governor(&cpufreq_gov_lambs);
     LAMbS_mo_uninit(); 
-    printk(KERN_ALERT "LAMbS_governor removed successfully\n");
+    printk(KERN_INFO "LAMbS_governor removed successfully\n");
 }
 
 MODULE_AUTHOR("Michael Giardino <giardino@ece.gatech.edu>");
