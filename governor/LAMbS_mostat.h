@@ -5,6 +5,8 @@
 
 #include "LAMbS_molookup.h"
 
+void LAMbS_mostat_motrans_callback(s32 old_moi);
+
 int LAMbS_mostat_init(void);
 void LAMbS_mostat_uninit(void);
 

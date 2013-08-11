@@ -97,6 +97,12 @@ static int _freqchange_notifier(  struct notifier_block *nb,
                 /*Update the current mo and instruction retirement rate*/
                 LAMbS_current_moi = new_moi;
                 
+                /*Update the mo residency statistics*/
+                /*Note, that for mechanisms like VIC source and VIC timer that use the 
+                mostat mechanism and motrans callback mechanism, respectively, this 
+                update operation needs to occur before the callback functions are called*/
+                LAMbS_mostat_motrans_callback(old_moi);
+                
                 /*Call motrans_notifiers registered in the chain and call the 
                 corresponding callbacks*/
                 list_for_each_safe( list_node_next, 
