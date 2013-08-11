@@ -46,7 +46,7 @@ void    _LAMbS_models_motrans_callback(
                             instruction_retirement_rate[new_moi];
     LAMbS_current_instretirementrate_inv = 
                             instruction_retirement_rate_inv[new_moi];
-
+    
     LAMbS_VICtimer_motransition();
 }
 

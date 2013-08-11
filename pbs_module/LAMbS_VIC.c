@@ -9,6 +9,11 @@
     kfree
 */
 
+#include <linux/module.h>
+/*
+EXPORT_SYMBOL
+*/
+
 #include "LAMbS_VIC.h"
 
 #include "LAMbS_molookup.h"
@@ -129,6 +134,7 @@ u64 LAMbS_VIC_get(u64* timestamp_p)
     
     return last_global_VIC;
 }
+EXPORT_SYMBOL(LAMbS_VIC_get);
 
 void LAMbS_VIC_uninit(void)
 {

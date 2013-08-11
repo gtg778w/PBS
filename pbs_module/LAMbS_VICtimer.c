@@ -2,6 +2,10 @@
 General note: VIC timer mechanism is more accurate with shorter relative VIC targets.
 */
 
+#include <linux/module.h>
+/*
+EXPORT_SYMBOL
+*/
 
 #include "LAMbS_mo.h"
 #include "LAMbS_VIC.h"
@@ -237,7 +241,6 @@ void LAMbS_VICtimer_motransition(void)
     enum LAMbS_VICtimer_restart timer_reset;
     s64  ns_to_target, ns_to_soft_target;
     
-    
     /*Loop through the list of active VIC timers and reset their targets
     or call their callbacks as appropriate*/
     list_for_each_safe(next_actvlist_node, temp_node, &LAMbS_VICtimer_activelist)
@@ -268,7 +271,9 @@ void LAMbS_VICtimer_motransition(void)
                                     HRTIMER_MODE_REL);
         }
     }
+    
 }
+
 
 /* Cancel a VICtimer. This function should not be called from the argument VICtimer's
 callback function. The callback function should just return the appropriate return value 
@@ -334,7 +339,7 @@ int LAMbS_VICtimer_cancel(  LAMbS_VICtimer_t *LAMbS_VICtimer_p)
     
     return ret;
 }
-
+EXPORT_SYMBOL(LAMbS_VICtimer_cancel);
 
 /* Start the VICtimer
 
@@ -454,6 +459,7 @@ exit1:
 exit0:
     return ret;
 }
+EXPORT_SYMBOL(LAMbS_VICtimer_start);
 
 /* Initialize a VICtimer structure*/
 void LAMbS_VICtimer_init(   LAMbS_VICtimer_t *LAMbS_VICtimer_p)
@@ -474,6 +480,7 @@ void LAMbS_VICtimer_init(   LAMbS_VICtimer_t *LAMbS_VICtimer_p)
     LAMbS_VICtimer_p->function = NULL;
     LAMbS_VICtimer_p->target_VIC = 0;
 }
+EXPORT_SYMBOL(LAMbS_VICtimer_init);
 
 /*Initialize the VIC timer mechanism. 
 
