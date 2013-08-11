@@ -21,20 +21,27 @@
 #define RP_COUNT 2
 
 struct hrtimer rp_timer;
-u64 test_sched[32];
-
+u64 test_sched_0[32];
+u64 test_sched_1[12] = {1000000, 0, 1000, 1000, 0, 1998000, 0, 15000000, 0, 1000000, 1000000, 0};
+u64 test_sched_2[12] = {1000000, 0, 15000000, 1000000, 199800, 1000000, 1000, 1000, 0, 0, 0, 0};
+u64* test_sched;
 int rp_count;
 
 static int __init test_setup(void) {
     u64 per_mo;
     int i;
 
+    test_sched = test_sched_2;
+    
     rp_count = 0;
+
     per_mo = (u64)RP/LAMbS_mo_struct.count;
     printk(KERN_ALERT "using per_mo of %llu ns\n", per_mo);
     for (i = 0; i < LAMbS_mo_struct.count; i++) {
-	test_sched[i] = per_mo;
+	test_sched_0[i] = per_mo;
     }
+
+    
     hrtimer_init(&rp_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
     printk(KERN_ALERT "hrtimer_init: rp_timer initialized\n");
     rp_timer.function = &next_rp;
@@ -56,7 +63,12 @@ static void change_freq(void) {
 */
 
 enum hrtimer_restart next_rp(struct hrtimer* timer) {
-
+    /*
+    if (irqs_disabled()) 
+	printk(KERN_ALERT "irqs_disabled in next_rp (callback function)\n");
+    else
+	printk(KERN_ALERT "irqs_enabled in next_rp (Callback function)\n");
+    */
     if (rp_count < RP_COUNT) {
 	rp_count++;
 	hrtimer_forward_now(&rp_timer, ktime_set(0, RP));
