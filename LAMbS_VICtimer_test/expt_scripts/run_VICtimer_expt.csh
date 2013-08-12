@@ -15,18 +15,22 @@
     set setspeed="${freqdir}/scaling_setspeed"
     set availablefreqs=`cat ${freqdir}/scaling_available_frequencies`    
 
-    @ freq_i = $#availablefreqs
+    @ min_freq_i = $#availablefreqs
+    @ mid1_freq_i = $min_freq_i / 4
+    @ mid2_freq_i = $mid1_freq_i * 2
     set max_freq=$availablefreqs[1]
-    set min_freq=$availablefreqs[${freq_i}]
+    set min_freq=$availablefreqs[${min_freq_i}]
+    set mid1_freq=$availablefreqs[${mid1_freq_i}]
+    set mid2_freq=$availablefreqs[${mid2_freq_i}]
 
-    set test_length="5000"
-    set test_interval_array=("100000" "200000" "500000" "1000000" "2000000" "5000000" "10000000" "50000000")
+    set test_length="10000"
+    set test_interval_array=("100000" "200000" "500000" "1000000" "2000000" "5000000")
     
     set rp_interval="10000000"
     
-    set cpufreq_steptime=`echo "($rp_interval * 10) / 1000000000" | bc -l`
+    set cpufreq_steptime=`echo "($rp_interval * 2) / 1000000000" | bc -l`
         
-    set cpufreq_name_array=("${max_freq}" "${min_freq}" "cycle")
+    set cpufreq_name_array=("${max_freq}" "${mid1_freq}" "${mid2_freq}" "${min_freq}" "cycle")
     @ testcount = $#test_interval_array * $#cpufreq_name_array
     @ testidx =  1
 
@@ -37,8 +41,10 @@
         set testtime=`echo "$testtime + 10.0" | bc -l`
         set rp_count=`echo "${testtime} * 1000000000 / ${rp_interval}" | bc -l`
         
-        set cpufreq_command_array=( "echo ${max_freq} > ${setspeed}" \
-                                    "echo ${min_freq} > ${setspeed}" \
+        set cpufreq_command_array=( "echo ${max_freq}  > ${setspeed}" \
+                                    "echo ${mid1_freq} > ${setspeed}" \
+                                    "echo ${mid2_freq} > ${setspeed}" \
+                                    "echo ${min_freq}  > ${setspeed}" \
                                     "${bindir}/cpufreq_step ${cpufreq_cycle_time} ${cpufreq_steptime} 0")
         
         foreach cpufreqi (`seq 1 1 $#cpufreq_name_array`)
@@ -64,4 +70,3 @@
             @ testidx =  ${testidx} + 1
         end
     end
-    
