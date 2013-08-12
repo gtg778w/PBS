@@ -54,17 +54,6 @@ struct file_operations bw_mgt_fops = {
 
 /**********************************************************************
 
-Hooks related to debugging the VICtimer code
-
-***********************************************************************/
-/*FIXME*/
-void (*LAMbS_VICtimer_pretrans_callback)(void) = NULL;
-EXPORT_SYMBOL(LAMbS_VICtimer_pretrans_callback);
-void (*LAMbS_VICtimer_psttrans_callback)(void) = NULL;
-EXPORT_SYMBOL(LAMbS_VICtimer_psttrans_callback);
-
-/**********************************************************************
-
 File handling code associated with the sched_rt_bw_mgt file and the
 helper function allocator_sleep
 
@@ -221,14 +210,6 @@ ssize_t bw_mgt_write(   struct file *filep,
                 //check before going to sleep
                 if(allocator_state == ALLOCATOR_LOOP)
                 {                    
-                    /*FIXME*/
-                    {
-                        if(NULL != LAMbS_VICtimer_pretrans_callback)
-                        {
-                            LAMbS_VICtimer_pretrans_callback();
-                        }
-                    }
-                    
                     /*Enter critical section. The following function needs to be 
                     executed with interrupts disabled*/
                     local_irq_save(irq_flags);
@@ -239,14 +220,6 @@ ssize_t bw_mgt_write(   struct file *filep,
 
                     /*Exit critical section*/
                     local_irq_restore(irq_flags);
-
-                    /*FIXME*/
-                    {
-                        if(NULL != LAMbS_VICtimer_psttrans_callback)
-                        {
-                            LAMbS_VICtimer_psttrans_callback();
-                        }
-                    }
                     
                     //assign new bandwidths
                     assign_bandwidths();
