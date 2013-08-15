@@ -246,6 +246,7 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 {
     int ret = 0;
 
+    /*Replace runtime2 with VIC2*/
     u64 runtime2;
 
     job_mgt_cmd_t cmd;

@@ -20,6 +20,7 @@ typedef struct SRT_handle_s
     int                 procfile;
     pbsSRT_predictor_t  *predictor;
     uint64_t            period;
+    /*FIXME: this should read estimated_mean_VIC*/
     uint64_t            estimated_mean_exectime;
     double              alpha_squared;
 
