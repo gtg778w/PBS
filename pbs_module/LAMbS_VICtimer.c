@@ -432,24 +432,38 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
                 goto exit1;
         }
 
+        /*Check if the VIC_to_target is within the threshold of the 
+        target or overshot it*/
+        if( (VIC_to_target < LAMbS_VICtimer_threshold_VIC) ||
+            (0 == LAMbS_current_instretirementrate_inv) )
+        {
+            ret = 1;
+            goto exit1;
+        }
+
+
         /*Compute the ns remaining to target*/
         ns_to_target  =  
             LAMBS_models_multiply_shift(VIC_to_target, 
                                         LAMbS_current_instretirementrate_inv, 
                                         LAMbS_MODELS_FIXEDPOINT_SHIFT);
 
-        /*Check if the timer is within the threshold of the 
+        /*FIXME*/
+        /*Check if the ns_to_target is within the threshold of the 
         target or overshot it*/
         if( ns_to_target < LAMbS_VICtimer_threshold_ns )
         {
-            /*FIXME*/
-            printk(KERN_INFO "LAMbS_VICtimer_start: current_VIC = %li, target_VIC = %li"
-                            "VIC_to_target = %li, ns_to_target = %li inst_rate_inv = %li",
-                            (long)current_VIC,
-                            (long)target_VIC,
-                            (long)VIC_to_target,
-                            (long)ns_to_target,
-                            (long)LAMbS_current_instretirementrate_inv);
+            printk(KERN_INFO    "LAMbS_VICtimer_start VIC_to_target not within "
+                                "threshold, but ns_to_target is: "
+                                "current_VIC = %li, target_VIC = %li, "
+                                "inst_rate_inv = %li, "
+                                "VIC_to_target = %li, VIC_threshold = %li, "
+                                "ns_to_target = %li, ns_threshold = %li",
+                                (long)current_VIC,
+                                (long)target_VIC,
+                                (long)LAMbS_current_instretirementrate_inv,
+                                (long)VIC_to_target, (long)LAMbS_VICtimer_threshold_VIC,
+                                (long)ns_to_target, (long)LAMbS_VICtimer_threshold_ns);
             ret = 1;
             goto exit1;
         }
