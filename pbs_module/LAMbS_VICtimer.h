@@ -33,6 +33,10 @@ typedef struct LAMbS_VICtimer_s
 
 void LAMbS_VICtimer_motransition(void);
 
+/*FIXME*/
+extern void (*LAMbS_VICtimer_pretrans_callback)(void);
+extern void (*LAMbS_VICtimer_psttrans_callback)(void);
+
 int LAMbS_VICtimer_cancel(  LAMbS_VICtimer_t *LAMbS_VICtimer_p);
 
 int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,

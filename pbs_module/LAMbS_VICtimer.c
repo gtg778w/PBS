@@ -27,32 +27,19 @@ s64 LAMbS_VICtimer_threshold_VIC;
 
 struct list_head LAMbS_VICtimer_activelist = LIST_HEAD_INIT(LAMbS_VICtimer_activelist);
 
-/*
+/*The following function checks if the ns_to_target for the given VIC timer is within
+LAMbS_VICtimer_threshold_ns and calls the callback function.
+
+If the callback function returns LAMbS_VICTIMER_RESTART, the ns_to_target is recomputed
+and checked, and the callback function called again if needed. This iterative call 
+maybe repeated up to LAMbS_VICTIMER_CALLBACK_LIMIT times. Then, the VICtimer is disabled 
+and removed to prevent the CPU from being stuck in this tight loop. The state of a 
+misbehaving timer is set to LAMbS_VICTIMER_CALLBACK_STORM. It should no longer be
+possible to start the timer without manually changing the state.
+
 It is expected that the following function is called with interrupts disabled
-
-The following function checks if the VIC_to_target for the given VIC timer is within
-the VIC threshold and calls the callback function in the CALLBACK state. If not, the 
-ns_to_target is computed and the RESTART value is returned.
-
-If the callback function returns LAMbS_VICTIMER_RESTART, and the timer is not in a 
-CALLBACK_STORM state, the VIC_to_target is recomputed and checked, and the callback 
-function called again if needed. 
-
-This iterative call maybe repeated up to LAMbS_VICTIMER_CALLBACK_LIMIT times. 
-Then, the VICtimer state is set to CALLBACK_STORM and the callback function called one
-last time.
- 
-If the callback function return NORESTART or returns RESTART in the CALLBACK_STORM state,
-the timer is removed from the active list, and the NORESTART value is returned. 
-
-The CALLBACK_STORM state and related behavior exists to prevent the system from locking 
-up due to persistent short VICtimer callback requests. Since this function should be 
-called with interrupts disabled, entering an infinite loop in this function would lock up
-the system.
-
-Once a VICtimer is in the CALLBACK_STORM state, the function can no longer be started
-until the state is explicitly changed.
 */
+
 static enum LAMbS_VICtimer_restart 
         LAMbS_VICtimer_check_callback(  LAMbS_VICtimer_t *LAMbS_VICtimer_p,
                                         s64 *ns_to_target_p)
@@ -65,85 +52,114 @@ static enum LAMbS_VICtimer_restart
     s64 current_VIC_timestamp;
     
     s64 VIC_to_target;
+    s64 ns_to_target;
     
     int callback_count;
-
-    /*Initialize the callback_count*/
-    callback_count = 0;
     
-    /*Initially set the callback return value to RESTART to allow the first iteration of 
-    the loop to execute*/
-    callback_ret   = LAMbS_VICTIMER_RESTART;
+    /*Get the target VIC*/
+    target_VIC  = LAMbS_VICtimer_p->target_VIC;
     
-    while(  (LAMbS_VICTIMER_HRTARMED == LAMbS_VICtimer_p->state) &&
-            (callback_ret   ==  LAMbS_VICTIMER_RESTART))
-    {
-        
-        /*Compute the VIC remaining to target VIC*/
-        target_VIC  = LAMbS_VICtimer_p->target_VIC;
-        current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
-        VIC_to_target = target_VIC - current_VIC;
-
-        /*If the target VIC is still too far away, then restart the hrtimer with the
-        new target*/
-        if( VIC_to_target > LAMbS_VICtimer_threshold_VIC)
-        {
-                /*Compute the ns remaining to target*/
-                *ns_to_target_p  =  
-                    LAMBS_models_multiply_shift(VIC_to_target,
-                                                LAMbS_current_instretirementrate_inv,
+    /*Get the current VIC value*/
+    current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
+    
+    /*Compute the VIC remaining to target VIC*/
+    VIC_to_target = target_VIC - current_VIC;
+    
+    /*Compute the ns remaining to target*/
+    ns_to_target  = LAMBS_models_multiply_shift(VIC_to_target, 
+                                                LAMbS_current_instretirementrate_inv, 
                                                 LAMbS_MODELS_FIXEDPOINT_SHIFT);
-                /*The timer has to restart*/
-                ret = LAMbS_VICTIMER_RESTART;
-                
-                break;
-        }
+    
+    /*Check if the timer is within the threshold of the 
+    target or overshot it*/
+    if( ns_to_target < LAMbS_VICtimer_threshold_ns )
+    {
+        /*Set the callback_count to 0*/
+        callback_count = 0;
         
-        /*Increment the callback counter*/
-        callback_count++;
-        
-        /*If the callback function has been called back more than threshold number of 
-        times, set the state to CALLBACK_STORM. The callback function is called at least 
-        once in the CALLBACK_STORM state. Unless the callback function changes the state 
-        back to ACTIVE, this will be the last iteration, and the timer will be 
-        deactivated*/
-        LAMbS_VICtimer_p->state =   (callback_count > LAMbS_VICTIMER_CALLBACK_LIMIT)?
-                                    LAMbS_VICTIMER_CALLBACK_STORM :
-                                    LAMbS_VICTIMER_CALLBACK;
-        
-        /*Call the callback function*/
-        callback_ret = LAMbS_VICtimer_p->function(LAMbS_VICtimer_p, current_VIC);
-        
-        /*Check if no restart has been requested*/
-        if( LAMbS_VICTIMER_NORESTART == callback_ret)
+        do
         {
-            /*Remove the timer from the active list*/
-            list_del(&(LAMbS_VICtimer_p->activelist_entry));
-            
-            /*Set the state to inactive*/
-            LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
-        }
-        else
-        {
-            /*If a restart was requested, check that the timer is not in a 
-            CALLBACK_STORM state.*/
-            if(LAMbS_VICTIMER_CALLBACK_STORM == LAMbS_VICtimer_p->state)
+            /*Check if the callback function has already been called back too many 
+            times*/
+            callback_count++;
+            if(callback_count > LAMbS_VICTIMER_CALLBACK_LIMIT)
             {
-                /*Remove the timer from the active list*/
+                /*This timer is misbehaving. Disable it.*/
+                
+                /*Remove it from the actv list*/
                 list_del(&(LAMbS_VICtimer_p->activelist_entry));
                 
-                /*The state should remain CALLBACK_STORM*/
+                /*Set the state to CALLBACK_STORM*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_CALLBACK_STORM;
+                
+                /*Set the return value to no restart*/
+                ret = LAMbS_VICTIMER_NORESTART;
+                
+                /*Break out of the loop*/
+                break;
+            }
+            
+
+            /*Change the state of the timer to CALLBACK*/
+            LAMbS_VICtimer_p->state = LAMbS_VICTIMER_CALLBACK;
+            
+            /*Call the callback function*/
+            callback_ret = LAMbS_VICtimer_p->function(LAMbS_VICtimer_p, current_VIC);
+            
+            /*Check if the callback function requested a restart*/
+            if(LAMbS_VICTIMER_RESTART == callback_ret)
+            {
+                /*Get the new VIC target*/
+                target_VIC  = LAMbS_VICtimer_p->target_VIC;
+                
+                /*Get the current VIC value*/
+                current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
+                
+                /*Compute the VIC remaining to target VIC*/
+                VIC_to_target = target_VIC - current_VIC;
+
+                /*Compute the ns remaining to target*/
+                ns_to_target  =  
+                    LAMBS_models_multiply_shift(VIC_to_target, 
+                                                LAMbS_current_instretirementrate_inv, 
+                                                LAMbS_MODELS_FIXEDPOINT_SHIFT);
+                
+                /*Change the state of the timer back to HRTARMED*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_HRTARMED;
+
+                /*The timer has to restart*/
+                ret = LAMbS_VICTIMER_RESTART;
             }
             else
             {
-                /*The VICtimer should remain in the activelist*/
-            
-                /*Change the state back to HRTARMED*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_HRTARMED;
+                /*The timer will not restart*/
+                ret = LAMbS_VICTIMER_NORESTART;
+                
+                /*Remove the timer from the active list*/
+                list_del(&(LAMbS_VICtimer_p->activelist_entry));
+                
+                /*Change the state of the timer to INACTIVE*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
+                
+                /*Break out of the loop*/
+                break;
             }
-        }
+            
+        }while( ( ns_to_target <    LAMbS_VICtimer_threshold_ns) );
+    }
+    else
+    {
+        /*The timer has not yet reached its target*/
+    
+        /*The timer has to restart*/
+        ret = LAMbS_VICTIMER_RESTART;
+        
+        /*The timer should remain in the active list*/
+        
+        /*The state of the timer should remain ACTIVE*/
     }
     
+    *ns_to_target_p = ns_to_target;
     return ret;
 }
 
@@ -212,10 +228,14 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
 
     - This function should not have to call schedule or _schedule. If one of the 
       VIC_timer functions set the NEED_RESCHED flag for the task, the task would be 
-      recheduled at least during return from interrupt or syscall, if not earlier.
+      recheduled at least during return from interrupt or syscall, if not earlier 
+      (inshallah).
       
-    - This function is called from _LAMbS_models_motrans_callback, which should be
-      called with interrupts disabled.
+    - This function is called from _LAMbS_models_motrans_callback, which is hopefully 
+      called with interrupts disabled (inshallah).
+      
+    Forgive me if the inshallas offend you, but I'm hitting a little in the dark here
+    and I can use all the divine help I can get.
 */
 void LAMbS_VICtimer_motransition(void)
 {
@@ -226,7 +246,7 @@ void LAMbS_VICtimer_motransition(void)
     
     enum LAMbS_VICtimer_restart timer_reset;
     s64  ns_to_target, ns_to_soft_target;
-    
+
     LAMbS_VICtimer_threshold_VIC = 
                     LAMBS_models_multiply_shift(LAMbS_VICtimer_threshold_ns,
                                                 LAMbS_current_instretirementrate,
@@ -245,8 +265,7 @@ void LAMbS_VICtimer_motransition(void)
         /*Cancel the timer*/
         hrtimer_cancel(&(LAMbS_VICtimer_p->hrtimer));
 
-        /*Check the status of the timer and take appropriate action. Note, that the timer
-        is already in the active list and should be in the active state*/
+        /*Check the status of the timer and take appropriate action*/
         timer_reset = LAMbS_VICtimer_check_callback(LAMbS_VICtimer_p,
                                                     &ns_to_target);
                                     
@@ -413,19 +432,27 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
                 goto exit1;
         }
 
-        /*Check if the timer is within the threshold of the 
-        target or overshot it*/
-        if( VIC_to_target < LAMbS_VICtimer_threshold_VIC)
-        {
-            ret = 1;
-            goto exit1;
-        }
-
         /*Compute the ns remaining to target*/
         ns_to_target  =  
             LAMBS_models_multiply_shift(VIC_to_target, 
                                         LAMbS_current_instretirementrate_inv, 
                                         LAMbS_MODELS_FIXEDPOINT_SHIFT);
+
+        /*Check if the timer is within the threshold of the 
+        target or overshot it*/
+        if( ns_to_target < LAMbS_VICtimer_threshold_ns )
+        {
+            /*FIXME*/
+            printk(KERN_INFO "LAMbS_VICtimer_start: current_VIC = %li, target_VIC = %li"
+                            "VIC_to_target = %li, ns_to_target = %li inst_rate_inv = %li",
+                            (long)current_VIC,
+                            (long)target_VIC,
+                            (long)VIC_to_target,
+                            (long)ns_to_target,
+                            (long)LAMbS_current_instretirementrate_inv);
+            ret = 1;
+            goto exit1;
+        }
                 
         /*update the LAMbS_VICtimer_t structure with the target_VIC*/
         LAMbS_VICtimer_p->target_VIC = target_VIC;
@@ -443,7 +470,7 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         /*Start the timer*/
         hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
                                 (ktime_t){.tv64=ns_to_soft_target},
-                                (LAMbS_VICtimer_threshold_ns/2),
+                                (LAMbS_VICtimer_threshold_ns/2), 
                                 HRTIMER_MODE_REL);
 exit1:
     /*Leave the critical section*/
@@ -477,7 +504,7 @@ EXPORT_SYMBOL(LAMbS_VICtimer_init);
 /*Initialize the VIC timer mechanism. 
 
 The purpose of this function is mainly to callibrate the threshold 
-LAMbS_VICTIMER_THRESHOLD*/
+LAMbS_VICtimer_threshold_ns*/
 int LAMbS_VICtimer_mechanism_init(void)
 {
     int ret = 0;
@@ -488,18 +515,16 @@ int LAMbS_VICtimer_mechanism_init(void)
     
     /*Set the threshold to the timer resolution if larger than the default value*/
     LAMbS_VICtimer_threshold_ns =  (ts.tv_nsec > LAMbS_VICtimer_threshold_ns)? 
-                                    ts.tv_nsec : LAMbS_VICtimer_threshold_ns;
+                                ts.tv_nsec : LAMbS_VICtimer_threshold_ns;
 
     LAMbS_VICtimer_threshold_VIC = 
                             LAMBS_models_multiply_shift(LAMbS_VICtimer_threshold_ns,
                                                         LAMbS_current_instretirementrate,
                                                         LAMbS_MODELS_FIXEDPOINT_SHIFT);
+                                                        
+    printk(KERN_INFO "LAMbS_VICtimer_mechanism_init: threshold = %luns",
+                     (unsigned long) LAMbS_VICtimer_threshold_ns);
 
-    printk(KERN_INFO "LAMbS_VICtimer_mechanism_init: ns threshold = %lins",
-                     (long) LAMbS_VICtimer_threshold_ns);
-    printk(KERN_INFO "LAMbS_VICtimer_mechanism_init: VIC threshold = %liVIC",
-                     (long) LAMbS_VICtimer_threshold_VIC);
-                     
     /*Initialize the active list to be empty*/
     INIT_LIST_HEAD(&LAMbS_VICtimer_activelist);
 
