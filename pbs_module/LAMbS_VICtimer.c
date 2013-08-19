@@ -27,19 +27,32 @@ s64 LAMbS_VICtimer_threshold_VIC;
 
 struct list_head LAMbS_VICtimer_activelist = LIST_HEAD_INIT(LAMbS_VICtimer_activelist);
 
-/*The following function checks if the ns_to_target for the given VIC timer is within
-LAMbS_VICtimer_threshold_ns and calls the callback function.
-
-If the callback function returns LAMbS_VICTIMER_RESTART, the ns_to_target is recomputed
-and checked, and the callback function called again if needed. This iterative call 
-maybe repeated up to LAMbS_VICTIMER_CALLBACK_LIMIT times. Then, the VICtimer is disabled 
-and removed to prevent the CPU from being stuck in this tight loop. The state of a 
-misbehaving timer is set to LAMbS_VICTIMER_CALLBACK_STORM. It should no longer be
-possible to start the timer without manually changing the state.
-
+/*
 It is expected that the following function is called with interrupts disabled
-*/
 
+The following function checks if the VIC_to_target for the given VIC timer is within
+the VIC threshold and calls the callback function in the CALLBACK state. If not, the 
+ns_to_target is computed and the RESTART value is returned.
+
+If the callback function returns LAMbS_VICTIMER_RESTART, and the timer is not in a 
+CALLBACK_STORM state, the VIC_to_target is recomputed and checked, and the callback 
+function called again if needed. 
+
+This iterative call maybe repeated up to LAMbS_VICTIMER_CALLBACK_LIMIT times. 
+Then, the VICtimer state is set to CALLBACK_STORM and the callback function called one
+last time.
+ 
+If the callback function return NORESTART or returns RESTART in the CALLBACK_STORM state,
+the timer is removed from the active list, and the NORESTART value is returned. 
+
+The CALLBACK_STORM state and related behavior exists to prevent the system from locking 
+up due to persistent short VICtimer callback requests. Since this function should be 
+called with interrupts disabled, entering an infinite loop in this function would lock up
+the system.
+
+Once a VICtimer is in the CALLBACK_STORM state, the function can no longer be started
+until the state is explicitly changed.
+*/
 static enum LAMbS_VICtimer_restart 
         LAMbS_VICtimer_check_callback(  LAMbS_VICtimer_t *LAMbS_VICtimer_p,
                                         s64 *ns_to_target_p)
@@ -52,114 +65,115 @@ static enum LAMbS_VICtimer_restart
     s64 current_VIC_timestamp;
     
     s64 VIC_to_target;
-    s64 ns_to_target;
     
     int callback_count;
-    
-    /*Get the target VIC*/
-    target_VIC  = LAMbS_VICtimer_p->target_VIC;
-    
-    /*Get the current VIC value*/
-    current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
-    
-    /*Compute the VIC remaining to target VIC*/
-    VIC_to_target = target_VIC - current_VIC;
-    
-    /*Compute the ns remaining to target*/
-    ns_to_target  = LAMBS_models_multiply_shift(VIC_to_target, 
-                                                LAMbS_current_instretirementrate_inv, 
-                                                LAMbS_MODELS_FIXEDPOINT_SHIFT);
-    
-    /*Check if the timer is within the threshold of the 
-    target or overshot it*/
-    if( ns_to_target < LAMbS_VICtimer_threshold_ns )
+
+    /*Initialize the callback_count*/
+    callback_count = 0;
+
+    /*Check if the VICtimer is armed. If not, remove it from the active list.*/
+    if(LAMbS_VICTIMER_HRTARMED != LAMbS_VICtimer_p->state)
     {
-        /*Set the callback_count to 0*/
-        callback_count = 0;
-        
-        do
+        /*If it is not armed, remove it from the actv list and return*/
+        list_del(&(LAMbS_VICtimer_p->activelist_entry));
+        ret =  LAMbS_VICTIMER_NORESTART;
+        goto exit0;
+    }
+    
+    do
+    {
+        /*Compute the VIC remaining to target VIC*/
+        target_VIC  = LAMbS_VICtimer_p->target_VIC;
+        current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
+        VIC_to_target = target_VIC - current_VIC;
+
+        /*If the target VIC is still too far away, then restart the hrtimer with the
+        new target*/
+        if( (VIC_to_target > LAMbS_VICtimer_threshold_VIC) )
         {
-            /*Check if the callback function has already been called back too many 
-            times*/
-            callback_count++;
-            if(callback_count > LAMbS_VICTIMER_CALLBACK_LIMIT)
+            /*The timer should be restarted no matter what.*/
+            ret = LAMbS_VICTIMER_RESTART;
+            
+            /*Check the instruction retirement rate. If it is zero, the VIC should not 
+            increment  until a change in the current mode of operation. When the mode of
+            operation changes, the function "LAMbS_VICtimer_motransition" will be called, 
+            which will call this check_callback function for all active VICtimers in the
+            active list including the current one.*/
+            if(0 == LAMbS_current_instretirementrate)
             {
-                /*This timer is misbehaving. Disable it.*/
-                
-                /*Remove it from the actv list*/
-                list_del(&(LAMbS_VICtimer_p->activelist_entry));
-                
-                /*Set the state to CALLBACK_STORM*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_CALLBACK_STORM;
-                
-                /*Set the return value to no restart*/
-                ret = LAMbS_VICTIMER_NORESTART;
-                
-                /*Break out of the loop*/
-                break;
-            }
-            
-
-            /*Change the state of the timer to CALLBACK*/
-            LAMbS_VICtimer_p->state = LAMbS_VICTIMER_CALLBACK;
-            
-            /*Call the callback function*/
-            callback_ret = LAMbS_VICtimer_p->function(LAMbS_VICtimer_p, current_VIC);
-            
-            /*Check if the callback function requested a restart*/
-            if(LAMbS_VICTIMER_RESTART == callback_ret)
-            {
-                /*Get the new VIC target*/
-                target_VIC  = LAMbS_VICtimer_p->target_VIC;
-                
-                /*Get the current VIC value*/
-                current_VIC = LAMbS_VIC_get(&current_VIC_timestamp);
-                
-                /*Compute the VIC remaining to target VIC*/
-                VIC_to_target = target_VIC - current_VIC;
-
-                /*Compute the ns remaining to target*/
-                ns_to_target  =  
-                    LAMBS_models_multiply_shift(VIC_to_target, 
-                                                LAMbS_current_instretirementrate_inv, 
-                                                LAMbS_MODELS_FIXEDPOINT_SHIFT);
-                
-                /*Change the state of the timer back to HRTARMED*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_HRTARMED;
-
-                /*The timer has to restart*/
-                ret = LAMbS_VICTIMER_RESTART;
+                *ns_to_target_p  =  -1;
             }
             else
             {
-                /*The timer will not restart*/
-                ret = LAMbS_VICTIMER_NORESTART;
-                
+                /*Compute the ns remaining to target*/
+                *ns_to_target_p  =  
+                    LAMBS_models_multiply_shift(VIC_to_target,
+                                                LAMbS_current_instretirementrate_inv,
+                                                LAMbS_MODELS_FIXEDPOINT_SHIFT);
+            }
+            
+            break;
+        }
+
+        /*Increment the callback counter*/
+        callback_count++;
+        
+        /*If the callback function has been called back more than threshold number of 
+        times, set the state to CALLBACK_STORM. The callback function is called at least 
+        once in the CALLBACK_STORM state. Unless the callback function changes the state 
+        back to ACTIVE, this will be the last iteration, and the timer will be 
+        deactivated*/
+        LAMbS_VICtimer_p->state =   (callback_count >= LAMbS_VICTIMER_CALLBACK_LIMIT)?
+                                    LAMbS_VICTIMER_CALLBACK_STORM :
+                                    LAMbS_VICTIMER_CALLBACK;
+        
+        /*Call the callback function*/
+        callback_ret = LAMbS_VICtimer_p->function(LAMbS_VICtimer_p, current_VIC);
+        if(LAMbS_VICTIMER_RESTART == callback_ret)
+        {
+            /*Check if the timer is in a callback storm state*/
+            if(LAMbS_VICTIMER_CALLBACK_STORM == LAMbS_VICtimer_p->state)
+            {
                 /*Remove the timer from the active list*/
                 list_del(&(LAMbS_VICtimer_p->activelist_entry));
                 
-                /*Change the state of the timer to INACTIVE*/
-                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
+                /*The state should remain CALLBACK_STORM*/
                 
-                /*Break out of the loop*/
+                /*Set the return value to NORESTART*/
+                ret = LAMbS_VICTIMER_NORESTART;
+                
+                /*Exit the loop*/
                 break;
             }
+            else
+            {
+                /*The timer should remain in the active list*/
+                
+                /*The state should be changed back to ACTIVE*/
+                LAMbS_VICtimer_p->state = LAMbS_VICTIMER_HRTARMED;
+                
+                /*The RESTART return value of the callback function should allow the 
+                loop to continue*/
+            }
+        }
+        else
+        {
+            /*Remove the timer from the active list*/
+            list_del(&(LAMbS_VICtimer_p->activelist_entry));
             
-        }while( ( ns_to_target <    LAMbS_VICtimer_threshold_ns) );
-    }
-    else
-    {
-        /*The timer has not yet reached its target*/
-    
-        /*The timer has to restart*/
-        ret = LAMbS_VICTIMER_RESTART;
+            /*Set the state to inactive*/
+            LAMbS_VICtimer_p->state = LAMbS_VICTIMER_INACTIVE;
+            
+            /*Set the return value to NORESTART*/
+            ret = LAMbS_VICTIMER_NORESTART;
+            
+            /*The NORESTART return value of the callback function should cause 
+            an exit from the loop*/
+        }
         
-        /*The timer should remain in the active list*/
-        
-        /*The state of the timer should remain ACTIVE*/
-    }
+    }while(LAMbS_VICTIMER_RESTART == callback_ret);
     
-    *ns_to_target_p = ns_to_target;
+exit0:
     return ret;
 }
 
@@ -182,6 +196,8 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
     /*Enter critical section. Note, timer callback functions should diable interrupts
     anyway, but just in case*/
     local_irq_save(irq_flags);
+
+        /**/
     
         /*Get the pointer of the VICtimer structure and the traget VIC */
         LAMbS_VICtimer_p = container_of(timer, struct LAMbS_VICtimer_s, hrtimer);
@@ -191,10 +207,15 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
             LAMbS_VICtimer_check_callback(  LAMbS_VICtimer_p,
                                             &ns_to_target);
     
-        /*If the timer has to be rearmed*/
-        if( LAMbS_VICTIMER_RESTART == callback_ret )
+        /*  If the timer has to be rearmed. Also check that ns_to_target is nonnegative.
+            A negative ns_to_target implies that the check_callback function detected
+            a zero instruction retirement rate. With a zero instruction retirement rate 
+            the VIC should not change until a change in the mode of operation. When the
+            MO changes, the hrtimers of VICtimers will be rearmed as appropriate.*/
+        if( (LAMbS_VICTIMER_RESTART == callback_ret) && (ns_to_target > 0) )
         {
             ns_current = (timer->base->get_time()).tv64;
+            
             /*Compute the time to soft target and the time to target minus half of the 
             threshold*/
             ns_to_soft_target = ns_to_target - (LAMbS_VICtimer_threshold_ns/2);
@@ -204,12 +225,12 @@ static enum hrtimer_restart LAMbS_VICtimer_hrtcallback(struct hrtimer *timer)
             hrtimer_set_expires_range(  timer, 
                                         (ktime_t){.tv64=ns_soft_target}, 
                                         (ktime_t){.tv64=(LAMbS_VICtimer_threshold_ns/2)});
-            ret = HRTIMER_RESTART;
+            ret = HRTIMER_RESTART;            
         }
         else
         {
-            /*LAMbS_VICtimer_check_callback deletes the timer from the active list*/
-            
+            /*LAMbS_VICtimer_check_callback deletes the VICtimer from the active list if
+            necessary. Nothing additional needs to be done here*/
             
             /*The timer should not be restarted*/
             ret = HRTIMER_NORESTART;
@@ -246,7 +267,8 @@ void LAMbS_VICtimer_motransition(void)
     
     enum LAMbS_VICtimer_restart timer_reset;
     s64  ns_to_target, ns_to_soft_target;
-
+    
+    /*Compute the new VIC threshold*/
     LAMbS_VICtimer_threshold_VIC = 
                     LAMBS_models_multiply_shift(LAMbS_VICtimer_threshold_ns,
                                                 LAMbS_current_instretirementrate,
@@ -269,20 +291,23 @@ void LAMbS_VICtimer_motransition(void)
         timer_reset = LAMbS_VICtimer_check_callback(LAMbS_VICtimer_p,
                                                     &ns_to_target);
                                     
-        /*Reset the timer if necessary*/
-        if(LAMbS_VICTIMER_RESTART == timer_reset)
+        /*Reset the timer if necessary. Also check that ns_to_target is greater than 
+        zero. Check the comments in the function "LAMbS_VICtimer_hrtcallback" for an 
+        explaination.*/
+        if((LAMbS_VICTIMER_RESTART == timer_reset) && (ns_to_target > 0))
         {
-            /*Compute the soft target*/
+            /*Compute the soft target.*/
             ns_to_soft_target = ns_to_target - (LAMbS_VICtimer_threshold_ns/2);
             
-            /*Start the timer*/
+            /*Start the timer.*/
             hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
                                     (ktime_t){.tv64=ns_to_soft_target},
                                     (LAMbS_VICtimer_threshold_ns/2), 
                                     HRTIMER_MODE_REL);
         }
     }
-    
+
+    return;
 }
 
 
