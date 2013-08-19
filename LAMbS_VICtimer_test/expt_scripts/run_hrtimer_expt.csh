@@ -1,6 +1,6 @@
 #! /bin/csh
 
-    set PBSdir="/media/Data/Research/expt_February2013/PBS"
+    set PBSdir="/media/Data/Research/expt_February2013/PBS_VICtimertest"
     set VICtestdir="${PBSdir}/LAMbS_VICtimer_test"
     
     set test_log_dir="${VICtestdir}/data/hrtimer"

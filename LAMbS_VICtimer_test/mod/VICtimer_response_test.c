@@ -45,6 +45,8 @@ static unsigned long    test_index;
 
 static s64  *start_VIC_array, *target_VIC_array, *callback_VIC_array;
 static s64  *target_ns_array,  *callback_ns_array, *modechange_array;
+static s64  callback_storm_count;
+static s64  failed_start_count;
 
 /****************************************************************************************
 
@@ -148,6 +150,13 @@ static void _VICtimer_response_test_rp_start(void)
         return;
     }
     
+    /*Check for a callback storm condition*/
+    if(LAMbS_VICTIMER_CALLBACK_STORM == test_VICtimer.state)
+    {
+        test_VICtimer.state = LAMbS_VICTIMER_INACTIVE;
+        callback_storm_count++;
+    }
+    
     /*Get the current VIC*/
     start_VIC = LAMbS_VIC_get(&start_timestamp);
     
@@ -177,15 +186,13 @@ static void _VICtimer_response_test_rp_start(void)
     }
     else if(ret == 1)
     {
-        int flag = 1;
-    
-        if(1 == flag)
-        {
-            printk(KERN_INFO    "_VICtimer_response_test_rp_start: The VIC interval %li "
-                                "is too short. LAMbS_VICtimer_start failed!",
-                                (long)test_interval);
-            flag = 0;
-        }
+        failed_start_count++;
+        printk(KERN_INFO    "_VICtimer_response_test_rp_start: The VIC interval %li "
+                            "is too short. Start VIC = %li. Abs VIC = %li. "
+                            "LAMbS_VICtimer_start failed!",
+                            (long)test_interval,
+                            (long)start_VIC,
+                            (long)target_VIC);
     }
 }
 
@@ -212,6 +219,8 @@ int VICtimer_response_test_alloc(void)
     callback_ns_array   = &(target_ns_array[test_length]);
     modechange_array    = &(callback_ns_array[test_length]);
     
+    callback_storm_count = 0;
+    failed_start_count = 0;
     return 0;
     
 error0:
@@ -241,6 +250,12 @@ static int _VICtimer_response_test_write_log( void )
     s64 ns_error;
 
     int i;
+    
+    /*Print the callback-storm count*/
+    printk(KERN_INFO "VICtimer_response_test: %li callback storms", 
+                    (long int)callback_storm_count);
+    printk(KERN_INFO "VICtimer_response_test: %li failed starts", 
+                    (long int)failed_start_count);
     
     /*
         Allocate the string buffer 

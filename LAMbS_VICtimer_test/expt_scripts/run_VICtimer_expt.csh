@@ -1,6 +1,6 @@
 #! /bin/csh
 
-    set PBSdir="/media/Data/Research/expt_February2013/PBS"
+    set PBSdir="/media/Data/Research/expt_February2013/PBS_VICtimertest"
     set VICtestdir="${PBSdir}/LAMbS_VICtimer_test"
 
     set test_log_dir="${VICtestdir}/data/VICtimer"
@@ -63,7 +63,7 @@
             sleep 5
             csh -xc "${cpufreq_command}" &
             insmod $mod test_length=${test_length} test_interval=${testinterval}
-            sleep $testtime
+            ${bindir}/poll_pbs_actv -I
             rmmod  $mod
             cp /var/log/VICtimer_response_test_log.csv ${logfile_name}
             
