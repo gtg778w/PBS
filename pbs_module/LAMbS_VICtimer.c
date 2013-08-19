@@ -459,36 +459,8 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
 
         /*Check if the VIC_to_target is within the threshold of the 
         target or overshot it*/
-        if( (VIC_to_target < LAMbS_VICtimer_threshold_VIC) ||
-            (0 == LAMbS_current_instretirementrate_inv) )
+        if( (VIC_to_target < LAMbS_VICtimer_threshold_VIC) )
         {
-            ret = 1;
-            goto exit1;
-        }
-
-
-        /*Compute the ns remaining to target*/
-        ns_to_target  =  
-            LAMBS_models_multiply_shift(VIC_to_target, 
-                                        LAMbS_current_instretirementrate_inv, 
-                                        LAMbS_MODELS_FIXEDPOINT_SHIFT);
-
-        /*FIXME*/
-        /*Check if the ns_to_target is within the threshold of the 
-        target or overshot it*/
-        if( ns_to_target < LAMbS_VICtimer_threshold_ns )
-        {
-            printk(KERN_INFO    "LAMbS_VICtimer_start VIC_to_target not within "
-                                "threshold, but ns_to_target is: "
-                                "current_VIC = %li, target_VIC = %li, "
-                                "inst_rate_inv = %li, "
-                                "VIC_to_target = %li, VIC_threshold = %li, "
-                                "ns_to_target = %li, ns_threshold = %li",
-                                (long)current_VIC,
-                                (long)target_VIC,
-                                (long)LAMbS_current_instretirementrate_inv,
-                                (long)VIC_to_target, (long)LAMbS_VICtimer_threshold_VIC,
-                                (long)ns_to_target, (long)LAMbS_VICtimer_threshold_ns);
             ret = 1;
             goto exit1;
         }
@@ -503,14 +475,48 @@ int LAMbS_VICtimer_start(   LAMbS_VICtimer_t *LAMbS_VICtimer_p,
         list_add(   &(LAMbS_VICtimer_p->activelist_entry), 
                     &(LAMbS_VICtimer_activelist));
         
-        /*Compute the soft target*/
-        ns_to_soft_target = ns_to_target - (LAMbS_VICtimer_threshold_ns/2);
+        /*Only start the hrtimer if the current mode of operation is has a non-zero
+        estimated instruction-retirement rate. Otherwise, the VIC should not increase
+        until the next change in the mode of operation, when the VIC and target VIC
+        will be checked again. */
+        if(LAMbS_current_instretirementrate > 0)
+        {
         
-        /*Start the timer*/
-        hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
-                                (ktime_t){.tv64=ns_to_soft_target},
-                                (LAMbS_VICtimer_threshold_ns/2), 
-                                HRTIMER_MODE_REL);
+            /*Compute the ns remaining to target*/
+            ns_to_target  =  
+                LAMBS_models_multiply_shift(VIC_to_target, 
+                                            LAMbS_current_instretirementrate_inv, 
+                                            LAMbS_MODELS_FIXEDPOINT_SHIFT);
+
+            /*FIXME*/
+            /*Check if the ns_to_target is within the threshold of the 
+            target or overshot it*/
+            if( ns_to_target < LAMbS_VICtimer_threshold_ns )
+            {
+                printk(KERN_INFO    "LAMbS_VICtimer_start VIC_to_target not within "
+                                    "threshold, but ns_to_target is: "
+                                    "current_VIC = %li, target_VIC = %li, "
+                                    "inst_rate_inv = %li, "
+                                    "VIC_to_target = %li, VIC_threshold = %li, "
+                                    "ns_to_target = %li, ns_threshold = %li",
+                                    (long)current_VIC,
+                                    (long)target_VIC,
+                                    (long)LAMbS_current_instretirementrate_inv,
+                                    (long)VIC_to_target, (long)LAMbS_VICtimer_threshold_VIC,
+                                    (long)ns_to_target, (long)LAMbS_VICtimer_threshold_ns);
+                ret = 1;
+                goto exit1;
+            }
+            
+            /*Compute the soft target*/
+            ns_to_soft_target = ns_to_target - (LAMbS_VICtimer_threshold_ns/2);
+            
+            /*Start the timer*/
+            hrtimer_start_range_ns( &(LAMbS_VICtimer_p->hrtimer), 
+                                    (ktime_t){.tv64=ns_to_soft_target},
+                                    (LAMbS_VICtimer_threshold_ns/2), 
+                                    HRTIMER_MODE_REL);
+        }
 exit1:
     /*Leave the critical section*/
     local_irq_restore(irq_flags);
