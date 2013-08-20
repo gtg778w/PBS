@@ -51,19 +51,6 @@ struct file_operations bw_mgt_fops = {
     .open       =   bw_mgt_open,
     .release    =   bw_mgt_release
 };
-
-/**********************************************************************
- 
-Hooks related to debugging the VICtimer code
-
-***********************************************************************/
-/*FIXME*/
-void (*LAMbS_VICtimer_pretrans_callback)(void) = NULL;
-EXPORT_SYMBOL(LAMbS_VICtimer_pretrans_callback);
-void (*LAMbS_VICtimer_psttrans_callback)(void) = NULL;
-EXPORT_SYMBOL(LAMbS_VICtimer_psttrans_callback);
-
-/**********************************************************************/
  
 /**********************************************************************
 
@@ -222,15 +209,7 @@ ssize_t bw_mgt_write(   struct file *filep,
             {
                 //check before going to sleep
                 if(allocator_state == ALLOCATOR_LOOP)
-                {                    
-                    /*FIXME*/
-                    {
-                        if(NULL != LAMbS_VICtimer_pretrans_callback)
-                        {
-                            LAMbS_VICtimer_pretrans_callback();
-                        }
-                    }
-         
+                {         
                     /*Enter critical section. The following function needs to be 
                     executed with interrupts disabled*/
                     local_irq_save(irq_flags);
@@ -238,15 +217,6 @@ ssize_t bw_mgt_write(   struct file *filep,
                         /*Now that model coefficients have been update, update the 
                         current instruction retirement rate*/
                         LAMbS_update_current_instrate();
-
-
-                    /*FIXME*/
-                    {
-                        if(NULL != LAMbS_VICtimer_psttrans_callback)
-                        {
-                            LAMbS_VICtimer_psttrans_callback();
-                        }
-                    }
                     
                     /*Exit critical section*/
                     local_irq_restore(irq_flags);
