@@ -81,7 +81,7 @@ Code implementing budget accounting and enforcement
 struct SRT_struct
 {
     struct SRT_timing_struct    timing_struct;
-    struct pba_struct           pba_struct;
+    struct pbs_budget_struct    budget_struct;
     struct SRT_job_log          log;
     struct SRT_summary_s        summary;
 

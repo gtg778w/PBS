@@ -2,7 +2,7 @@
 #include "bw_mgt.h"
 #include "pbs_budget.h"
 /*
-pba_nextjob2
+pbs_budget_jobboundary2
 */
 
 /**********************************************************************
@@ -132,7 +132,7 @@ ssize_t jb_mgt_read(struct file* filp, char __user *dst, size_t count, loff_t *o
 
     SRT_struct = (struct SRT_struct*)(filp->private_data);
 
-    pba_nextjob2(SRT_struct);
+    pbs_budget_jobboundary2(SRT_struct);
 
     count = (count > sizeof(struct SRT_job_log))?
             sizeof(struct SRT_job_log) : count;

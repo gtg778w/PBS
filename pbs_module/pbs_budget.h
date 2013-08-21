@@ -4,7 +4,7 @@
 struct SRT_struct;
 
 /*For each time-related variable, a VIC-based variable has been created*/
-struct pba_struct
+struct pbs_budget_struct
 {
     //bandwidth enforcement timer
     struct hrtimer  budget_enforcement_timer;
@@ -61,19 +61,19 @@ struct pba_struct
 
 //the following are bits in the flags field 
 //of the above data structure
-#define PBA_SLEEPING (0x1)
-#define PBA_THROTTLED (0x2)
+#define PBS_BUDGET_SLEEPING     (0x1)
+#define PBS_BUDGET_THROTTLED    (0x2)
 
-void pba_firstjob(struct SRT_struct *ss);
-void pba_nextjob(struct SRT_struct *ss);
-void pba_nextjob2(struct SRT_struct *ss);
+void pbs_budget_firstjob(struct SRT_struct *ss);
+void pbs_budget_jobboundary1(struct SRT_struct *ss);
+void pbs_budget_jobboundary2(struct SRT_struct *ss);
 
-void pba_refresh_budget(struct SRT_struct *SRT_struct_p);
+void pbs_budget_refresh(struct SRT_struct *SRT_struct_p);
 
-#define pba_set_budget(SRT_struct_p, budget) \
-(SRT_struct_p->pba_struct.sp_budget = budget)
+#define pbs_budget_set(SRT_struct_p, budget) \
+(SRT_struct_p->budget_struct.sp_budget = budget)
 
-void pba_init(struct SRT_struct *SRT_struct_p);
-void pba_uninit(struct SRT_struct *SRT_struct_p);
+void pbs_budget_init(struct SRT_struct *SRT_struct_p);
+void pbs_budget_uninit(struct SRT_struct *SRT_struct_p);
 
 #endif

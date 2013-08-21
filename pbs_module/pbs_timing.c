@@ -213,7 +213,7 @@ void sched_period_tick(void)
                             sp_per_tp : (sp_till_deadline - 1);
         (bwrefreshable->loaddata)->sp_till_deadline = sp_till_deadline;
 
-        pba_refresh_budget(bwrefreshable);
+        pbs_budget_refresh(bwrefreshable);
 
         //move to the next task in the list
         pos = pos->next;
@@ -272,7 +272,7 @@ void assign_bandwidths(void)
         }
 
         //modify its bandwidth allocation
-        pba_set_budget(SRT_struct, allocation);
+        pbs_budget_set(SRT_struct, allocation);
         
         //accumulate the total budget allocated
         SRT_struct->summary.cumulative_budget_sat = 
@@ -416,7 +416,7 @@ int sleep_till_next_period(struct SRT_timing_struct *tq_entry)
     //reduce the queue length by one
     (ss->queue_length)--;
 
-    pba_nextjob(ss);
+    pbs_budget_jobboundary1(ss);
 
     //update the log with information from the last completed job
     (ss->log).abs_releaseTime   =(ss->loaddata)->job_release_time;
@@ -471,7 +471,7 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
         return -ECANCELED;
     }
 
-    pba_init(SRT_struct);
+    pbs_budget_init(SRT_struct);
 
     //from this point forward, first_sleep_till_next_period can only return success (0)
     tq_entry->next_task_period_boundary = expires_next;
@@ -490,7 +490,7 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
     SRT_struct->maximum_overuse = 0;
 
     //update the statistics for counting job computation times
-    pba_firstjob(SRT_struct);
+    pbs_budget_firstjob(SRT_struct);
 
     /*set the release-time in loaddata to the next scheduling period, 
     the release time of the first job.*/
@@ -522,7 +522,7 @@ void remove_from_timing_queue(struct SRT_timing_struct *tq_entry)
     //remove it from the loaddata list
     remove_loaddata(SRT_struct->loaddata);
 
-    pba_uninit(SRT_struct);
+    pbs_budget_uninit(SRT_struct);
 
     printk(KERN_INFO "Removed load data from list. Task %d.\n", current->pid);
     
