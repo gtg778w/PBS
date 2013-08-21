@@ -1,5 +1,7 @@
 #include "bw_mgt.h"
-#include "pba.h"
+#include "jb_mgt.h"
+
+#include "pbs_budget.h"
 
 #include "LAMbS_VIC.h"
 /*
@@ -33,29 +35,6 @@ u64 pba_get_jbruntime(struct pba_struct *pba_struct_p)
     total_runtime = current_runtime + pba_struct_p->total_jb_runtime;
 
     return total_runtime;
-}
-
-u64 pba_get_jbrunVIC(struct pba_struct *pba_struct_p)
-{
-    u64 now;
-
-    u64 total_runVIC, current_runVIC = 0;
-
-    //if the task is currently running, compute the runtime since
-    //the last activation
-    if(!PBA_IS_SLEEPING(pba_struct_p))
-    {
-        //obtain the current VIC
-        now = LAMbS_VIC_get(NULL);
-        //compute the runVIC in this activation
-        current_runVIC = now - pba_struct_p->jb_actv_VIC;
-    }
-
-    //set the total runtime to the sum of the curent runtime 
-    //and accumulated previous runtime
-    total_runVIC = current_runVIC + pba_struct_p->total_jb_runVIC;
-
-    return total_runVIC;
 }
 
 void pba_firstjob(struct SRT_struct *ss)
@@ -225,31 +204,6 @@ u64 pba_get_spruntime(struct pba_struct *pba_struct_p)
     return total_runtime;
 }
 
-////this is called for the purpose of checking if VIC budget has expired
-//this is also called to determine how much budget remains after a 
-//job completes
-u64 pba_get_sprunVIC(struct pba_struct *pba_struct_p)
-{
-    u64 now_VIC;
-
-    u64 total_runVIC, current_runVIC = 0;
-
-    //if the task is currently running, compute the runtime since
-    //the last activation
-    if(!PBA_IS_SLEEPING(pba_struct_p))
-    {
-        //obtain the current time
-        now_VIC = LAMbS_VIC_get(NULL);
-        current_runVIC = now_VIC - pba_struct_p->last_actv_VIC;
-    }
-
-    //set the total runtime to the sum of the curent accumulated 
-    //runtime and previous runtime
-    total_runVIC = current_runVIC + pba_struct_p->total_sp_runVIC;
-
-    return total_runVIC;
-}
-
 //FIXME
 u64 check_budget_remaining(struct pba_struct *pba_struct_p)
 {
@@ -342,7 +296,7 @@ void pba_refresh_budget(struct SRT_struct *SRT_struct_p)
 
 }
 
-enum hrtimer_restart pbs_hrtick(struct hrtimer *timer)
+static enum hrtimer_restart _budget_enforcement_timer_callback(struct hrtimer *timer)
 {
     struct pba_struct *pba_struct_p;
     s64 remaining;
@@ -355,7 +309,7 @@ enum hrtimer_restart pbs_hrtick(struct hrtimer *timer)
         return ret;
     }
 
-    pba_struct_p = container_of(timer, struct pba_struct, hrtimer);
+    pba_struct_p = container_of(timer, struct pba_struct, budget_enforcement_timer);
 
     remaining = check_budget_remaining(pba_struct_p);
 
@@ -371,7 +325,7 @@ enum hrtimer_restart pbs_hrtick(struct hrtimer *timer)
     return ret;
 }
 
-static void inline pbs_hrtick_start(struct pba_struct *pba_struct_p)
+static void inline _budget_enforcement_timer_start(struct pba_struct *pba_struct_p)
 {
     s64 remaining;
     ktime_t remaining_k;
@@ -390,7 +344,9 @@ static void inline pbs_hrtick_start(struct pba_struct *pba_struct_p)
         //setup the timer to go off after the necessary time
         remaining = remaining - (THROTTLE_THREASHOLD_NS/2);
         remaining_k.tv64 = remaining;
-        hrtimer_start(&(pba_struct_p->hrtimer), remaining_k, HRTIMER_MODE_REL);
+        hrtimer_start(  &(pba_struct_p->budget_enforcement_timer), 
+                        remaining_k, 
+                        HRTIMER_MODE_REL);
     }
 }
 
@@ -459,8 +415,8 @@ void pba_schedin(   struct preempt_notifier *notifier,
         //reset the SLEEPING flag
         pba_struct_p->flags &= (~PBA_SLEEPING);
 
-        //start the bandwidth enforcement timer
-        pbs_hrtick_start(pba_struct_p);
+        //start the budget enforcement timer
+        _budget_enforcement_timer_start(pba_struct_p);
     }
 }
 
@@ -505,7 +461,7 @@ void pba_schedout(  struct preempt_notifier *notifier,
     }
 
     //cancel the bandwidth enforcement timer
-    hrtimer_cancel(&(SRT_struct_p->pba_struct.hrtimer));
+    hrtimer_cancel(&(SRT_struct_p->pba_struct.budget_enforcement_timer));
 
     //load the scheduling period activation time and job activation time
     current_runtime = -(pba_struct_p->jb_actv_time);
@@ -573,10 +529,11 @@ void pba_init(struct SRT_struct *SRT_struct_p)
     pba_struct_p = &(SRT_struct_p->pba_struct);
 
     //initialize the bw enforcement timer
-    hrtimer_init(   &(pba_struct_p->hrtimer), 
+    hrtimer_init(   &(pba_struct_p->budget_enforcement_timer), 
                     CLOCK_MONOTONIC, 
                     HRTIMER_MODE_REL);
-    (pba_struct_p->hrtimer).function = pbs_hrtick;
+    (pba_struct_p->budget_enforcement_timer).function = 
+                                                _budget_enforcement_timer_callback;
 
     //initialize the preempt notifier
     preempt_notifier_init(  &(pba_struct_p->pin_notifier), 
@@ -594,7 +551,7 @@ void pba_uninit(struct SRT_struct *SRT_struct_p)
     hlist_del(&(SRT_struct_p->pba_struct.pin_notifier.link));
 
     //cancel the bandwidth enforcement timer if it is active
-    hrtimer_cancel(&(SRT_struct_p->pba_struct.hrtimer));
+    hrtimer_cancel(&(SRT_struct_p->pba_struct.budget_enforcement_timer));
 
     printk(KERN_INFO "pba_uninit called %d", SRT_struct_p->task->pid);
 

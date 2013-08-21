@@ -23,7 +23,7 @@ module_param
 #include "LAMbS.h"
 #include "jb_mgt.h"
 #include "bw_mgt.h"
-#include "pba.h"
+#include "pbs_budget.h"
 #include "LAMbS_VIC.h"
 /*
 (un)init_bw_mgt

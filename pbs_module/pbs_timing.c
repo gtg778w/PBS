@@ -1,7 +1,7 @@
 #include "pbs_timing.h"
 #include "jb_mgt.h"
 #include "bw_mgt.h"
-#include "pba.h"
+#include "pbs_budget.h"
 /*
     init/uninit the pbs_hrtick_timer
     rt_runtime_update
