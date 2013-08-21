@@ -246,7 +246,8 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 {
     int ret = 0;
 
-    /*Replace runtime2 with VIC2*/
+    struct SRT_job_log local_job_log;
+    struct SRT_job_log *job_log_p;
     u64 runtime2;
 
     job_mgt_cmd_t cmd;
@@ -254,31 +255,22 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     int64_t u_c0, std_c0;
     int64_t u_cl, std_cl;
 
+    /*FIXME: Use VIC rather than runtime*/
     /*Get various data such as execution time for the job that just completed*/
-    if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
-        (handle->job_count < handle->log_size))
+    job_log_p = (   (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+                    (handle->job_count < handle->log_size)  )?
+                    &(handle->log[handle->job_count]) : &(local_job_log);
+
+    ret = read( handle->procfile, 
+                job_log_p, 
+                sizeof(struct SRT_job_log));
+    if(ret != sizeof(struct SRT_job_log))
     {
-        /*Store the data in the log if logging is enabled.*/
-        ret = read(handle->procfile, &(handle->log[handle->job_count]), sizeof(struct SRT_job_log));
-        if(ret != sizeof(struct SRT_job_log))
-        {
-            ret = -1; 
-            goto exit0;
-        }
-        
-        runtime2 = (handle->log[handle->job_count]).runtime2;
+        ret = -1; 
+        goto exit0;
     }
-    else
-    {
-        /*Store just the runtime in a local variable if logging is disabled.*/
-        ret = read(handle->procfile, &runtime2, sizeof(u64));
-        if(ret != sizeof(u64))
-        {
-            ret = -1;
-            goto exit0;
-        }
-        
-    }
+    
+    runtime2 = job_log_p->runtime2;
 
     /*Increment the job count*/
     (handle->job_count)++;
