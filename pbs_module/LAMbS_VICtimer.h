@@ -42,5 +42,7 @@ void LAMbS_VICtimer_init(   LAMbS_VICtimer_t *LAMbS_VICtimer_p);
 int LAMbS_VICtimer_mechanism_init(void);
 void LAMbS_VICtimer_mechanism_clear(void);
 
+extern s64 LAMbS_VICtimer_threshold_VIC;
+
 #endif
 

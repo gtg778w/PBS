@@ -1,23 +1,22 @@
-ifneq ($(KERNELRELEASE),)
-# call from kernel build system
 
-EXTRA_CFLAGS := -I$(src)/../governor
-obj-m	:= pbs_module.o
-pbs_module-objs := module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o pbs_active.o \
-                   pbs_budget_ns.o LAMbS.o \
-                   LAMbS_icount.o LAMbS_energy.o LAMbS_models.o LAMbS_VIC.o \
-                   LAMbS_VICtimer.o
-                   
-else
+GOVERNOR_DIR = ../governor
+EXTRA_CFLAGS=-I$(src)/$(GOVERNOR_DIR) -DVIC_Budget=$(VIC_BUDGET)
+
+pbs_module-objs = module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o \
+                  pbs_active.o LAMbS.o \
+                  pbs_budget.o pbs_budget_ns_helper.o pbs_budget_VIC_helper.o \
+                  LAMbS_icount.o LAMbS_energy.o LAMbS_models.o LAMbS_VIC.o \
+                  LAMbS_VICtimer.o
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
-PWD       := $(shell pwd)
+GOVSYMS=`pwd`/$(GOVERNOR_DIR)/Module.symvers
 
-modules:
-	$(MAKE) -C $(KERNELDIR) M=`pwd`/ KBUILD_EXTRA_SYMBOLS=`pwd`/../governor/Module.symvers modules
+obj-m += pbs_module.o
 
-endif
+all:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) KBUILD_EXTRA_SYMBOLS=$(GOVSYMS) modules
 
 clean:
-	rm -rf *.o *~ core .depend .*.cmd *.ko *.mod.c .tmp_versions modules.order Module.symvers
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
+	$(RM) Module.markers modules.order
 

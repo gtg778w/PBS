@@ -38,13 +38,11 @@ struct SRT_job_log
 {
     u64 runtime2;
     u64 runVIC2;
-    u64 runtime;
-    u64 runVIC;
     u64 abs_releaseTime;
     u64 abs_LFT;
 
-    u32 last_sp_compt_allocated;
-    u32 last_sp_compt_used_sofar;
+    u32 last_sp_budget_allocated;
+    u32 last_sp_budget_used_sofar;
 };
 
 typedef struct SRT_summary_s
