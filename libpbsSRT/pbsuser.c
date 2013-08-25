@@ -369,17 +369,15 @@ void pbsSRT_close(SRT_handle *handle)
                 log_entry = &(handle->log[i]);
                 relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
                 miss = (relative_LFT > handle->period);
-                fprintf(handle->log_file,   "%lu, %lu, %lu, %lu, %lu, "
+                fprintf(handle->log_file,   "%lu, %lu, %lu, "
                                             "%lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
-                                            (unsigned long)log_entry->runtime,
                                             (unsigned long)log_entry->runtime2,
-                                            (unsigned long)log_entry->runVIC,
                                             (unsigned long)log_entry->runVIC2,
                                             miss,
                                             (unsigned long)log_entry->abs_releaseTime,
                                             (unsigned long)log_entry->abs_LFT,
-                                            log_entry->last_sp_compt_allocated,
-                                            log_entry->last_sp_compt_used_sofar,
+                                            log_entry->last_sp_budget_allocated,
+                                            log_entry->last_sp_budget_used_sofar,
                                             (unsigned long)handle->pu_c0[i],
                                             (unsigned long)handle->pstd_c0[i],
                                             (unsigned long)handle->pu_cl[i],
