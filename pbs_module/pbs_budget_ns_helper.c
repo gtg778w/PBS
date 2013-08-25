@@ -248,7 +248,7 @@ static enum hrtimer_restart budget_ns_BET_callback(struct hrtimer *timer)
     return ret;
 }
 
-void budget_ns_BET_start(   struct pbs_budget_struct *budget_struct_p)
+void pbs_budget_ns_BET_start(   struct pbs_budget_struct *budget_struct_p)
 {
     struct pbs_budget_ns_struct *budget_ns_struct_p;
     
@@ -315,7 +315,7 @@ void pbs_budget_ns_schedout(struct pbs_budget_struct *budget_struct_p,
     budget_ns_struct_p->total_rp_runtime    += budget_used;
 }
 
-void pbs_budget_ns_cancel_BET(  struct pbs_budget_struct *budget_struct_p)
+void pbs_budget_ns_BET_cancel(  struct pbs_budget_struct *budget_struct_p)
 {
     struct pbs_budget_ns_struct *budget_ns_struct_p;
     

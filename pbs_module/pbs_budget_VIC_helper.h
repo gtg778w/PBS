@@ -51,9 +51,13 @@ void pbs_budget_VIC_jobboundary2(   struct pbs_budget_struct *budget_struct_p,
                                     u64 now_VIC);
 
 
-void budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p);
+#define pbs_budget_VIC_refresh(budget_struct_p) \
+    (budget_struct_p->budget_VIC_struct).total_rp_VIC = 0;
 
-void pbs_budget_VIC_cancel_BET( struct pbs_budget_struct *budget_struct_p);
+
+void pbs_budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p);
+
+void pbs_budget_VIC_BET_cancel( struct pbs_budget_struct *budget_struct_p);
 
 
 void pbs_budget_VIC_schedin(struct pbs_budget_struct *budget_struct_p,
@@ -67,9 +71,5 @@ void pbs_budget_VIC_init(   struct pbs_budget_struct *budget_struct_p);
 
 void pbs_budget_VIC_uninit( struct pbs_budget_struct *budget_struct_p);
 
-
-/*Refresh the budget*/
-#define pbs_budget_VIC_refresh(budget_struct_p) \
-    (budget_struct_p->budget_VIC_struct).total_rp_VIC = 0;
 
 #endif

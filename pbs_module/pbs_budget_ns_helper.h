@@ -41,26 +41,36 @@ u64 pbs_budget_ns_get_jbusage2( struct pbs_budget_struct *budget_struct_p,
 u64 pbs_budget_ns_get_rpusage(  struct pbs_budget_struct *budget_struct_p,
                                 u64 now,    int is_sleeping);
 
+
 void pbs_budget_ns_firstjob(struct pbs_budget_struct *budget_struct_p,
                             u64 now);
+
 void pbs_budget_ns_jobboundary1(struct pbs_budget_struct *budget_struct_p,
                                 u64 now);
+
 void pbs_budget_ns_jobboundary2(struct pbs_budget_struct *budget_struct_p,
                                 u64 now);
 
-void budget_ns_BET_start(   struct pbs_budget_struct *budget_struct_p);
-void pbs_budget_ns_cancel_BET(  struct pbs_budget_struct *budget_struct_p);
+
+#define pbs_budget_ns_refresh(budget_struct_p) \
+    (budget_struct_p->budget_ns_struct).total_rp_runtime = 0;
+
+
+void pbs_budget_ns_BET_start(   struct pbs_budget_struct *budget_struct_p);
+
+void pbs_budget_ns_BET_cancel(  struct pbs_budget_struct *budget_struct_p);
+
 
 void pbs_budget_ns_schedin( struct pbs_budget_struct *budget_struct_p,
                             u64 now);
+
 void pbs_budget_ns_schedout(struct pbs_budget_struct *budget_struct_p,
                             u64 now);
                                 
+
 void pbs_budget_ns_init(    struct pbs_budget_struct *budget_struct_p);
+
 void pbs_budget_ns_uninit(  struct pbs_budget_struct *budget_struct_p);
 
-/*Refresh the budget*/
-#define pbs_budget_ns_refresh(budget_struct_p) \
-    (budget_struct_p->budget_ns_struct).total_rp_runtime = 0;
 
 #endif

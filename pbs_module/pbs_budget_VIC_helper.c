@@ -247,7 +247,7 @@ static enum LAMbS_VICtimer_restart budget_VIC_BET_callback(
     return ret;
 }
 
-void budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p)
+void pbs_budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p)
 {
     struct pbs_budget_VIC_struct *budget_VIC_struct_p;
     
@@ -310,7 +310,7 @@ void pbs_budget_VIC_schedout(struct pbs_budget_struct *budget_struct_p,
     budget_VIC_struct_p->total_rp_VIC    += budget_used;
 }
 
-void pbs_budget_VIC_cancel_BET(  struct pbs_budget_struct *budget_struct_p)
+void pbs_budget_VIC_BET_cancel( struct pbs_budget_struct *budget_struct_p)
 {
     struct pbs_budget_VIC_struct *budget_VIC_struct_p;
     

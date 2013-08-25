@@ -73,7 +73,6 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
         current_rp_budgetusage = pbs_budget_ns_get_rpusage(budget_struct_p, now, 0);
     }
     
-    /*  reset the statistics for CPU usage over a reservation period*/
     pbs_budget_VIC_jobboundary1(budget_struct_p, now_VIC);
     pbs_budget_ns_jobboundary1(budget_struct_p, now);
     
@@ -99,7 +98,7 @@ void pbs_budget_jobboundary2(struct SRT_struct *ss)
     /*write information regarding the completed job into the log*/
     (ss->log).runtime2  = pbs_budget_ns_get_jbusage2( budget_struct_p, now, 0);
     (ss->log).runVIC2   = pbs_budget_VIC_get_jbusage2( budget_struct_p, now_VIC, 0);
-    
+   
     pbs_budget_ns_jobboundary2(budget_struct_p, now);
     pbs_budget_VIC_jobboundary2(budget_struct_p, now_VIC);
 }
@@ -112,7 +111,7 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
 
     int is_sleeping;
 
-   budget_struct_p = &(SRT_struct_p->budget_struct);
+    budget_struct_p = &(SRT_struct_p->budget_struct);
     
     is_sleeping = PBS_BUDGET_IS_SLEEPING(budget_struct_p);
     
@@ -225,11 +224,11 @@ static void pbs_budget_schedin( struct preempt_notifier *notifier,
         /* Start the budget_enforcement_timer */
         if( PBS_BUDGET_VIC == budget_type)
         {
-            budget_ns_BET_start(budget_struct_p);
+            pbs_budget_ns_BET_start(budget_struct_p);
         }
         else
         {
-            budget_VIC_BET_start(budget_struct_p);
+            pbs_budget_VIC_BET_start(budget_struct_p);
         }
     }
 }
@@ -270,12 +269,12 @@ static void pbs_budget_schedout(struct preempt_notifier *notifier,
     /* Cancel the budget_enforcement_timer */
     if( PBS_BUDGET_VIC == budget_type)
     {
-        pbs_budget_VIC_cancel_BET(budget_struct_p);
+        pbs_budget_VIC_BET_cancel(budget_struct_p);
     }
     else
     {
         /*The default assumption is ns-type budget.*/
-        pbs_budget_ns_cancel_BET(budget_struct_p);
+        pbs_budget_ns_BET_cancel(budget_struct_p);
     }
 
     /*  Allow the next set of operations to be performed atomically */
@@ -285,7 +284,7 @@ static void pbs_budget_schedout(struct preempt_notifier *notifier,
         now_VIC = LAMbS_VIC_get(&now);
         
         pbs_budget_ns_schedout( budget_struct_p, now);
-        pbs_budget_ns_schedout( budget_struct_p, now_VIC);
+        pbs_budget_VIC_schedout( budget_struct_p, now_VIC);
 
         /*  set the SLEEPING flag   */
         budget_struct_p->flags |= PBS_BUDGET_SLEEPING;
