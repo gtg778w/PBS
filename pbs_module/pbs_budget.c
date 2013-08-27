@@ -9,6 +9,9 @@
     LAMbS_VIC_get
 */
 
+/*FIXME*/
+extern u64 throttle_count;
+
 static enum pbs_budget_type pbs_budget_type = PBS_BUDGET_ns;
 
 /*  Access to the pbs_budget_type variable is controlled through these set and get
@@ -93,13 +96,12 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
     {
         current_rp_budgetusage = pbs_budget_ns_get_rpusage(budget_struct_p, now, 0);
     }
-    
-    pbs_budget_VIC_jobboundary1(budget_struct_p, now_VIC);
-    pbs_budget_ns_jobboundary1(budget_struct_p, now);
-    
     /*  When logs are analyzed, the budget usage in the reservation period can be used to
         compute VFT error.*/
     (ss->log).last_sp_budget_used_sofar  = current_rp_budgetusage;
+    
+    pbs_budget_VIC_jobboundary1(budget_struct_p, now_VIC);
+    pbs_budget_ns_jobboundary1(budget_struct_p, now);
 }
 
 /*Job boundary according to the second definition of job:
@@ -169,6 +171,9 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
     /*  Check if the task was previously throttled and unthrottle it*/
     if(budget_struct_p->flags & PBS_BUDGET_THROTTLED)
     {
+        /*FIXME: delete line*/
+        throttle_count++;
+
         budget_struct_p->flags &= (~PBS_BUDGET_THROTTLED);
 
         /*  Only wakeup the throttled task if it has work left to do (non-zero queue 

@@ -30,7 +30,7 @@
     set Ta="10000000"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="29000"
+    set sa="7000"
     
     #The name of the configuration
     set APPNAME="sqrwav"
@@ -43,7 +43,7 @@
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="7000"
+    set J1="1500"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
@@ -54,7 +54,7 @@
     set alpha_array=("0.25")
     
     @ duration_secs = 300 * ${repetitions}
-    set oscillate_duration=290
+    set oscillate_duration=70
     
     #Initialize the experiment ID
     #Each repetition for each value of alpha should have a unique ID
@@ -77,7 +77,7 @@
             set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqcycle"${SRT_logfilesuffix}
             
             #Start the frequency cycling program
-            ${BINDIR}/cpufreq_oscillate ${oscillate_duration} 5 0.5 1.0 &
+            ${BINDIR}/cpufreq_oscillate ${oscillate_duration} 2.5 0.5 1.0 &
             #Start the allocator
             ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} -VIC &
             #Wait for half a second to let the allocator run a couple of scheduling periods
