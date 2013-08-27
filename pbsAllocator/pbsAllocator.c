@@ -84,7 +84,7 @@ void allocator_loop_wlogging(int proc_file)
     
 }
 
-void allocator_loop(int proc_file)
+void allocator_loop(int proc_file, unsigned char logging_enabled)
 {
     bw_mgt_cmd_t cmd;
 
@@ -112,6 +112,10 @@ void allocator_loop(int proc_file)
         }
 
         pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
+        if((logging_enabled != 0) && (sp_count < sp_limit))
+        {
+            log_allocator_dat(sp_count, inst_count, energy_count);
+        }
 
         next = &(loaddata_array[loaddata_list_header->first]);
         task_count = loaddata_list_header->SRT_count;
@@ -122,6 +126,11 @@ void allocator_loop(int proc_file)
 
             compute_budget(next, &budget);
             allocation_array[task_index] = budget;
+
+            if((logging_enabled != 0) && (sp_count < sp_limit))
+            {
+                log_SRT_sp_dat(t, sp_count, next, budget);
+            }
 
             next = &(loaddata_array[next->next]);
         }
@@ -347,14 +356,7 @@ int main(int argc, char** argv)
         goto exit1;
     }
 
-    if(Sflag == 0)
-    {
-        allocator_loop_wlogging(proc_file);
-    }
-    else
-    {
-        allocator_loop(proc_file);
-    }
+    allocator_loop(proc_file, (0 == Sflag));
     
 exit1:
     /*Indicate to the kernel module that the allocator is closing*/
