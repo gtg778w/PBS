@@ -15,9 +15,12 @@ enum {  pbsSRT_LOGLEVEL_NONE,
 #define pbsSRT_LOGLEVEL_MIN (pbsSRT_LOGLEVEL_NONE)
 #define pbsSRT_LOGLEVEL_MAX (pbsSRT_LOGLEVEL_FULL)
 
+enum pbs_budget_type;
+
 typedef struct SRT_handle_s
 {
     int                 procfile;
+    int                 budget_type;
     pbsSRT_predictor_t  *predictor;
     uint64_t            period;
     /*FIXME: this should read estimated_mean_VIC*/

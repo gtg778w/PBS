@@ -1,11 +1,13 @@
 #ifndef PBSALLOCATOR_CMD_INCLUDE
 #define PBSALLOCATOR_CMD_INCLUDE
 
+#include "pbsCommon_cmd.h"
 
 #define PBS_BWMGT_CMD_SETUP_START (0)
 /*
-    0) scheduling period (us)
-    1) allocator runtime (us)
+    0) budget type (ns or VIC)
+    1) scheduling period (us)
+    2) allocator runtime (us)
 */
 
 #define PBS_BWMGT_CMD_NEXTJOB   (1)
@@ -18,10 +20,11 @@
 
 #define PBS_BWMGT_CMD_MAX       (3)
 #define PBS_BWMGT_CMD_MAXARGS   (2)
+
 typedef struct bw_mgt_cmd_s
 {
     int             cmd;
-    s64         args[2];
+    s64         args[3];
 } bw_mgt_cmd_t;
 
 typedef struct _SRT_loaddata

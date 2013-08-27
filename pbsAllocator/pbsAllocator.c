@@ -138,6 +138,7 @@ char *options_string = \
 "\n\t-f:\trun without prompting\n"\
 "\t-P:\tThe length of a scheduling period. (ns)\n"\
 "\t-B:\tThe budget allocated to the scheduler over a scheduling period. (ns)\n"\
+"\t-VIC:\tUse VIC-based budget.\n"\
 "\t-s:\tthe number of scheduling periods (1)\n"\
 "\t-S:\tdo not keep or output a log\n";
 
@@ -147,6 +148,7 @@ int main(int argc, char** argv)
 
     int proc_file;
 
+    enum pbs_budget_type budget_type = PBS_BUDGET_ns;
     uint64_t scheduling_period = 10000000;
     uint64_t allocator_budget = 1000000;
 
@@ -155,7 +157,7 @@ int main(int argc, char** argv)
 
     sp_limit = 1;
 
-    while((retval = getopt(argc, argv, "fP:B:s:S")) != -1)
+    while((retval = getopt(argc, argv, "fP:V:B:s:S")) != -1)
     {
         switch(retval)
         {
@@ -215,7 +217,15 @@ int main(int argc, char** argv)
             case 'S':
                 Sflag = 1;
                 break;
-                
+            
+            case 'V':
+                retval = strncmp("IC", optarg, 2);
+                if(0 == retval)
+                {
+                    budget_type = PBS_BUDGET_VIC;
+                    break;
+                }
+                /*else, fall through to the default condition*/
             default:
                 fprintf(stderr, "Usage: %s [Options]\n%s\n", 
                                 argv[0], options_string);
@@ -255,8 +265,8 @@ int main(int argc, char** argv)
     if((sp_limit == 0) && (Sflag == 0))
     {
         fprintf(stderr, 
-            "WARNING: The number of scheduling periods is not bounded!" 
-            "Logging is automatically disabled!\n");
+            "\n\nWARNING: The number of scheduling periods is not bounded!" 
+            "Logging is automatically disabled!\n\n");
         Sflag = 1;
     }
 
@@ -268,6 +278,21 @@ int main(int argc, char** argv)
     else
     {
         fprintf(stderr, ", count = %lli", (long long int)sp_limit);
+    }
+    
+    /*Display the type of budget being used*/
+    if(PBS_BUDGET_VIC == budget_type)
+    {
+        fprintf(stderr, ", VIC-based budget");
+    }
+    else if(PBS_BUDGET_ns == budget_type)
+    {
+        fprintf(stderr, ", time-based budget");
+    }
+    else
+    {
+        fprintf(stderr, "\n\nERROR: budget-type set to unknown value!\n");
+        goto exit0;
     }
     
     /*Check if logging is enabled*/
@@ -306,7 +331,7 @@ int main(int argc, char** argv)
 
     //Setup the interface with the pbs_allocator module
     //and scheduling related parameters
-    proc_file = allocator_setup(scheduling_period, allocator_budget);
+    proc_file = allocator_setup(budget_type, scheduling_period, allocator_budget);
     if(proc_file < 0)
     {
         fprintf(stderr, "allocator_setup failed!\n");

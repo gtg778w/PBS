@@ -11,6 +11,7 @@ and allocator task.
 #include "pbs_mmap.h"
 #include "LAMbS_models.h"
 #include "LAMbS_mo.h"
+#include "pbs_budget.h"
 
 /**********************************************************************
 
@@ -125,12 +126,12 @@ ssize_t bw_mgt_write(   struct file *filep,
                 goto exit0;
             }
         
-            if(cmd.args[0] > 0)
+            if(cmd.args[1] > 0)
             {
-                if((cmd.args[1] > 0) && (cmd.args[1] <= cmd.args[0]))
+                if((cmd.args[2] > 0) && (cmd.args[2] <= cmd.args[1]))
                 {
-                    allocator_period = cmd.args[0];
-                    allocator_runtime= cmd.args[1];
+                    allocator_period = cmd.args[1];
+                    allocator_runtime= cmd.args[2];
                     printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command!"\
                                         "Setting allocator (%i) to a period of %li, "\
                                         "and a budget of %li.\n",
@@ -146,8 +147,8 @@ ssize_t bw_mgt_write(   struct file *filep,
                                         "larger than the period. Received parameters:"
                                         "Period (%li), Budget (%li).\n", 
                                         current->pid,
-                                        (long int)cmd.args[0],
-                                        (long int)cmd.args[1]);
+                                        (long int)cmd.args[1],
+                                        (long int)cmd.args[2]);
                     ret = -EINVAL;
                     goto exit0;
                 }
@@ -159,8 +160,19 @@ ssize_t bw_mgt_write(   struct file *filep,
                                     "(%i). The allocated period must be larger than 0."\
                                     "Received parameters: Period (%li), Budget (%li).\n",
                                     current->pid,
-                                    (long int)cmd.args[0],
-                                    (long int)cmd.args[1]);
+                                    (long int)cmd.args[1],
+                                    (long int)cmd.args[2]);
+                ret = -EINVAL;
+                goto exit0;
+            }
+    
+            ret = pbs_budget_settype((enum pbs_budget_type)cmd.args[0]);
+            if( 0 != ret)
+            {
+                printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command with invalid "\
+                                    "value (%li) for argument 0 (budget_type). Argument "\
+                                    "0 should have a value from the enumerator "\
+                                    "pbs_budget_type. ", (long int)cmd.args[0]);
                 ret = -EINVAL;
                 goto exit0;
             }

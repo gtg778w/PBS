@@ -40,7 +40,8 @@ SRT_loaddata_t          *loaddata_array;
 loaddata_list_header_t  *loaddata_list_header;
 uint64_t                *allocation_array;
 
-int allocator_setup(uint64_t scheduling_period,
+int allocator_setup(enum pbs_budget_type budget_type,
+                    uint64_t scheduling_period,
                     uint64_t allocator_bandwidth)
 {
     int proc_file;
@@ -111,8 +112,9 @@ int allocator_setup(uint64_t scheduling_period,
     }
 
     cmd.cmd = PBS_BWMGT_CMD_SETUP_START;
-    cmd.args[0] = scheduling_period;
-    cmd.args[1] = allocator_bandwidth;
+    cmd.args[0] = budget_type;
+    cmd.args[1] = scheduling_period;
+    cmd.args[2] = allocator_bandwidth;
     retval = write(proc_file, &cmd, sizeof(cmd));
     if(retval != sizeof(cmd))
     {

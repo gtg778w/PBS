@@ -9,9 +9,30 @@
     LAMbS_VIC_get
 */
 
-enum pbs_budget_type {PBS_BUDGET_VIC, PBS_BUDGET_ns};
+static enum pbs_budget_type pbs_budget_type = PBS_BUDGET_ns;
 
-enum pbs_budget_type budget_type = PBS_BUDGET_ns;
+/*  Access to the pbs_budget_type variable is controlled through these set and get
+    functions and to prevent it from being set to an erroneous value  */
+int pbs_budget_settype(enum pbs_budget_type budget_type)
+{
+    int ret = 0;
+    
+    if( (PBS_BUDGET_VIC == budget_type) || (PBS_BUDGET_ns == budget_type))
+    {
+        pbs_budget_type = budget_type;
+    }
+    else
+    {
+        ret = -1;
+    }
+    
+    return ret;
+}
+
+enum pbs_budget_type pbs_budget_gettype(void)
+{
+    return pbs_budget_type;
+}
 
 #define PBS_BUDGET_IS_THROTTLED(budget_struct_p)   \
         (budget_struct_p->flags & PBS_BUDGET_THROTTLED)
@@ -64,7 +85,7 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
     (ss->log).last_sp_budget_allocated   = (budget_struct_p->sp_budget);
     
     /*  Determine the cpu-usage in the current reservation period*/
-    if( PBS_BUDGET_VIC == budget_type)
+    if( PBS_BUDGET_VIC == pbs_budget_type)
     {
         current_rp_budgetusage = pbs_budget_VIC_get_rpusage(budget_struct_p, now_VIC, 0);
     }
@@ -119,7 +140,7 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
     now_VIC = LAMbS_VIC_get(&now);
 
     /*  Start the budget_enforcement_timer */
-    if( PBS_BUDGET_VIC == budget_type)
+    if( PBS_BUDGET_VIC == pbs_budget_type)
     {
         (SRT_struct_p->loaddata)->current_runtime = 
                                 pbs_budget_VIC_get_jbusage1(budget_struct_p,
@@ -222,13 +243,13 @@ static void pbs_budget_schedin( struct preempt_notifier *notifier,
         budget_struct_p->flags &= (~PBS_BUDGET_SLEEPING);
 
         /* Start the budget_enforcement_timer */
-        if( PBS_BUDGET_VIC == budget_type)
+        if( PBS_BUDGET_VIC == pbs_budget_type)
         {
-            pbs_budget_ns_BET_start(budget_struct_p);
+            pbs_budget_VIC_BET_start(budget_struct_p);
         }
         else
         {
-            pbs_budget_VIC_BET_start(budget_struct_p);
+            pbs_budget_ns_BET_start(budget_struct_p);
         }
     }
 }
@@ -267,7 +288,7 @@ static void pbs_budget_schedout(struct preempt_notifier *notifier,
     }
 
     /* Cancel the budget_enforcement_timer */
-    if( PBS_BUDGET_VIC == budget_type)
+    if( PBS_BUDGET_VIC == pbs_budget_type)
     {
         pbs_budget_VIC_BET_cancel(budget_struct_p);
     }
@@ -300,7 +321,7 @@ void pbs_budget_init(struct SRT_struct *SRT_struct_p)
 
     /*  Initialize the budget_enforcement_timer and anything else that needs to be 
         initialized, based on the type of budget being used*/
-    if( PBS_BUDGET_VIC == budget_type)
+    if( PBS_BUDGET_VIC == pbs_budget_type)
     {
         pbs_budget_VIC_init( &(SRT_struct_p->budget_struct));
     }
@@ -325,7 +346,7 @@ void pbs_budget_uninit(struct SRT_struct *SRT_struct_p)
     preempt_notifier_unregister(&(SRT_struct_p->budget_struct.pin_notifier));
 
     /* Cancel the budget_enforcement_timer based on the type of budget being used*/
-    if( PBS_BUDGET_VIC == budget_type)
+    if( PBS_BUDGET_VIC == pbs_budget_type)
     {
         pbs_budget_VIC_uninit( &(SRT_struct_p->budget_struct));
     }

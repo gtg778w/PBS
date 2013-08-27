@@ -159,6 +159,9 @@ ssize_t jb_mgt_write(   struct file *filep,
     u64 task_period;
     u64 sp_per_tp; /*reservation periods in a task period*/
     
+    void __user *budget_type_p;
+    enum pbs_budget_type budget_type;
+    
     if(sizeof(job_mgt_cmd_t) != count)
     {
         printk(KERN_INFO    "The argument written through jb_mgt_write by process %d "
@@ -213,6 +216,14 @@ ssize_t jb_mgt_write(   struct file *filep,
                                     "The passed value is too large.", 
                                     current->pid);
                 ret = -EINVAL;
+                goto exit0;
+            }
+            
+            budget_type_p = (void __user *)cmd.args[1];
+            budget_type   = pbs_budget_gettype();
+            if( copy_to_user( budget_type_p, &budget_type, sizeof(enum pbs_budget_type)) )
+            {
+                ret = -EFAULT;
                 goto exit0;
             }
             

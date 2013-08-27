@@ -1,7 +1,12 @@
+#ifndef PBSSRT_CMD_INCLUDE
+#define PBSSRT_CMD_INCLUDE
+
+#include "pbsCommon_cmd.h"
 
 #define PBS_JBMGT_CMD_SETUP     (0)
 /*
     0) period (us)
+    1) &budget_type (output varriable)
 */
 
 #define PBS_JBMGT_CMD_START     (1)
@@ -63,3 +68,4 @@ typedef struct SRT_summary_s
     s64 total_misses;
 } SRT_summary_t;
 
+#endif

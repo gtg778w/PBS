@@ -3,6 +3,8 @@
 
 #include <linux/kernel.h>
 
+#include "pbsCommon_cmd.h"
+
 #include "pbs_budget_ns_helper.h"
 #include "pbs_budget_VIC_helper.h"
 
@@ -26,6 +28,9 @@ struct pbs_budget_struct
 //of the above data structure
 #define PBS_BUDGET_SLEEPING     (0x1)
 #define PBS_BUDGET_THROTTLED    (0x2)
+
+int pbs_budget_settype(enum pbs_budget_type budget_type);
+enum pbs_budget_type pbs_budget_gettype(void);
 
 void pbs_budget_firstjob(struct SRT_struct *ss);
 void pbs_budget_jobboundary1(struct SRT_struct *ss);

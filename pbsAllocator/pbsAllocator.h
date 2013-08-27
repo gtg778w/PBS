@@ -22,7 +22,8 @@ extern SRT_loaddata_t           *loaddata_array;
 extern loaddata_list_header_t   *loaddata_list_header;
 extern uint64_t                 *allocation_array;
 
-int allocator_setup(uint64_t scheduling_period,
+int allocator_setup(enum pbs_budget_type budget_type,
+                    uint64_t scheduling_period,
                     uint64_t allocator_bandwidth);
 int allocator_close(int proc_file);
 

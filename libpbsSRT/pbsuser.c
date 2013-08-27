@@ -94,7 +94,6 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
 
         if(loglevel >= pbsSRT_LOGLEVEL_FULL)
         {
-
             handle->log = (struct SRT_job_log*)malloc(logCount*sizeof(struct SRT_job_log));
             if(handle->log == NULL)
             {
@@ -151,17 +150,36 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
 
     cmd.cmd = PBS_JBMGT_CMD_SETUP;
     cmd.args[0] = period;
+    cmd.args[1] = (u64)&(handle->budget_type);
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
         perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
         goto close_exit;
     }
+    else /*FIXME: get rid of the else statement*/
+    {
+        if(PBS_BUDGET_VIC == handle->budget_type)
+        {
+            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = VIC\n");
+        }
+        else if(PBS_BUDGET_ns == handle->budget_type)
+        {
+            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = time\n");
+        }
+        else
+        {
+            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = <unknown>\n");
+        }
+    }
     
     handle->period          = period;
     handle->estimated_mean_exectime 
                             = estimated_mean_exectime;
     handle->alpha_squared   = alpha * alpha;
+
+    /*FIXME: delet the following line*/
+    fprintf(stderr, "libpbsSRT: (pbsSRT_setup) alpha^2 = %f\n", handle->alpha_squared);
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
@@ -248,7 +266,7 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 
     struct SRT_job_log local_job_log;
     struct SRT_job_log *job_log_p;
-    u64 runtime2;
+    u64 CPU_usage;
 
     job_mgt_cmd_t cmd;
 
@@ -270,14 +288,16 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         goto exit0;
     }
     
-    runtime2 = job_log_p->runtime2;
+    CPU_usage = (PBS_BUDGET_VIC == handle->budget_type)? 
+                job_log_p->runVIC2 :
+                job_log_p->runtime2;
 
     /*Increment the job count*/
     (handle->job_count)++;
 
     /*Update the predictor and predict the execution time of the next job*/
     ret = handle->predictor->update(handle->predictor->state,
-                                    runtime2,
+                                    CPU_usage,
                                     &u_c0, &std_c0,
                                     &u_cl, &std_cl);
     if(ret == -1)
@@ -350,9 +370,11 @@ void pbsSRT_close(SRT_handle *handle)
             perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
         }
         
-        fprintf(handle->log_file,   "%i, %llu, %llu, %llu, %llu, %llu, %llu, %llu, %llu, "
-                                    "0, 0, 0, 0\n\n", getpid(),
+        fprintf(handle->log_file,   "%i, %llu, %i, %llu, %llu, %llu, %llu, %llu, %llu, "
+                                    "%llu, 0, \n\n", 
+                                    (int)               getpid(),
                                     (unsigned long long)handle->period,
+                                    (int)               handle->budget_type,
                                     (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,
                                     (unsigned long long)summary.cumulative_budget,
