@@ -9,10 +9,12 @@
     LAMbS_VIC_get
 */
 
-/*FIXME*/
-extern u64 throttle_count;
-
 static enum pbs_budget_type pbs_budget_type = PBS_BUDGET_ns;
+
+#define PBS_BUDGET_IS_THROTTLED(budget_struct_p)   \
+        (budget_struct_p->flags & PBS_BUDGET_THROTTLED)
+#define PBS_BUDGET_IS_SLEEPING(budget_struct_p)    \
+        (budget_struct_p->flags & PBS_BUDGET_SLEEPING)
 
 /*  Access to the pbs_budget_type variable is controlled through these set and get
     functions and to prevent it from being set to an erroneous value  */
@@ -37,10 +39,6 @@ enum pbs_budget_type pbs_budget_gettype(void)
     return pbs_budget_type;
 }
 
-#define PBS_BUDGET_IS_THROTTLED(budget_struct_p)   \
-        (budget_struct_p->flags & PBS_BUDGET_THROTTLED)
-#define PBS_BUDGET_IS_SLEEPING(budget_struct_p)    \
-        (budget_struct_p->flags & PBS_BUDGET_SLEEPING)
 
 void pbs_budget_firstjob(struct SRT_struct *ss)
 {
@@ -171,9 +169,6 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
     /*  Check if the task was previously throttled and unthrottle it*/
     if(budget_struct_p->flags & PBS_BUDGET_THROTTLED)
     {
-        /*FIXME: delete line*/
-        throttle_count++;
-
         budget_struct_p->flags &= (~PBS_BUDGET_THROTTLED);
 
         /*  Only wakeup the throttled task if it has work left to do (non-zero queue 
@@ -213,7 +208,7 @@ static void pbs_budget_schedin( struct preempt_notifier *notifier,
     //check if the task is already awake
     if((budget_struct_p->flags & PBS_BUDGET_SLEEPING) == 0)
     {
-        //FIXME
+        /*FIXME*/
         {
             static unsigned char flag = 1;
 
@@ -277,15 +272,9 @@ static void pbs_budget_schedout(struct preempt_notifier *notifier,
         //FIXME
         if((budget_struct_p->flags & PBS_BUDGET_THROTTLED) == 0)
         {
-            static unsigned char flag = 1;
-
-            if(flag)
-            {
-                printk(KERN_INFO "WARNING: pbs_budget_schedout called for task whose "
-                                "flag is set to PBS_BUDGET_SLEEPING, but not "
-                                "PBS_BUDGET_THROTTLED!");
-                flag = 0;
-            }
+            printk(KERN_INFO "WARNING: pbs_budget_schedout called for task whose "
+                            "flag is set to PBS_BUDGET_SLEEPING, but not "
+                            "PBS_BUDGET_THROTTLED!");
         }
 
         /*The task is already in the SLEEPING state, just exit*/
@@ -340,6 +329,9 @@ void pbs_budget_init(struct SRT_struct *SRT_struct_p)
     preempt_notifier_init(  &(budget_struct_p->pin_notifier), 
                             &pbs_budget_pops);
     preempt_notifier_register(&(budget_struct_p->pin_notifier));
+
+    /*initialize the flags*/
+    budget_struct_p->flags = 0;
 
     printk(KERN_INFO "pbs_budget_init called %d", SRT_struct_p->task->pid);
 }

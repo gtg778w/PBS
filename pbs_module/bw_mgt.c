@@ -234,7 +234,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                     local_irq_restore(irq_flags);
                     
                     //assign new bandwidths
-                    assign_bandwidths();
+                    assign_budgets();
 
                     /*Execute the operation-mode schedule*/
             		/* LAMbS_cpufreq_schedule(LAMbS_mo_sched);*/

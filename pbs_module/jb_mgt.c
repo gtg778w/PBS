@@ -21,18 +21,6 @@ static void free_SRT_struct(struct SRT_struct *freeable)
 {
     free_loaddata(freeable->loaddata);
 
-    /*FIXME*/
-    printk(KERN_INFO    "free_SRT_struct called by task (%d), "
-                        "cumulative budget %llins, "
-                        "cumulative budget before saturation %llins, "
-                        "total consumed budget %llins, "
-                        "total misses %llu\n", 
-                        freeable->task->pid, 
-                        freeable->summary.cumulative_budget,
-                        freeable->summary.cumulative_budget_sat,
-                        freeable->summary.consumed_budget,
-                        freeable->summary.total_misses);
-
     kmem_cache_free(SRT_struct_slab_cache, freeable);
 
     decrement_SRT_count();
@@ -51,7 +39,7 @@ struct SRT_struct *allocate_SRT_struct(void)
     }
 
     /*zero out the summary structure*/
-    initable->summary = (struct SRT_summary_s){0, 0, 0, 0, 0};;
+    initable->summary = (struct SRT_summary_s){0, 0, 0, 0};;
 
     initable->loaddata = alloc_loaddata();
     if(initable->loaddata == NULL)

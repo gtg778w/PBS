@@ -56,9 +56,6 @@ typedef struct SRT_summary_s
     the first scheduling period for this task.*/
     s64 cumulative_budget;
     
-    /*Same as cumulative_budget, but after any saturation.*/
-    s64 cumulative_budget_sat;
-
     /*Total comsumed budget (vs allocated budget)*/
     s64 consumed_budget;
     s64 consumed_VIC;

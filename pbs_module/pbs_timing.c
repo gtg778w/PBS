@@ -148,9 +148,9 @@ void first_sched_period_tick(void)
 
 void sched_period_tick(void)
 {
-    struct list_head *pos, *prev, *next;
-    struct SRT_timing_struct* wakeable;
-    struct SRT_struct *bwrefreshable;
+    struct list_head *curr, *prev, *next;
+    struct SRT_timing_struct* SRT_timing_struct_p;
+    struct SRT_struct *SRT_struct_p;
 
     int sp_till_deadline, sp_per_tp;
 
@@ -167,125 +167,97 @@ void sched_period_tick(void)
     if(timing_queue_head.next == &timing_queue_head)
         return;
 
-    pos = timing_queue_head.next;
+    curr = timing_queue_head.next;
     while(1)
     {
-        wakeable = (struct SRT_timing_struct*)pos;
-        bwrefreshable = (struct SRT_struct*)pos;
+        SRT_timing_struct_p = container_of( curr, 
+                                            struct SRT_timing_struct, 
+                                            timing_list_entry);
+        SRT_struct_p = container_of(   SRT_timing_struct_p,
+                                        struct SRT_struct,
+                                        timing_struct);
 
-        if(expires_prev.tv64 < wakeable->next_task_period_boundary.tv64)
+        if(expires_prev.tv64 < SRT_timing_struct_p->next_task_period_boundary.tv64)
+        {
             break;
-
+        }
+        
         //remove it from the list
-        pos = pos->prev;
-        __list_del(pos, (wakeable->timing_list_entry).next);
+        curr = curr->prev;
+        __list_del(curr, (SRT_timing_struct_p->timing_list_entry).next);
 
         //assign it a new value
-        wakeable->next_task_period_boundary.tv64 += wakeable->task_period.tv64;
+        SRT_timing_struct_p->next_task_period_boundary.tv64 += 
+                        SRT_timing_struct_p->task_period.tv64;
 
         //insert it back into the list in order
         prev = &timing_queue_head;
-        insert_asnd(&timing_queue_head, prev, wakeable, next);
+        insert_asnd(&timing_queue_head, prev, SRT_timing_struct_p, next);
 
         //increment the task's queue length
-        (bwrefreshable->queue_length)++;
-        (bwrefreshable->loaddata->queue_length) = 
-            (unsigned short)(bwrefreshable->queue_length);
+        (SRT_struct_p->queue_length)++;
+        (SRT_struct_p->loaddata->queue_length) = 
+            (unsigned short)(SRT_struct_p->queue_length);
 
         //wakeup the associated task
-        wake_up_process(bwrefreshable->task);
+        wake_up_process(SRT_struct_p->task);
 
         //move to the next task in the list
-        pos = pos->next;
+        curr = curr->next;
     }
 
-    //refresh bandwidth for the tasks
-    pos = timing_queue_head.next;
-    while(pos != &timing_queue_head)
+    /*  loop through the set of tasks in the timing list */
+    list_for_each(curr, &(timing_queue_head))
     {
-        //determine the next task in the list
-        bwrefreshable = (struct SRT_struct*)pos;
+        SRT_timing_struct_p = container_of( curr, 
+                                            struct SRT_timing_struct, 
+                                            timing_list_entry);
+        SRT_struct_p = container_of(   SRT_timing_struct_p,
+                                        struct SRT_struct,
+                                        timing_struct);
 
-        //decrement sp_till_deadline
-        sp_till_deadline = (bwrefreshable->loaddata)->sp_till_deadline;
-        sp_per_tp = (bwrefreshable->loaddata)->sp_per_tp;
+        /*  Determine the number of reservation periods remaining until the
+            beginning of the next task-period (the next job release). */
+        sp_till_deadline = (SRT_struct_p->loaddata)->sp_till_deadline;
+        sp_per_tp = (SRT_struct_p->loaddata)->sp_per_tp;
         sp_till_deadline = (sp_till_deadline == 1) ? 
                             sp_per_tp : (sp_till_deadline - 1);
-        (bwrefreshable->loaddata)->sp_till_deadline = sp_till_deadline;
+        (SRT_struct_p->loaddata)->sp_till_deadline = sp_till_deadline;
 
-        pbs_budget_refresh(bwrefreshable);
-
-        //move to the next task in the list
-        pos = pos->next;
+        /*  Refresh the budget (unthrottle the task if necessary) */
+        pbs_budget_refresh(SRT_struct_p);
     }
 
 }
 
-void assign_bandwidths(void)
+void assign_budgets(void)
 {
-    struct list_head *pos;
-    struct SRT_struct *SRT_struct;
-    ktime_t now;
-    u64 bw_sum, allocation;
-    s64 saturation_level;
-    unsigned char saturate;
+    struct list_head *next;
+    struct SRT_timing_struct *SRT_timing_struct_p;
+    struct SRT_struct *SRT_struct_p;
+    u64 allocation;
 
-    //check if the allocations have to be saturated 
-    //(the sum of the bw is larger than some threshold)
-    bw_sum = 0;
-    pos = timing_queue_head.next;
-    while(pos != &timing_queue_head)
+    /*Loop through the list of active SRT tasks and allocate corresponding budgets*/
+    list_for_each(next, &(timing_queue_head))
     {
-        //determine the next task in the list
-        SRT_struct = (struct SRT_struct*)pos;
-
-        bw_sum = bw_sum + allocation_array[SRT_struct->allocation_index];
-
-        //accumulate the total budget allocated before saturation
-        SRT_struct->summary.cumulative_budget = 
-            SRT_struct->summary.cumulative_budget + 
-            allocation_array[SRT_struct->allocation_index];
-
-        //move to the next task in the list
-        pos = pos->next;
-    }
-
-    //compute the appropriate saturation level according to time remaining
-    //until the beginning of the next scheduling period
-    now = hrtimer_cb_get_time(&sp_timer);
-    saturation_level = (expires_next.tv64 - now.tv64)*95/100;
-
-    /*FIXME: Saturation is already done at the user level*/
-    //saturate = (bw_sum > saturation_level)? 1: 0;
-    saturate = 0;
-    
-    pos = timing_queue_head.next;
-    while(pos != &timing_queue_head)
-    {
-        //determine the next task in the list
-        SRT_struct = (struct SRT_struct*)pos;
-
-        //saturate the allocation if necessary
-        allocation = allocation_array[SRT_struct->allocation_index];
-        if(saturate)
-        {
-            allocation = (allocation*saturation_level)/bw_sum;
-            allocation_array[SRT_struct->allocation_index] = allocation;
-        }
-
-        //modify its bandwidth allocation
-        pbs_budget_set(SRT_struct, allocation);
+        /* Get the pointer to the SRT_struct of the next task in the list */
+        SRT_timing_struct_p = container_of( next, 
+                                            struct SRT_timing_struct, 
+                                            timing_list_entry);
+        SRT_struct_p =  container_of(   SRT_timing_struct_p,
+                                        struct SRT_struct,
+                                        timing_struct);
         
-        //accumulate the total budget allocated
-        SRT_struct->summary.cumulative_budget_sat = 
-            SRT_struct->summary.cumulative_budget_sat + allocation;
+        /* Get the corresponding budget allocation computed by the Allocator*/
+        allocation = allocation_array[SRT_struct_p->allocation_index];
+        
+        /* Accumulate the total budget for the task */
+        SRT_struct_p->summary.cumulative_budget += allocation;
 
-        //move to the next task in the list
-        pos = pos->next;
+        /* Set the task's budget to the new value */
+        pbs_budget_set( SRT_struct_p, allocation);
     }
-
 }
-
 
 int setup_allocator(s64 period, s64 runtime)
 {
@@ -364,7 +336,7 @@ int stop_pbs_timing(char not_allocator)
 //nothing to be done for step4
 
 //handle what happens after step 4
-    //wake up all the SRT tasks, restoring their bandwidth timers
+    //wake up all the SRT tasks
     pos = timing_queue_head.next;
     while(pos != &timing_queue_head)
     {

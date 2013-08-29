@@ -9,14 +9,6 @@
 #include "jb_mgt.h"
 #include "bw_mgt.h"
 
-/*FIXME*/
-u64 throttle_count;
-u64 callback_count;
-u64 timer_start_count;
-s64 min_timer_interval;
-s64 max_timer_interval;
-u64 budget_check;
-
 /*Get the runtime of the currently running job of the task*/
 u64 pbs_budget_VIC_get_jbusage1(struct pbs_budget_struct *budget_struct_p,
                                 u64 now_VIC,    int is_sleeping)
@@ -158,9 +150,6 @@ static u64 check_budget_VIC_remaining(  struct pbs_budget_VIC_struct *budget_VIC
     s64 remaining;
     s64 overuse;
 
-    /*FIXME: delete this line*/
-    //budget_check++;
-
     /*Climb super struct pointers upto the SRT struct*/
     budget_struct_p = container_of( budget_VIC_struct_p, 
                                     struct pbs_budget_struct, 
@@ -248,10 +237,6 @@ static enum LAMbS_VICtimer_restart budget_VIC_BET_callback(
 
     remaining = check_budget_VIC_remaining(budget_VIC_struct_p, &now_VIC);
     
-    /*FIXME: delete this*/
-    budget_check++;
-    callback_count++;
-    
     if(remaining > 0)
     {
         /*  forward the timer to the desired VIC target */
@@ -274,17 +259,13 @@ void pbs_budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p)
     /*  check the time that this should be setup for */
     remaining = check_budget_VIC_remaining(budget_VIC_struct_p, &now_VIC);
 
-    /*FIXME: delete this*/
-    budget_check++;
-
     if(remaining > 0)
     {
         /*  forward the timer by the necessary amount */
         LAMbS_VICtimer_start(   &(budget_VIC_struct_p->budget_enforcement_timer),
                                 (now_VIC + remaining),
                                 LAMbS_VICTIMER_ABS);
-        /*FIXME: delete this*/    
-        timer_start_count++;
+
         min_timer_interval = (remaining < min_timer_interval)? 
                              remaining : min_timer_interval;
         max_timer_interval = (remaining > max_timer_interval)? 
@@ -354,14 +335,6 @@ void pbs_budget_VIC_init(struct pbs_budget_struct *budget_struct_p)
     LAMbS_VICtimer_init(&(budget_VIC_struct_p->budget_enforcement_timer));
                     
     (budget_VIC_struct_p->budget_enforcement_timer).function = budget_VIC_BET_callback;
-    
-    /*FIXME: delete line*/
-    throttle_count = 0;
-    budget_check = 0;
-    callback_count = 0;
-    timer_start_count = 0;
-    min_timer_interval = ((u64)1) << 62;
-    max_timer_interval = 0;
 }
 
 void pbs_budget_VIC_uninit(  struct pbs_budget_struct *budget_struct_p)
@@ -372,19 +345,5 @@ void pbs_budget_VIC_uninit(  struct pbs_budget_struct *budget_struct_p)
     
     /*Cancel the budget_enforcement_timer*/
     LAMbS_VICtimer_cancel(&(budget_VIC_struct_p->budget_enforcement_timer));
-
-    /*FIXME: delete line*/
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) throttle_count = %lu",
-                    (long unsigned)throttle_count);
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) budget_check = %lu",
-                    (long unsigned)budget_check);
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) callback count = %lu",
-                    (long unsigned)callback_count);
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) timer start count = %lu",
-                    (long unsigned)timer_start_count);
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) min timer interval = %li",
-                    (long)min_timer_interval);
-    printk(KERN_INFO "pbs_module: (pbs_budget_VIC_uninit) max timer interval = %li",
-                    (long)max_timer_interval);    
 }
 
