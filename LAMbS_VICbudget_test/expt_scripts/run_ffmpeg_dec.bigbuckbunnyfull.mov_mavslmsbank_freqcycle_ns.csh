@@ -27,15 +27,15 @@
     endif
     
     #The period of the allocator task
-    set Ta="10000000"
+    set Ta="10416667"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="7000"
+    set sa="28800"
     
     #The name of the configuration
-    set APPNAME="sqrwav"
-    set CONFIGNAME="constant"
-    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqcycle"
+    set APPNAME="ffmpeg"
+    set CONFIGNAME="dec.bigbuckbunnyfull.mov"
+    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqcycle/ns"
     mkdir -p ${LOCALLOGDIR}
     
     #The name of the configuration file for the PeSoRTA workload
@@ -43,31 +43,32 @@
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="1500"
+    set J1="6480"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
-    set p1="40000000"
+    set p1="41666668"
     #The estimated mean execution time of the SRT application
-    set c1="20000000"
+    set c1="11000000"
     #Alpha values of the workload
-    set alpha_array=("0.25")
+    set alpha_array=("1.39533")
     
-    @ duration_secs = 300 * ${repetitions}
-    set oscillate_duration=70
+    @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
+    @ oscillate_duration = (((${Ta} / 1000) * ${sa}) / 1000) / 1000
     
     #Initialize the experiment ID
     #Each repetition for each value of alpha should have a unique ID
     @ expt_id = 1
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
-        
+    
         #The suffix of the log file to store the data collected by the SRT application
         set SRT_logfilesuffix="_SRT_PeSoRTA_"${APPNAME}"_"${CONFIGNAME}"_"${J1}"_"${A1}"_"${p1}"_"${c1}"_"${alpha}".log"        
+        set ALC_logfilesuffix="_allocator_PeSoRTA_"${APPNAME}"_"${Ta}"_"${Qa}"_"${sa}".log"
         
         #Loop over the repetitions
         foreach rep (`seq 1 1 ${repetitions}`)
-            
+        
             #Display progress and estimated duration
             echo "Experiment: ${LOCALLOGDIR}"
             echo "Approximate total duration of experiment: ${duration_secs}"
@@ -75,18 +76,19 @@
                 
             #Names of LOG files
             set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqcycle"${SRT_logfilesuffix}
+            set ALC_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqcycle"${ALC_logfilesuffix}
             
             #Start the frequency cycling program
-            ${BINDIR}/cpufreq_oscillate ${oscillate_duration} 2.5 0.5 1.0 &
+            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 5, 0, 1.0 &
             #Start the allocator
-            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} -VIC &
+            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task
             ${BINDIR}/${APPNAME}_pbsSRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${alpha} -L 2 -R ${SRT_logfile} &
             #Wait for the allocator task to finish
             ${BINDIR}/poll_pbs_actv -I
-            
+
             #Increment the experiment ID
             @ expt_id += 1
         end

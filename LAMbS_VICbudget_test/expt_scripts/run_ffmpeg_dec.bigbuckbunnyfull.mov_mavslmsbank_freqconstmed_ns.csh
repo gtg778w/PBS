@@ -48,7 +48,7 @@
     #The name of the configuration
     set APPNAME="ffmpeg"
     set CONFIGNAME="dec.bigbuckbunnyfull.mov"
-    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstmed"
+    set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstmed/ns"
     mkdir -p ${LOCALLOGDIR}
 
     #The name of the configuration file for the PeSoRTA workload
