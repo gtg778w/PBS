@@ -36,54 +36,6 @@ write
 
 #include "pbsAllocator.h"
 
-void allocator_loop_wlogging(int proc_file)
-{
-    bw_mgt_cmd_t cmd = {0, {0, 0}};
-    
-    long long sp_count = 0;
-
-    double inst_count, energy_count;
-
-    int retval;
-    int t, task_count, task_index;
-
-    SRT_loaddata_t *next;
-
-    uint64_t budget;
-
-    for(sp_count = 0; sp_count < sp_limit; sp_count++)
-    {
-    
-        cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
-        retval = write(proc_file, &cmd, sizeof(cmd));
-        if(retval != sizeof(cmd))
-        {
-            perror( "allocator_loop_wlogging: Failed to write PBS_BWMGT_CMD_NEXTJOB "
-                    "command.");
-            break;
-        }
-
-        pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
-        log_allocator_dat(sp_count, inst_count, energy_count);
-
-        next = &(loaddata_array[loaddata_list_header->first]);
-        task_count = loaddata_list_header->SRT_count;
-
-        for(t = 0; t < task_count; t++)
-        {
-            task_index = next - loaddata_array;
-
-            compute_budget(next, &budget);
-            allocation_array[task_index] = budget;
-            
-            log_SRT_sp_dat(t, sp_count, next, budget);
-
-            next = &(loaddata_array[next->next]);
-        }
-    }
-    
-}
-
 void allocator_loop(int proc_file, unsigned char logging_enabled)
 {
     bw_mgt_cmd_t cmd;
@@ -98,10 +50,14 @@ void allocator_loop(int proc_file, unsigned char logging_enabled)
 
     SRT_loaddata_t *next;
 
-    uint64_t budget;
+    double   budget_double, budget_sum, saturation_multiplier;
+    uint64_t budget_uint64_t;
+    unsigned char overload;
 
+    /*  The main allocator loop.  */
     while(loop_condition)
     {
+        /*  Sleep until the beginning of the next reservation period.   */
         cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
         retval = write(proc_file, &cmd, sizeof(cmd));
         if(retval != sizeof(cmd))
@@ -111,25 +67,83 @@ void allocator_loop(int proc_file, unsigned char logging_enabled)
             break;
         }
 
+        /*  Update the power and performance model coefficients.    */
         pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
         if((logging_enabled != 0) && (sp_count < sp_limit))
         {
+            /*  Log energy and instruction count  */
             log_allocator_dat(sp_count, inst_count, energy_count);
         }
 
-        next = &(loaddata_array[loaddata_list_header->first]);
+        /*  Compute the amount of CPU budget available to allocate. */
+        compute_max_CPU_budget();
+        
+        /*  The budget allocated over all SRT tasks will be summed, initialize the sum 
+        to zero.    */
+        budget_sum = 0.0;
+        
+        /*  Determine the number of SRT tasks in the system from the loaddata_list_header
+        that is shared with the kernel. */
         task_count = loaddata_list_header->SRT_count;
-
+        
+        /*  Get the loaddata structure of the first task in the linked list   */
+        next = &(loaddata_array[loaddata_list_header->first]);
+        
+        /*  Loop over all the tasks in the linked list    */
         for(t = 0; t < task_count; t++)
         {
             task_index = next - loaddata_array;
 
-            compute_budget(next, &budget);
-            allocation_array[task_index] = budget;
+            /*  Compute the budget allocation before any saturation */
+            compute_budget(next, &budget_double);
+            presaturation_budget_array[task_index] = budget_double;
+            
+            budget_sum = budget_sum + budget_double;
+            
+            next = &(loaddata_array[next->next]);
+        }
 
+        /*  Check if the sum of the budget allocated is too high and if saturation is 
+            needed  */
+        if( budget_sum > maximum_available_CPU_budget   )
+        {
+            /*  Set the overload flag  */
+            overload = 1;
+            
+            /*  Compute the saturation multiplier   */
+            saturation_multiplier = maximum_available_CPU_budget / budget_sum;
+        }
+        else
+        {
+            /*  Reset the overload flag  */
+            overload = 0;
+        }
+
+        /*  Loop over all tasks in the linked list to perform the saturation    */
+        next = &(loaddata_array[loaddata_list_header->first]);
+        for(t = 0; t < task_count; t++)
+        {
+            task_index = next - loaddata_array;
+            
+            if(overload)
+            {
+                budget_double = saturation_multiplier * 
+                                presaturation_budget_array[task_index];
+            }
+            else
+            {
+                budget_double = presaturation_budget_array[task_index];
+            }
+                        
+            /*  Write the saturated budget out to the memory-mapped region
+                containing all the allocation.  */
+            budget_uint64_t = (uint64_t)budget_double;
+            allocation_array[task_index] = budget_uint64_t;
+            
+            /*  Log the amount of budget allocated. */
             if((logging_enabled != 0) && (sp_count < sp_limit))
             {
-                log_SRT_sp_dat(t, sp_count, next, budget);
+                log_SRT_sp_dat(t, sp_count, next, budget_uint64_t);
             }
 
             next = &(loaddata_array[next->next]);
@@ -157,9 +171,8 @@ int main(int argc, char** argv)
 
     int proc_file;
 
-    enum pbs_budget_type budget_type = PBS_BUDGET_ns;
     uint64_t scheduling_period = 10000000;
-    uint64_t allocator_budget = 1000000;
+    uint64_t allocator_budget  = 1000000;
 
     /*variables for parsing input arguments*/
     unsigned char   fflag=0, Sflag = 0;
@@ -265,8 +278,11 @@ int main(int argc, char** argv)
     else
     {
         fprintf(stderr, "(T, Q) = (%llu, %llu)",
-                        (long long unsigned int)scheduling_period, 
+                        (long long unsigned int)scheduling_period,
                         (long long unsigned int)allocator_budget);
+        
+        maximum_available_CPU_time =(double)scheduling_period - 
+                                    (double)allocator_budget;
     }
 
     /*If no bound is imposed on the number of reservation periods,
@@ -340,7 +356,7 @@ int main(int argc, char** argv)
 
     //Setup the interface with the pbs_allocator module
     //and scheduling related parameters
-    proc_file = allocator_setup(budget_type, scheduling_period, allocator_budget);
+    proc_file = allocator_setup(scheduling_period, allocator_budget);
     if(proc_file < 0)
     {
         fprintf(stderr, "allocator_setup failed!\n");

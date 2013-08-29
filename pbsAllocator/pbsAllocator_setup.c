@@ -40,8 +40,7 @@ SRT_loaddata_t          *loaddata_array;
 loaddata_list_header_t  *loaddata_list_header;
 uint64_t                *allocation_array;
 
-int allocator_setup(enum pbs_budget_type budget_type,
-                    uint64_t scheduling_period,
+int allocator_setup(uint64_t scheduling_period,
                     uint64_t allocator_bandwidth)
 {
     int proc_file;
@@ -52,6 +51,25 @@ int allocator_setup(enum pbs_budget_type budget_type,
     int min_priority;
 
     bw_mgt_cmd_t cmd;
+
+    /*Setup the memory for storing budget allocations before saturation. The space 
+    required is the same as that of the allocation mapping pages*/
+    presaturation_budget_array = (double*)malloc(ALLOC_SIZE);
+    if(NULL == presaturation_budget_array)
+    {
+        perror("allocator_setup: malloc failed for the presaturation_budget_array!");
+        retval = -1;
+        goto exit0;
+    }
+    
+    if(mlock(presaturation_budget_array, ALLOC_SIZE) < 0)
+    {
+        perror("allocator_setup: mlock failed for the presaturation_budget_array!");
+        free(presaturation_budget_array);
+        presaturation_budget_array = NULL;
+        retval = -1;
+        goto exit0;
+    }
 
     /*Need to change the scheduling policy of the task to real-time 
       (SCHED_FIFO)*/
@@ -99,7 +117,6 @@ int allocator_setup(enum pbs_budget_type budget_type,
 
     //setup the model adapters
     
-
     //setup the allocations mapping
     allocation_array = mmap(NULL, ALLOC_SIZE, 
                             (PROT_READ | PROT_WRITE), MAP_SHARED, 

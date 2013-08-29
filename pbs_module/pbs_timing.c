@@ -255,8 +255,10 @@ void assign_bandwidths(void)
     now = hrtimer_cb_get_time(&sp_timer);
     saturation_level = (expires_next.tv64 - now.tv64)*95/100;
 
-    saturate = (bw_sum > saturation_level)? 1: 0;
-
+    /*FIXME: Saturation is already done at the user level*/
+    //saturate = (bw_sum > saturation_level)? 1: 0;
+    saturate = 0;
+    
     pos = timing_queue_head.next;
     while(pos != &timing_queue_head)
     {

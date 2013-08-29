@@ -82,7 +82,7 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
 
     /*  update the loaddata structure for the next job */
     (ss->loaddata)->current_runtime = 0;
-    (ss->loaddata)->queue_length = (unsigned short)(ss->queue_length);
+    (ss->loaddata)->queue_length    = (unsigned short)(ss->queue_length);
 
     /*  write information regarding the completed job into the log  */
     (ss->log).last_sp_budget_allocated   = (budget_struct_p->sp_budget);

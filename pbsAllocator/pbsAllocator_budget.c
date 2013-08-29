@@ -4,24 +4,42 @@
 
 #include "pbsAllocator.h"
 
-void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget)
+enum pbs_budget_type    budget_type = PBS_BUDGET_ns;
+double                  *presaturation_budget_array;
+
+double                  maximum_available_CPU_time;
+double                  maximum_available_CPU_budget;
+
+void compute_max_CPU_budget(void)
+{
+    if(PBS_BUDGET_ns == budget_type)
+    {
+        maximum_available_CPU_budget = maximum_available_CPU_time;
+    }
+    else
+    {
+        maximum_available_CPU_budget = maximum_available_CPU_time * max_perf_coeff;
+    }
+}
+
+void compute_budget(SRT_loaddata_t *loaddata, double *budget)
 {
     
-    int64_t queue_length = loaddata->queue_length;
+    int64_t queue_length    = loaddata->queue_length;
     int64_t current_runtime = loaddata->current_runtime;
     
-    int64_t mean0   = loaddata->u_c0;
-    int64_t meanl   = loaddata->u_cl;
-    int64_t var0    = loaddata->var_c0;
-    int64_t varl    = loaddata->var_cl;
+    double  mean0   = loaddata->u_c0;
+    double  meanl   = loaddata->u_cl;
+    double  var0    = loaddata->var_c0;
+    double  varl    = loaddata->var_cl;
     
-    int64_t total_var = 0;
-    int64_t total_mean = 0;
+    double  total_var   = 0;
+    double  total_mean  = 0;
     
-    double std;
+    double  std;
     
-    int64_t estimated_load;
-    int64_t sp_till_deadline = loaddata->sp_till_deadline;
+    double  estimated_load;
+    double  sp_till_deadline = loaddata->sp_till_deadline;
     
     if(queue_length == 0)
     {
@@ -39,10 +57,10 @@ void compute_budget(SRT_loaddata_t *loaddata, uint64_t* budget)
             total_var  =  total_var + (queue_length - 1)*varl;
         }
         
-        std = sqrt((double)total_var);
+        std = sqrt(total_var);
         /*It is assumed that the predictor in the SRT task already multiplied all 
         variance values by squared alpha*/
-        estimated_load = total_mean + (int64_t)std;
+        estimated_load = total_mean + std;
     }    
 
     *budget = (estimated_load / sp_till_deadline);

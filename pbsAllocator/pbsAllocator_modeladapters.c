@@ -21,6 +21,9 @@ double  *perf_model_coeffs_double = NULL;
 double  *power_model_coeffs_double = NULL;
 double  *mostat_double = NULL;
 
+int     max_perf_coeff_moi;
+double  max_perf_coeff;
+
 int pbsAllocator_modeladapters_init(int proc_file)
 {
     int mo_count = loaddata_list_header->mo_count;
@@ -171,6 +174,11 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
                     power_model_coeffs_double,
                     energy_count);
 
+
+    /*Keep track of the MO with the highest performance coeff*/
+    max_perf_coeff_moi = 0; 
+    max_perf_coeff = perf_model_coeffs_double[0];
+    
     /*Copy the perf coefficients and perf coefficient inverse back into the memory 
     region*/
     /*Copy the u64 mostat array into the double mostat array*/
@@ -180,6 +188,13 @@ void pbsAllocator_modeladapters_adapt(double *est_icount_p, double *est_energy_p
         coefficients can be negative. Saturate below at zero*/
         perf_model_coeffs_double[moi]   = (perf_model_coeffs_double[moi] < 0)?
                                         0: perf_model_coeffs_double[moi];
+
+        /*Keep track of the MO with the highest performance coeff*/
+        if( max_perf_coeff < perf_model_coeffs_double[moi] )
+        {
+            max_perf_coeff_moi = moi;
+            max_perf_coeff = perf_model_coeffs_double[moi];
+        }
 
         perf_model_coeffs_u64[moi]
             = (uint64_t)(   perf_model_coeffs_double[moi] *
