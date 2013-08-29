@@ -23,13 +23,13 @@ typedef struct SRT_handle_s
     int                 budget_type;
     pbsSRT_predictor_t  *predictor;
     uint64_t            period;
-    /*FIXME: this should read estimated_mean_VIC*/
+
     uint64_t            estimated_mean_exectime;
     double              alpha_squared;
 
     FILE                *log_file;
     struct SRT_job_log  *log;
-    /*FIXME: remove these buffers to reduce overhead*/
+
     int64_t             *pu_c0;
     int64_t             *pstd_c0;
     int64_t             *pu_cl;

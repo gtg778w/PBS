@@ -157,29 +157,11 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
         perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
         goto close_exit;
     }
-    else /*FIXME: get rid of the else statement*/
-    {
-        if(PBS_BUDGET_VIC == handle->budget_type)
-        {
-            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = VIC\n");
-        }
-        else if(PBS_BUDGET_ns == handle->budget_type)
-        {
-            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = time\n");
-        }
-        else
-        {
-            fprintf(stderr, "libpbsSRT: (pbsSRT_setup) budget_type = <unknown>\n");
-        }
-    }
     
     handle->period          = period;
     handle->estimated_mean_exectime 
                             = estimated_mean_exectime;
     handle->alpha_squared   = alpha * alpha;
-
-    /*FIXME: delet the following line*/
-    fprintf(stderr, "libpbsSRT: (pbsSRT_setup) alpha^2 = %f\n", handle->alpha_squared);
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
@@ -243,6 +225,17 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     cmd.args[2] = handle->estimated_mean_exectime;
     cmd.args[3] = 0;
     
+    /*If "FULL" logging is enabled, log the predicted execution time and the estimated
+    variance in the prediction error*/
+    if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+        (handle->job_count < handle->log_size))
+    {
+        handle->pu_c0[0]    = cmd.args[0];
+        handle->pstd_c0[0]  = cmd.args[1];
+        handle->pu_cl[0]    = cmd.args[2];
+        handle->pstd_cl[0]  = cmd.args[3];
+    }
+
     /*Issue the NEXTJOB command*/
     ret = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret != sizeof(cmd))
@@ -328,10 +321,10 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
         (handle->job_count < handle->log_size))
     {
-        handle->pu_c0[handle->job_count-1] = cmd.args[0];
-        handle->pstd_c0[handle->job_count-1] = cmd.args[1];
-        handle->pu_cl[handle->job_count-1] = cmd.args[2];
-        handle->pstd_cl[handle->job_count-1] = cmd.args[3];
+        handle->pu_c0[handle->job_count] = cmd.args[0];
+        handle->pstd_c0[handle->job_count] = cmd.args[1];
+        handle->pu_cl[handle->job_count] = cmd.args[2];
+        handle->pstd_cl[handle->job_count] = cmd.args[3];
     }
     
     ret = 0;
@@ -371,14 +364,13 @@ void pbsSRT_close(SRT_handle *handle)
         }
         
         fprintf(handle->log_file,   "%i, %llu, %i, %llu, %llu, %llu, %llu, %llu, %llu, "
-                                    "%llu, 0, \n\n", 
+                                    "0, \n\n", 
                                     (int)               getpid(),
                                     (unsigned long long)handle->period,
                                     (int)               handle->budget_type,
                                     (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,
                                     (unsigned long long)summary.cumulative_budget,
-                                    (unsigned long long)summary.cumulative_budget_sat,
                                     (unsigned long long)summary.consumed_budget,
                                     (unsigned long long)summary.consumed_VIC,
                                     (unsigned long long)summary.total_misses);
