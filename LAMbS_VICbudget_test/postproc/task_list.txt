@@ -1,0 +1,9 @@
+- Parse VICbudget experiment code
+
+        - For each value of alpha
+            - For each repetition
+                - get the miss rate
+                - get the utilization
+            
+            - Compute the min, average, max miss-rate accross repetitions
+            - Compute the min, average, max budget utilization accross repetitions
