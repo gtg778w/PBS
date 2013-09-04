@@ -45,11 +45,11 @@
     set Qa="1000000"
     set sa="28800"
     #The budget type should be "" for ns and "-VIC" for VIC.
-    set BUDGET_TYPE=""
+    set BUDGET_TYPE="-VIC"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.bigbuckbunnyfull.480p.mov"
+    set CONFIGNAME="dec.sintelfull.720p.mkv"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
@@ -75,7 +75,7 @@
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
         
-        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstmed/ns/${alpha}"
+        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstmed/VIC/${alpha}"
         mkdir -p ${LOCALLOGDIR}
         
         #The suffix of the log file to store the data collected by the SRT application

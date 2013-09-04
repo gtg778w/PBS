@@ -49,7 +49,7 @@
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.bigbuckbunnyfull.480p.mov"
+    set CONFIGNAME="dec.sintelfull.720p.mkv"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
