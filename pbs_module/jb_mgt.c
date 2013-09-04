@@ -150,6 +150,10 @@ ssize_t jb_mgt_write(   struct file *filep,
     void __user *budget_type_p;
     enum pbs_budget_type budget_type;
     
+    void __user *reservation_period_p;
+    u64 reservation_period;
+
+    
     if(sizeof(job_mgt_cmd_t) != count)
     {
         printk(KERN_INFO    "The argument written through jb_mgt_write by process %d "
@@ -209,7 +213,19 @@ ssize_t jb_mgt_write(   struct file *filep,
             
             budget_type_p = (void __user *)cmd.args[1];
             budget_type   = pbs_budget_gettype();
-            if( copy_to_user( budget_type_p, &budget_type, sizeof(enum pbs_budget_type)) )
+            if( copy_to_user(   budget_type_p, 
+                                &budget_type, 
+                                sizeof(enum pbs_budget_type)) )
+            {
+                ret = -EFAULT;
+                goto exit0;
+            }
+            
+            reservation_period_p =  (void __user *)cmd.args[2];
+            reservation_period =    scheduling_period_ns.tv64;
+            if( copy_to_user(   reservation_period_p,
+                                &reservation_period, 
+                                sizeof(u64)) )
             {
                 ret = -EFAULT;
                 goto exit0;

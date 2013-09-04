@@ -265,11 +265,6 @@ void pbs_budget_VIC_BET_start(  struct pbs_budget_struct *budget_struct_p)
         LAMbS_VICtimer_start(   &(budget_VIC_struct_p->budget_enforcement_timer),
                                 (now_VIC + remaining),
                                 LAMbS_VICTIMER_ABS);
-
-        min_timer_interval = (remaining < min_timer_interval)? 
-                             remaining : min_timer_interval;
-        max_timer_interval = (remaining > max_timer_interval)? 
-                             remaining : max_timer_interval;
     }
 }
 

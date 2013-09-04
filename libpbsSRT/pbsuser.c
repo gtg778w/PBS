@@ -151,6 +151,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     cmd.cmd = PBS_JBMGT_CMD_SETUP;
     cmd.args[0] = period;
     cmd.args[1] = (u64)&(handle->budget_type);
+    cmd.args[2] = (u64)&(handle->reservation_period);
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
@@ -363,10 +364,11 @@ void pbsSRT_close(SRT_handle *handle)
             perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
         }
         
-        fprintf(handle->log_file,   "%i, %llu, %i, %llu, %llu, %llu, %llu, %llu, %llu, "
-                                    "0, \n\n", 
+        fprintf(handle->log_file,   "%i, %llu, %llu, %i, %llu, %llu, %llu, %llu, %llu, "
+                                    "%llu, 0\n\n", 
                                     (int)               getpid(),
                                     (unsigned long long)handle->period,
+                                    (unsigned long long)handle->reservation_period,
                                     (int)               handle->budget_type,
                                     (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,

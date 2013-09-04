@@ -7,6 +7,7 @@
 /*
     0) period (us)
     1) &budget_type (output varriable)
+    2) &reservation_period (output varriable)
 */
 
 #define PBS_JBMGT_CMD_START     (1)

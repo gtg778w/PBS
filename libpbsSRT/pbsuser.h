@@ -23,6 +23,7 @@ typedef struct SRT_handle_s
     int                 budget_type;
     pbsSRT_predictor_t  *predictor;
     uint64_t            period;
+    uint64_t            reservation_period;
 
     uint64_t            estimated_mean_exectime;
     double              alpha_squared;
