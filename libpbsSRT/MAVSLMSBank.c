@@ -436,6 +436,8 @@ int pbsSRT_update_MAVSLMSBank(  void    *state, int64_t exec_time,
     double xhat_ma;
     double xhat_vslms;
     
+    MAVSLMSBank_ftype_t minvar_ftype;
+    
     /*Update the VSLMS error statistics, step sizes, andfilter coefficients*/
     VSLMSBank_update(MAVSLMSBank_p, observed);
     
@@ -456,13 +458,18 @@ int pbsSRT_update_MAVSLMSBank(  void    *state, int64_t exec_time,
     ma_minvar   = MAVSLMSBank_p->ma_error_var[MAVSLMSBank_p->ma_minvar_f];
     vslms_minvar= MAVSLMSBank_p->vslms_error_var[MAVSLMSBank_p->vslms_minvar_f];
     
-    xhat_ma     = MAVSLMSBank_p->ma_prediction[MAVSLMSBank_p->ma_minvar_f];
     xhat_vslms  = MAVSLMSBank_p->vslms_prediction[MAVSLMSBank_p->vslms_minvar_f]
                     + MAVSLMSBank_p->vslms_error_mean[MAVSLMSBank_p->vslms_minvar_f];
+    xhat_ma     = MAVSLMSBank_p->ma_prediction[MAVSLMSBank_p->ma_minvar_f];
     
-    MAVSLMSBank_p->x_hat = (ma_minvar <= vslms_minvar)?  xhat_ma : xhat_vslms;
-    MAVSLMSBank_p->minvar_ftype = (ma_minvar <= vslms_minvar)?  
-                                    MAVSLMSBank_MA : MAVSLMSBank_VSLMS;
+    minvar_ftype =  ((vslms_minvar < ma_minvar) && (xhat_vslms > 0))?
+                    MAVSLMSBank_VSLMS:
+                    MAVSLMSBank_MA;
+    
+    MAVSLMSBank_p->minvar_ftype = minvar_ftype;
+    MAVSLMSBank_p->x_hat =  (minvar_ftype == MAVSLMSBank_MA)?  
+                            xhat_ma : 
+                            xhat_vslms;
     
     *pu_c0  = (int64_t) MAVSLMSBank_p->x_hat;
     *pvar_c0= (int64_t) ((ma_minvar <= vslms_minvar)? ma_minvar : vslms_minvar);
