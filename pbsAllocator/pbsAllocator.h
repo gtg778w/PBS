@@ -36,7 +36,7 @@ void log_allocator_dat( long long sp_count,
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
                     SRT_loaddata_t  *SRT_loaddata_p,
-                    uint64_t SRT_budget2);
+                    uint64_t SRT_budget);
 void free_log_memory(void);
 
 void compute_max_CPU_budget(void);

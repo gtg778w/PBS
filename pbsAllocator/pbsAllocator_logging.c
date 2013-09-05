@@ -149,7 +149,7 @@ void log_allocator_dat( long long sp_count,
 void log_SRT_sp_dat(int task_index,
                     long long sp_count,
                     SRT_loaddata_t  *SRT_loaddata_p,
-                    uint64_t SRT_budget2)
+                    uint64_t SRT_budget)
 {
     if(task_index < ALLOCATOR_RECORD_COUNT)
     {
@@ -164,7 +164,7 @@ void log_SRT_sp_dat(int task_index,
         SRT_record_p->var_c0            = SRT_loaddata_p->var_c0;
         SRT_record_p->u_cl              = SRT_loaddata_p->u_cl;
         SRT_record_p->var_cl            = SRT_loaddata_p->var_cl;
-        SRT_record_p->SRT_budget        = allocation_array[task_index];
+        SRT_record_p->SRT_budget        = SRT_budget;
     }
 }
 
