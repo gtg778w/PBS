@@ -28,6 +28,7 @@ struct pbs_budget_struct
 //of the above data structure
 #define PBS_BUDGET_SLEEPING     (0x1)
 #define PBS_BUDGET_THROTTLED    (0x2)
+#define PBS_BUDGET_JOBCOMPLETE  (0x4)
 
 int pbs_budget_settype(enum pbs_budget_type budget_type);
 enum pbs_budget_type pbs_budget_gettype(void);

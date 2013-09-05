@@ -251,9 +251,6 @@ void assign_budgets(void)
         /* Get the corresponding budget allocation computed by the Allocator*/
         allocation = allocation_array[SRT_struct_p->allocation_index];
         
-        /* Accumulate the total budget for the task */
-        SRT_struct_p->summary.cumulative_budget += allocation;
-
         /* Set the task's budget to the new value */
         pbs_budget_set( SRT_struct_p, allocation);
     }
@@ -474,7 +471,7 @@ int first_sleep_till_next_period(struct SRT_timing_struct *tq_entry)
     //the log reflects information on the job before the one currently started (job# -1)
     //job# -1 was "released" one task period before the last scheduling period boundary
     //Update the log to reflect that
-    (SRT_struct->log).abs_releaseTime   = expires_prev.tv64 - (SRT_struct->timing_struct).task_period.tv64;
+    (SRT_struct->log).abs_releaseTime   = expires_next.tv64 - (SRT_struct->timing_struct).task_period.tv64;
     (SRT_struct->log).abs_LFT           = expires_next.tv64;    
 
     set_current_state(TASK_INTERRUPTIBLE);

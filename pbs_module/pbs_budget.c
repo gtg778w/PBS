@@ -82,6 +82,11 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
     (ss->loaddata)->current_runtime = 0;
     (ss->loaddata)->queue_length    = (unsigned short)(ss->queue_length);
 
+    if(0 == ss->queue_length)
+    {
+        budget_struct_p->flags |= PBS_BUDGET_JOBCOMPLETE;
+    }
+
     /*  write information regarding the completed job into the log  */
     (ss->log).last_sp_budget_allocated   = (budget_struct_p->sp_budget);
     
@@ -130,6 +135,8 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
 
     u64 now, now_VIC;
 
+    s64 budget_consumed_ns, budget_consumed_VIC;
+
     int is_sleeping;
 
     budget_struct_p = &(SRT_struct_p->budget_struct);
@@ -153,14 +160,18 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
                                                             now, is_sleeping);
     }
 
-    /*  Accumulate the actual time and VIC usage over the current reservation period*/
-    SRT_struct_p->summary.consumed_budget += 
-                                pbs_budget_ns_get_rpusage(  budget_struct_p,
-                                                            now_VIC, is_sleeping);
+    budget_consumed_ns  =   pbs_budget_ns_get_rpusage(  budget_struct_p,
+                                                        now_VIC, is_sleeping);
     
-    SRT_struct_p->summary.consumed_VIC += 
-                                pbs_budget_VIC_get_rpusage( budget_struct_p,
-                                                            now, is_sleeping);
+    budget_consumed_VIC =   pbs_budget_VIC_get_rpusage( budget_struct_p,
+                                                        now, is_sleeping);
+
+    /*  Accumulate the actual time and VIC usage over the current reservation period*/
+    SRT_struct_p->summary.consumed_budget += budget_consumed_ns;
+                                
+    
+    SRT_struct_p->summary.consumed_VIC += budget_consumed_VIC;
+                                
 
     /*  Refresh the budgets  */
     pbs_budget_ns_refresh(budget_struct_p);
@@ -178,6 +189,33 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
             wake_up_process(SRT_struct_p->task);
         }
     }
+    else
+    {
+        /* Check if the task went to sleep because no more jobs were left to process*/
+        if( (   budget_struct_p->flags & PBS_BUDGET_JOBCOMPLETE ) )
+        {
+            /*Only reset the PBS_BUDGET_JOBCOMPLETE flag when there is work to be done*/
+            if(  SRT_struct_p->queue_length > 0 )
+            {
+                budget_struct_p->flags &= (~PBS_BUDGET_JOBCOMPLETE);
+            }
+        }
+        else
+        {
+            /*The task was neither throttled, nor went to sleep due to lack of jobs.*/
+            /*The likely cause is that the allocated budget was more than available
+            CPU capacity, and that the allocator was activated before the task fully
+            use the allocated budget*/
+            
+            /* Set the allocated budget equal to the consumed budget*/
+            budget_struct_p->sp_budget =    ( PBS_BUDGET_VIC == pbs_budget_type)?
+                                            budget_consumed_VIC:
+                                            budget_consumed_ns;
+        }
+    }
+    
+    /* Accumulate the total budget for the task */
+    SRT_struct_p->summary.cumulative_budget += budget_struct_p->sp_budget;
 
 }
 
@@ -332,7 +370,6 @@ void pbs_budget_init(struct SRT_struct *SRT_struct_p)
 
     /*initialize the flags*/
     budget_struct_p->flags = 0;
-
     printk(KERN_INFO "pbs_budget_init called %d", SRT_struct_p->task->pid);
 }
 
