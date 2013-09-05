@@ -82,7 +82,7 @@
             set SRT_logfile=${LOCALLOGDIR}"/"${rep}${SRT_logfilesuffix}
             
             #Start the frequency cycling program
-            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 5, 0.45, 1.0 &
+            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 5, 0.0, 1.0 &
             #Start the allocator
             ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
             #Wait for half a second to let the allocator run a couple of scheduling periods

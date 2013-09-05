@@ -30,20 +30,20 @@
     set Ta="10416667"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="28800"
+    set sa="14400"
     #The budget type should be "" for ns and "-VIC" for VIC.
-    set BUDGET_TYPE="-VIC"
+    set BUDGET_TYPE=""
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.bigbuckbunnyfull.480p.mov"
+    set CONFIGNAME="dec.sintelfull.720p.mkv"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="6480"
+    set J1="3240"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
@@ -51,8 +51,7 @@
     #The estimated mean execution time of the SRT application
     set c1="11000000"
     #Alpha values of the workload
-    set alpha_array=(   "0.6" "0.7" "0.8" "0.9" "1.0" "1.1" "1.2" "1.3" "1.4" "1.5" "1.6"\
-                        "1.7" "1.8" "1.9" "2.0")
+    set alpha_array=(   "0.65" )
     
     @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
     @ oscillate_duration = (((${Ta} / 1000) * ${sa}) / 1000) / 1000
@@ -63,7 +62,7 @@
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
         
-        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqcycle/VIC/${alpha}"
+        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqcycle/ns/${alpha}"
         mkdir -p ${LOCALLOGDIR}
         
         #The suffix of the log file to store the data collected by the SRT application
@@ -82,9 +81,9 @@
             set SRT_logfile=${LOCALLOGDIR}"/"${rep}${SRT_logfilesuffix}
             
             #Start the frequency cycling program
-            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 5, 0.0, 1.0 &
+            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 1, 0.0, 1.0 &
             #Start the allocator
-            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
+            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} > allocator_log.txt &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task
