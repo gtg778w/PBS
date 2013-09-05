@@ -379,16 +379,20 @@ void pbsSRT_close(SRT_handle *handle)
 
         if(handle->loglevel >= pbsSRT_LOGLEVEL_FULL)
         {
-
-            for(i = 0; i < handle->job_count; i++)
+            /*Note: when the log is read, the runtime and run VIC correspond to the 
+                    current job, whereas all other statistics correspond to the previous 
+                    job. The first job log is for job -1 and the corrsponding is actually 
+                    data is garbage. So account for the "phase difference" between 
+                    runtime and runVIC, and the rest of the data*/
+            for(i = 1; i < handle->job_count; i++)
             {
                 log_entry = &(handle->log[i]);
                 relative_LFT = log_entry->abs_LFT - log_entry->abs_releaseTime;
                 miss = (relative_LFT > handle->period);
                 fprintf(handle->log_file,   "%lu, %lu, %lu, "
                                             "%lu, %lu, %u, %u, %lu, %lu, %lu, %lu\n",
-                                            (unsigned long)log_entry->runtime2,
-                                            (unsigned long)log_entry->runVIC2,
+                                            (unsigned long)handle->log[(i-1)].runtime2,
+                                            (unsigned long)handle->log[(i-1)].runVIC2,
                                             miss,
                                             (unsigned long)log_entry->abs_releaseTime,
                                             (unsigned long)log_entry->abs_LFT,
