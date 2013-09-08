@@ -14,10 +14,10 @@
     aseries_freqcycle_VIC = get_alpha_series(freqcycle_VIC_dir);
     
     figure;
-    plot_alpha_series(aseries_freqconstmed_VIC, 'bo');
+    plot_alpha_series(aseries_freqconstmed_VIC, 'k');
     hold on;
     plot_alpha_series(aseries_freqcycle_VIC, 'b');
-    plot_alpha_series(aseries_freqconstmed_ns, 'ro');
+    plot_alpha_series(aseries_freqconstmed_ns, 'g');
     plot_alpha_series(aseries_freqcycle_ns, 'r');
     hold off;
     
@@ -27,7 +27,7 @@
     %   VFT_error      vs release_time
     %   cpuusage_ns    vs release_time
     %   cpuusage_VIC   vs release_time
-    filename = [freqconstmed_ns_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
+    filename = [freqconstmed_ns_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
     data_freqconstmed_ns = parse_csv_file(filename);
     VFT_eror_plot = plot_VFT_error(data_freqconstmed_ns, 'freqconstmed ns-based budget');
     
@@ -44,7 +44,7 @@
     %   VFT_error      vs release_time
     %   cpuusage_ns    vs release_time
     %   cpuusage_VIC   vs release_time
-    filename = [freqconstmed_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
+    filename = [freqconstmed_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
     data_freqconstmed_VIC = parse_csv_file(filename);
     VFT_eror_plot = plot_VFT_error(data_freqconstmed_VIC, 'freqconstmed VIC-based budget');
         
@@ -52,7 +52,7 @@
     %   VFT_error      vs release_time
     %   cpuusage_ns    vs release_time
     %   cpuusage_VIC   vs release_time
-    filename = [freqcycle_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
+    filename = [freqcycle_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
     data_freqcycle_VIC = parse_csv_file(filename);
     VFT_eror_plot = plot_VFT_error(data_freqcycle_VIC, 'freqcycle VIC-based budget');
     

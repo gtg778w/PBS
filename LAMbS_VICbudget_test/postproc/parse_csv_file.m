@@ -17,6 +17,8 @@ function [data] = parse_csv_file(filename)
     
     data.miss_rate          = data.total_misses / data.job_count;
     
+    #BUDGET_TYPE_VIC = 0;
+    #BUDGET_TYPE_NS  = 1;
     if(data.budget_type == 1)
         consumed_budget     = data.consumed_budget_ns;
     elseif (data.budget_type == 0)
@@ -38,8 +40,17 @@ function [data] = parse_csv_file(filename)
     data.u_cl               = body(:,10);
     data.var_cl             = body(:,11);
     
-    BUDGET_TYPE_VIC = 0;
-    BUDGET_TYPE_NS  = 1;
+    if(data.budget_type == 1)
+        data.prediction_error   = data.cpuusage_ns - data.u_c0;
+        mean_cpuusage = mean(data.cpuusage_ns);
+        data.norm_pred_error    = data.prediction_error / mean_cpuusage;
+    elseif (data.budget_type == 0)
+        data.prediction_error   = data.cpuusage_VIC - data.u_c0;
+        mean_cpuusage = mean(data.cpuusage_VIC);
+        data.norm_pred_error    = data.prediction_error / mean_cpuusage;
+    else
+        error('File contains unknown budget_type (%i)', data.budget_type );
+    end
     
     relative_LFT    = (data.LFT - data.releaseTime);
     data.VFT        = relative_LFT - ...

@@ -56,9 +56,6 @@
     @ duration_secs = 300 * ${repetitions}
     set oscillate_duration=290
     
-    #Initialize the experiment ID
-    #Each repetition for each value of alpha should have a unique ID
-    @ expt_id = 1
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
         
@@ -87,8 +84,6 @@
             #Wait for the allocator task to finish
             ${BINDIR}/poll_pbs_actv -I
             
-            #Increment the experiment ID
-            @ expt_id += 1
         end
     end
 
