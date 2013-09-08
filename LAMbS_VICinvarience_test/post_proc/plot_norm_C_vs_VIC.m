@@ -3,13 +3,13 @@ function [] = plot_norm_C_vs_VIC(   summ_SRT_record, std_C, std_VIC, ...
                                     Caxis_vals, VICaxis_vals)
 
 
-    norm_p1_C = summ_SRT_record.p1_C1 ./ std_C;
-    norm_avg_C= summ_SRT_record.avg_C1 ./ std_C;
-    norm_p2_C = summ_SRT_record.p2_C1 ./ std_C;
+    norm_p1_C = summ_SRT_record.p1_cpuusage_ns ./ std_C;
+    norm_avg_C= summ_SRT_record.avg_cpuusage_ns ./ std_C;
+    norm_p2_C = summ_SRT_record.p2_cpuusage_ns ./ std_C;
     
-    norm_p1_VIC =   summ_SRT_record.p1_VIC1 ./ std_VIC;
-    norm_avg_VIC =  summ_SRT_record.avg_VIC1 ./ std_VIC;
-    norm_p2_VIC =   summ_SRT_record.p2_VIC1 ./ std_VIC;
+    norm_p1_VIC =   summ_SRT_record.p1_cpuusage_VIC ./ std_VIC;
+    norm_avg_VIC =  summ_SRT_record.avg_cpuusage_VIC ./ std_VIC;
+    norm_p2_VIC =   summ_SRT_record.p2_cpuusage_VIC ./ std_VIC;
 
     t = summ_SRT_record.rel_release_time;
     
@@ -19,9 +19,9 @@ function [] = plot_norm_C_vs_VIC(   summ_SRT_record, std_C, std_VIC, ...
         
     subplot(2, 1, 1);
     hold on
-    plot(t, norm_p1_C);
+    %plot(t, norm_p1_C);
     plot(t, norm_avg_C);
-    plot(t, norm_p2_C);
+    %plot(t, norm_p2_C);
     xlabel('Time (ns)');
     ylabel('Normalized Execution Time');
     axis(Caxis_vals);
@@ -29,9 +29,9 @@ function [] = plot_norm_C_vs_VIC(   summ_SRT_record, std_C, std_VIC, ...
     title_h = title(plot_title);
     
     subplot(2, 1, 2);
-    plot(t, norm_p1_VIC);
+    %plot(t, norm_p1_VIC);
     plot(t, norm_avg_VIC);
-    plot(t, norm_p2_VIC);
+    %plot(t, norm_p2_VIC);
     xlabel('Time (ns)');
     ylabel('Normalized VIC');
     axis(VICaxis_vals);

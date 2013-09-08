@@ -31,7 +31,8 @@ function [SRT_records] = parse_SRT_full_wVIC_dir(logdir)
             continue;            
         end
         
-        SRT_record = parse_SRT_run_full_wVIC(logdir, next_file_name);
+        full_file_name = sprintf('%s/%s', logdir, next_file_name);
+        SRT_record = parse_csv_file(full_file_name);
         SRT_records = [SRT_records, SRT_record];
     end
     
