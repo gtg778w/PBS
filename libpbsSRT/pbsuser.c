@@ -365,17 +365,18 @@ void pbsSRT_close(SRT_handle *handle)
         }
         
         fprintf(handle->log_file,   "%i, %llu, %llu, %i, %llu, %llu, %llu, %llu, %llu, "
-                                    "%llu, 0\n\n", 
+                                    "%llu, %llu\n\n", 
                                     (int)               getpid(),
                                     (unsigned long long)handle->period,
                                     (unsigned long long)handle->reservation_period,
                                     (int)               handle->budget_type,
                                     (unsigned long long)handle->estimated_mean_exectime,
                                     (unsigned long long)handle->job_count,
-                                    (unsigned long long)summary.cumulative_budget,
-                                    (unsigned long long)summary.consumed_budget,
-                                    (unsigned long long)summary.consumed_VIC,
-                                    (unsigned long long)summary.total_misses);
+                                    (unsigned long long)summary.allocated_budget,
+                                    (unsigned long long)summary.consumed_budget_ns,
+                                    (unsigned long long)summary.consumed_budget_VIC,
+                                    (unsigned long long)summary.total_misses,
+                                    (unsigned long long)summary.total_CPU_budget_capacity);
 
         if(handle->loglevel >= pbsSRT_LOGLEVEL_FULL)
         {

@@ -55,15 +55,19 @@ typedef struct SRT_summary_s
 {
     /*The total budget allocated to this task since 
     the first scheduling period for this task.*/
-    s64 cumulative_budget;
+    s64 allocated_budget;
     
     /*Total comsumed budget (vs allocated budget)*/
-    s64 consumed_budget;
-    s64 consumed_VIC;
+    s64 consumed_budget_ns;
+    s64 consumed_budget_VIC;
 
     /*The total number of jobs that missed the 
     corresponding deadline since the first job.*/
     s64 total_misses;
+
+    /*Total available CPU capacity*/
+    s64 total_CPU_budget_capacity;
+    
 } SRT_summary_t;
 
 #endif

@@ -144,6 +144,9 @@ void first_sched_period_tick(void)
     /*Take initial readings of absolute instruction count, energy, and time spent so far
     in each mode of operation and initialize the model coefficients*/
     LAMbS_models_measurements_init();
+    
+    /*Initialize CPU usage statistics*/
+    init_CPUusage_statistics();
 }
 
 void sched_period_tick(void)
@@ -159,6 +162,9 @@ void sched_period_tick(void)
     LAMbS_measure_delta(&(loaddata_list_header->icount_last_sp),
                         &(loaddata_list_header->energy_last_sp),
                         loaddata_list_header->mostat_last_sp);
+    
+    /*Update CPU usage statistics*/
+    update_CPUusage_statistics();
                             
     /*Accumulate the total amount of energy consumed*/
     loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;

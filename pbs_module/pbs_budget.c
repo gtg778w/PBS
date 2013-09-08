@@ -11,6 +11,46 @@
 
 static enum pbs_budget_type pbs_budget_type = PBS_BUDGET_ns;
 
+static u64 CPUusage_last_sample_value;
+static u64 CPUusage_last_reservation_period;
+
+void    init_CPUusage_statistics(void)
+{
+    u64 now, now_VIC;
+
+    /*  obtain the current time and VIC */
+    now_VIC = LAMbS_VIC_get(&now);
+    CPUusage_last_reservation_period = 0;
+    
+    if( PBS_BUDGET_VIC == pbs_budget_type)
+    {
+        CPUusage_last_sample_value = now_VIC;
+    }
+    else /*(PBS_BUDGET_ns == budget_type)*/
+    {
+        CPUusage_last_sample_value = now;
+    }
+}
+
+void    update_CPUusage_statistics(void)
+{
+    u64 now, now_VIC;
+    
+    /*  obtain the current time and VIC */
+    now_VIC = LAMbS_VIC_get(&now);
+
+    if( PBS_BUDGET_VIC == pbs_budget_type)
+    {
+        CPUusage_last_reservation_period = now_VIC - CPUusage_last_sample_value;
+        CPUusage_last_sample_value = now_VIC;
+    }
+    else /*(PBS_BUDGET_ns == budget_type)*/
+    {
+        CPUusage_last_reservation_period = now - CPUusage_last_sample_value;
+        CPUusage_last_sample_value = now;
+    }
+}
+
 #define PBS_BUDGET_IS_THROTTLED(budget_struct_p)   \
         (budget_struct_p->flags & PBS_BUDGET_THROTTLED)
 #define PBS_BUDGET_IS_SLEEPING(budget_struct_p)    \
@@ -167,10 +207,10 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
                                                         now, is_sleeping);
 
     /*  Accumulate the actual time and VIC usage over the current reservation period*/
-    SRT_struct_p->summary.consumed_budget += budget_consumed_ns;
+    SRT_struct_p->summary.consumed_budget_ns += budget_consumed_ns;
                                 
     
-    SRT_struct_p->summary.consumed_VIC += budget_consumed_VIC;
+    SRT_struct_p->summary.consumed_budget_VIC += budget_consumed_VIC;
                                 
 
     /*  Refresh the budgets  */
@@ -215,8 +255,9 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
     }
     
     /* Accumulate the total budget for the task */
-    SRT_struct_p->summary.cumulative_budget += budget_struct_p->sp_budget;
-
+    SRT_struct_p->summary.allocated_budget += budget_struct_p->sp_budget;
+    /* Accumulate the total CPU budget capacity */
+    SRT_struct_p->summary.total_CPU_budget_capacity += CPUusage_last_reservation_period;
 }
 
 static void pbs_budget_schedin( struct preempt_notifier *notifier, 

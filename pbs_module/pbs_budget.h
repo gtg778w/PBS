@@ -33,6 +33,9 @@ struct pbs_budget_struct
 int pbs_budget_settype(enum pbs_budget_type budget_type);
 enum pbs_budget_type pbs_budget_gettype(void);
 
+void    init_CPUusage_statistics(void);
+void    update_CPUusage_statistics(void);
+
 void pbs_budget_firstjob(struct SRT_struct *ss);
 void pbs_budget_jobboundary1(struct SRT_struct *ss);
 void pbs_budget_jobboundary2(struct SRT_struct *ss);
