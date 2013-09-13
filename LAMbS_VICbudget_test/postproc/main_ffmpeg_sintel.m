@@ -1,5 +1,6 @@
 
     ffmpeg_sintel_dir = '../data/ffmpeg/dec.sintelfull.720p.mkv';
+    figure_dir = [ffmpeg_sintel_dir, '/figures'];
 
     freqconstmed_ns_dir = [ffmpeg_sintel_dir, '/freqconstmed/ns'];
     aseries_freqconstmed_ns = get_alpha_series(freqconstmed_ns_dir);
@@ -13,14 +14,32 @@
     freqcycle_VIC_dir = [ffmpeg_sintel_dir, '/freqcycle/VIC'];
     aseries_freqcycle_VIC = get_alpha_series(freqcycle_VIC_dir);
     
-    figure;
-    plot_alpha_series(aseries_freqconstmed_VIC, 'k');
+    h = figure;
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k');
     hold on;
-    plot_alpha_series(aseries_freqcycle_VIC, 'b');
-    plot_alpha_series(aseries_freqconstmed_ns, 'g');
-    plot_alpha_series(aseries_freqcycle_ns, 'r');
+    plot_missrate_vs_budgetutil(aseries_freqcycle_VIC, 'b');
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_ns, 'g');
+    plot_missrate_vs_budgetutil(aseries_freqcycle_ns, 'r');
     hold off;
+    xlabel('miss rate');
+    ylabel('budget utilization');
+    title('ffmpeg sintel missrate vs budget utilization');
+    filename = [figure_dir, '/missrate_vs_util'];
+    print(h, filename, '-djpg')';
     
+    h = figure;
+    plot_missrate_vs_normbudget(aseries_freqconstmed_VIC, 'k');
+    hold on;
+    plot_missrate_vs_normbudget(aseries_freqcycle_VIC, 'b');
+    plot_missrate_vs_normbudget(aseries_freqconstmed_ns, 'g');
+    plot_missrate_vs_normbudget(aseries_freqcycle_ns, 'r');
+    hold off;
+    xlabel('miss rate');
+    ylabel('average CPU bandwidth');
+    title('ffmpeg sintel missrate vs budget utilization');
+    filename = [figure_dir, '/missrate_vs_normbudget'];
+    print(h, filename, '-djpg')';
+        
     alpha = '1.2';
     
     %   frequency square waves VIC budget

@@ -6,6 +6,7 @@ function [summary] = get_SRTlogrepetition_summary(SRT_folder)
     
     missrate_array = [];
     budgetutil_array = [];
+    normbudget_array = [];
     
     array_i = 1;
     for k = 1:file_count
@@ -39,6 +40,7 @@ function [summary] = get_SRTlogrepetition_summary(SRT_folder)
         
         missrate_array(array_i) = parsed_data.miss_rate;
         budgetutil_array(array_i)  = parsed_data.budget_util;
+        normbudget_array(array_i)  = parsed_data.normalized_budget_allocation;
         array_i                 = array_i + 1;
     end
 
@@ -50,4 +52,7 @@ function [summary] = get_SRTlogrepetition_summary(SRT_folder)
     summary.budgetutil_min = min(budgetutil_array);
     summary.budgetutil_mean= mean(budgetutil_array);
     
+    summary.normbudget_max = max(normbudget_array);
+    summary.normbudget_min = min(normbudget_array);
+    summary.normbudget_mean= mean(normbudget_array);
 end

@@ -14,13 +14,28 @@
     aseries_freqcycle_VIC = get_alpha_series(freqcycle_VIC_dir);
     
     figure;
-    plot_alpha_series(aseries_freqconstmed_VIC, 'bo');
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k');
+    xlabel('miss rate');
+    ylabel('budget utilization');
+    title('ffmpeg_bigbuckbunny missrate vs budget utilization');
     hold on;
-    plot_alpha_series(aseries_freqcycle_VIC, 'bx');
-    plot_alpha_series(aseries_freqconstmed_ns, 'ro');
-    plot_alpha_series(aseries_freqcycle_ns, 'rx');
+    plot_missrate_vs_budgetutil(aseries_freqcycle_VIC, 'b');
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_ns, 'g');
+    plot_missrate_vs_budgetutil(aseries_freqcycle_ns, 'r');
     hold off;
 
+    figure;
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k');
+    xlabel('miss rate');
+    ylabel('average CPU bandwidth');
+    title('ffmpeg_bigbuckbunny missrate vs budget utilization');
+    plot_missrate_vs_normbudget(aseries_freqconstmed_VIC, 'k');
+    hold on;
+    plot_missrate_vs_normbudget(aseries_freqcycle_VIC, 'b');
+    plot_missrate_vs_normbudget(aseries_freqconstmed_ns, 'g');
+    plot_missrate_vs_normbudget(aseries_freqcycle_ns, 'r');
+    hold off;
+    
     alpha = '1.2';
     
     %   frequency square waves VIC budget

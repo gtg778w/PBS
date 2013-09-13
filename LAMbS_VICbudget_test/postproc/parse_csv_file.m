@@ -14,6 +14,7 @@ function [data] = parse_csv_file(filename)
     data.consumed_budget_ns = row1(1, 8);
     data.consumed_budget_VIC= row1(1, 9);
     data.total_misses       = row1(1, 10);
+    data.CPU_budget_cpacity = row1(1, 11);
     
     data.miss_rate          = data.total_misses / data.job_count;
     
@@ -27,6 +28,8 @@ function [data] = parse_csv_file(filename)
         error('File contains unknown budget_type (%i)', data.budget_type );
     end
     data.budget_util        = consumed_budget / data.allocated_budget;
+    
+    data.normalized_budget_allocation = data.allocated_budget / data.CPU_budget_cpacity;
     
     data.cpuusage_ns        = body(:,1);
     data.cpuusage_VIC       = body(:,2);
