@@ -45,15 +45,24 @@ function [data] = parse_csv_file(filename)
     
     if(data.budget_type == 1)
         data.prediction_error   = data.cpuusage_ns - data.u_c0;
-        mean_cpuusage = mean(data.cpuusage_ns);
-        data.norm_pred_error    = data.prediction_error / mean_cpuusage;
+        cpuusage                = data.cpuusage_ns;
     elseif (data.budget_type == 0)
         data.prediction_error   = data.cpuusage_VIC - data.u_c0;
-        mean_cpuusage = mean(data.cpuusage_VIC);
-        data.norm_pred_error    = data.prediction_error / mean_cpuusage;
+        cpuusage                = data.cpuusage_VIC;
     else
         error('File contains unknown budget_type (%i)', data.budget_type );
     end
+    
+    mean_cpuusage   = mean(cpuusage);
+    Scpuusage       = cpuusage .* cpuusage;
+    MScpuusage      = mean(Scpuusage);
+    RMScpuusage     = sqrt(MScpuusage);
+    
+    data.norm_pred_error    = data.prediction_error / mean_cpuusage;
+    Spred_error             = data.prediction_error .* data.prediction_error;
+    MSpred_error            = mean(Spred_error);
+    RMSpred_error           = sqrt(MSpred_error);
+    data.NRMSpred_error     = RMSpred_error / RMScpuusage;
     
     relative_LFT    = (data.LFT - data.releaseTime);
     data.VFT        = relative_LFT - ...

@@ -11,7 +11,7 @@ function [alpha_series] = get_alpha_series(alpha_folder)
         next_file_name = file_name_list{k};
         
         %check that it is a folder
-        if( ~isdir('~/Desktop/bin'))
+        if( ~isdir(next_file_name))
             continue;
         end
         
