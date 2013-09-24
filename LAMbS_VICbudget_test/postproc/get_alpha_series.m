@@ -10,11 +10,6 @@ function [alpha_series] = get_alpha_series(alpha_folder)
         
         next_file_name = file_name_list{k};
         
-        %check that it is a folder
-        if( ~isdir(next_file_name))
-            continue;
-        end
-        
         %check that it is a number
         if( ~isdigit(next_file_name(1)))
             %propper log files begin with digits
@@ -23,6 +18,11 @@ function [alpha_series] = get_alpha_series(alpha_folder)
         end
         
         log_dirname = [alpha_folder, '/', next_file_name];
+        
+        %check that it is a folder
+        if( ~isdir(log_dirname))
+            continue;
+        end
         
         alpha_series(array_i) = get_SRTlogrepetition_summary(log_dirname);
         array_i = array_i + 1;

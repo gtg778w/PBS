@@ -1,15 +1,18 @@
-function [handle] = plot_missrate_vs_normbudget(alpha_series, formatting)
+function [handle] = plot_missrate_vs_normbudget(alpha_series, color)
 
     missrate = [];
     normbudget = [];
 
+    formatting = ['x', color];
     for k = 1:length(alpha_series)
         
         alpha_point = alpha_series{k};
         
-        missrate(k) = alpha_point.missrate_mean;
+        _missrate = alpha_point.missrate_array;
+        missrate = [missrate, _missrate];
         
-        normbudget(k) = alpha_point.normbudget_mean;
+        _normbudget = alpha_point.normbudget_array;
+        normbudget = [normbudget, _normbudget];
         
     end
     

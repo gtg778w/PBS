@@ -3,15 +3,19 @@
 
     freqconstmed_ns_dir = [ffmpeg_bigbuckbunny_dir, '/freqconstmed/ns'];
     aseries_freqconstmed_ns = get_alpha_series(freqconstmed_ns_dir);
+    size(aseries_freqconstmed_ns)
 
     freqcycle_ns_dir = [ffmpeg_bigbuckbunny_dir, '/freqcycle/ns'];
     aseries_freqcycle_ns = get_alpha_series(freqcycle_ns_dir);
+    size(freqcycle_ns_dir)
         
     freqconstmed_VIC_dir = [ffmpeg_bigbuckbunny_dir, '/freqconstmed/VIC'];
     aseries_freqconstmed_VIC = get_alpha_series(freqconstmed_VIC_dir);
+    size(freqconstmed_VIC_dir)
 
     freqcycle_VIC_dir = [ffmpeg_bigbuckbunny_dir, '/freqcycle/VIC'];
     aseries_freqcycle_VIC = get_alpha_series(freqcycle_VIC_dir);
+    size(freqcycle_VIC_dir)
     
     figure;
     plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k');
