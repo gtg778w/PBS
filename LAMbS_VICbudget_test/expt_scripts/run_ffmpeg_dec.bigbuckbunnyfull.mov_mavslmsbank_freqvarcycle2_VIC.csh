@@ -32,11 +32,11 @@
     set Qa="1000000"
     set sa="28800"
     #The budget type should be "" for ns and "-VIC" for VIC.
-    set BUDGET_TYPE=""
+    set BUDGET_TYPE="-VIC"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.sintelfull.720p.mkv"
+    set CONFIGNAME="dec.bigbuckbunnyfull.480p.mov"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
@@ -51,10 +51,10 @@
     #The estimated mean execution time of the SRT application
     set c1="11000000"
     #Alpha values of the workload
-    set alpha_array=("1.4")
+    set alpha_array=("2.3")
     #Periods for switching the CPU frequency
-    set oscillate_period_array=("0.25" "0.5" "0.75" "1.0" "1.25" "1.5" "2.0" "3.0" "4.0" "5.0" "6.0")
-    
+    set oscillate_period_array=("0.75" "1.0" "1.25")
+        
     @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
     @ oscillate_duration = (((${Ta} / 1000) * ${sa}) / 1000) / 1000
     
@@ -68,7 +68,7 @@
         #Loop over the values of alpha
         foreach alpha ($alpha_array)
             
-            set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqvarcycle/ns/${oscillate_period}"
+            set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqvarcycle/VIC/${oscillate_period}"
             mkdir -p ${LOCALLOGDIR}
             
             #The suffix of the log file to store the data collected by the SRT application

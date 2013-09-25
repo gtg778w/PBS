@@ -53,7 +53,7 @@
     #Alpha values of the workload
     set alpha_array=("1.4")
     #Periods for switching the CPU frequency
-    set oscillate_period_array=("0.5" "1.0" "1.5" "2.0" "3.0" "4.0" "5.0" "6.0")
+    set oscillate_period_array=("0.25" "0.5" "0.75" "1.0" "1.25" "1.5" "2.0" "3.0" "4.0" "5.0" "6.0")
         
     @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
     @ oscillate_duration = (((${Ta} / 1000) * ${sa}) / 1000) / 1000
