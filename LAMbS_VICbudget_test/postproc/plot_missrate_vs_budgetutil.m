@@ -1,4 +1,4 @@
-function [handle] = plot_missrate_vs_budgetutil(alpha_series, color)
+function [handle] = plot_missrate_vs_budgetutil(alpha_series, color, bigness, boldness)
 
     missrate = [];
     budgetutil = [];
@@ -17,5 +17,6 @@ function [handle] = plot_missrate_vs_budgetutil(alpha_series, color)
     end
     
     handle = plot(missrate, budgetutil, formatting);
-    
+    set(handle, 'markersize', bigness);
+    set(handle, 'linewidth', boldness);
 end

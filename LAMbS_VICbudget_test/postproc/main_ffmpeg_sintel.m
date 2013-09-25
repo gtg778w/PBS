@@ -15,63 +15,37 @@
     aseries_freqcycle_VIC = get_alpha_series(freqcycle_VIC_dir);
     
     h = figure;
-    plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k');
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_VIC, 'k', 8, 0.5);
     hold on;
-    plot_missrate_vs_budgetutil(aseries_freqcycle_VIC, 'b');
-    plot_missrate_vs_budgetutil(aseries_freqconstmed_ns, 'g');
-    plot_missrate_vs_budgetutil(aseries_freqcycle_ns, 'r');
+    plot_missrate_vs_budgetutil(aseries_freqcycle_VIC, 'b', 8, 0.5);
+    plot_missrate_vs_budgetutil(aseries_freqconstmed_ns, 'g', 8, 0.5);
+    plot_missrate_vs_budgetutil(aseries_freqcycle_ns, 'r', 8, 0.5);
     hold off;
     xlabel('miss rate');
     ylabel('budget utilization');
     title('ffmpeg sintel missrate vs budget utilization');
-    filename = [figure_dir, '/missrate_vs_util'];
+    filename = [figure_dir, '/missrate_vs_util.jpg'];
     print(h, filename, '-djpg')';
     
     h = figure;
-    plot_missrate_vs_normbudget(aseries_freqconstmed_VIC, 'k');
+    plot_missrate_vs_normbudget(aseries_freqconstmed_VIC, 'k', 8, 0.5);
     hold on;
-    plot_missrate_vs_normbudget(aseries_freqcycle_VIC, 'b');
-    plot_missrate_vs_normbudget(aseries_freqconstmed_ns, 'g');
-    plot_missrate_vs_normbudget(aseries_freqcycle_ns, 'r');
+    plot_missrate_vs_normbudget(aseries_freqconstmed_ns, 'g', 8, 0.5);
     hold off;
     xlabel('miss rate');
     ylabel('average CPU bandwidth');
-    title('ffmpeg sintel missrate vs budget utilization');
-    filename = [figure_dir, '/missrate_vs_normbudget'];
+    title('ffmpeg sintel constant CPU frequency');
+    filename = [figure_dir, '/missrate_vs_normbudget_freqconst.jpg'];
     print(h, filename, '-djpg')';
-        
-    alpha = '1.2';
     
-    %   frequency square waves VIC budget
-    %   VFT_error      vs release_time
-    %   cpuusage_ns    vs release_time
-    %   cpuusage_VIC   vs release_time
-    filename = [freqconstmed_ns_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
-    data_freqconstmed_ns = parse_csv_file(filename);
-    VFT_eror_plot = plot_VFT_error(data_freqconstmed_ns, 'freqconstmed ns-based budget');
-    
-    %   frequency square waves VIC budget
-    %   VFT_error      vs release_time
-    %   cpuusage_ns    vs release_time
-    %   cpuusage_VIC   vs release_time
-    %   freqcycle_ns_dir
-    filename = [freqcycle_ns_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
-    data_freqcycle_ns = parse_csv_file(filename);
-    VFT_eror_plot = plot_VFT_error(data_freqcycle_ns, 'freqcycle ns-based budget');
-    
-    %   constant frequency ns budget
-    %   VFT_error      vs release_time
-    %   cpuusage_ns    vs release_time
-    %   cpuusage_VIC   vs release_time
-    filename = [freqconstmed_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
-    data_freqconstmed_VIC = parse_csv_file(filename);
-    VFT_eror_plot = plot_VFT_error(data_freqconstmed_VIC, 'freqconstmed VIC-based budget');
-        
-    %   frequency square waves VIC budget
-    %   VFT_error      vs release_time
-    %   cpuusage_ns    vs release_time
-    %   cpuusage_VIC   vs release_time
-    filename = [freqcycle_VIC_dir, '/', alpha, '/1_SRT_PeSoRTA_ffmpeg_dec.sintelfull.720p.mkv_6480_mavslmsbank_41666668_11000000_', alpha, '.log'];
-    data_freqcycle_VIC = parse_csv_file(filename);
-    VFT_eror_plot = plot_VFT_error(data_freqcycle_VIC, 'freqcycle VIC-based budget');
+    h = figure;
+    plot_missrate_vs_normbudget(aseries_freqcycle_VIC, 'b', 8, 0.5);
+    hold on;
+    plot_missrate_vs_normbudget(aseries_freqcycle_ns, 'r', 8, 0.5);
+    hold off;
+    xlabel('miss rate');
+    ylabel('average CPU bandwidth');
+    title('ffmpeg sintel switching CPU frequency');
+    filename = [figure_dir, '/missrate_vs_normbudget_freqcycle.jpg'];
+    print(h, filename, '-djpg')';
     
