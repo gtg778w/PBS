@@ -1,4 +1,4 @@
-function [handle] = plot_fcfreq_vs_NRMSprederror(fcfreq_series, color)
+function [handle] = plot_fcfreq_vs_NRMSprederror(fcfreq_series, color, bigness, boldness)
 
     fcfreq = [];
     NRMSprederror = [];
@@ -17,5 +17,6 @@ function [handle] = plot_fcfreq_vs_NRMSprederror(fcfreq_series, color)
     end
     
     handle = plot(fcfreq, NRMSprederror, formatting);
-    
+    set(handle, 'markersize', bigness);
+    set(handle, 'linewidth', boldness);
 end
