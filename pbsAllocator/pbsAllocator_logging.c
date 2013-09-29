@@ -67,6 +67,8 @@ int64_t     sp_limit;
 /*Summary information*/
 struct allocator_summary_s
 {
+    uint64_t    mo_count;
+    uint64_t    sp_count;
     double      energy_total;   //8
     double      inst_total;     //8
     double      mostat_total[ALLOCATOR_LOG_MOI_MAX]; //128
@@ -127,16 +129,22 @@ int setup_log_memory(long log_level)
     return 0;
 }
 
+void log_summary_setmocount(void)
+{
+    allocator_summary.mo_count = loaddata_list_header->mo_count;
+}
+
 void log_allocator_summary(void)
 {
     int moi, mocount;
     
+    allocator_summary.sp_count++;
     allocator_summary.energy_total
                         += (double)loaddata_list_header->energy_last_sp;
     allocator_summary.inst_total
                         += (double)loaddata_list_header->icount_last_sp;
 
-    mocount = loaddata_list_header->mo_count;
+    mocount = allocator_summary.mo_count;
     mocount = (mocount > ALLOCATOR_LOG_MOI_MAX)? ALLOCATOR_LOG_MOI_MAX : mocount;
     for(moi = 0; moi < mocount; moi++)
     {
@@ -212,8 +220,9 @@ void free_log_memory(long log_level)
 
     if(log_level > 0)
     {
-        mocount = loaddata_list_header->mo_count;
-        printf( "%f, %f, %llu, ",
+        mocount = allocator_summary.mo_count;
+        printf( "%llu, %f, %f, %llu, ",
+                (long long unsigned int)allocator_summary.sp_count,
                 allocator_summary.energy_total,
                 allocator_summary.inst_total,
                 (long long unsigned int)mocount);

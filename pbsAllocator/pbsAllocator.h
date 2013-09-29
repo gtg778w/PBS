@@ -30,6 +30,7 @@ extern int64_t  sp_limit;
 
 
 int setup_log_memory(long log_level);
+void log_summary_setmocount(void);
 void log_allocator_summary(void);
 void log_allocator_dat( long long sp_count, 
                         double est_icount,

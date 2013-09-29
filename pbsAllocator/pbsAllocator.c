@@ -348,7 +348,7 @@ int main(int argc, char** argv)
     }
     
     /*Check if logging is enabled*/
-    fprintf(stderr, ", log_level = %li", log_level);
+    fprintf(stderr, ", log_level = %li\n", log_level);
     
     /*Check if the user will be prompted before proceeding*/
     if(fflag == 0)
@@ -380,6 +380,9 @@ int main(int argc, char** argv)
         retval = proc_file;
         goto exit0;
     }
+
+    /*Set the mocount field in the log summary*/
+    log_summary_setmocount();
 
     //Setup the model adapters
     retval = pbsAllocator_modeladapters_init(proc_file);
