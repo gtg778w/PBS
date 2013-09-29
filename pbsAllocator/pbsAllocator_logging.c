@@ -52,7 +52,6 @@ struct allocator_record_s
     uint64_t    sp_start_time;      //8
     uint64_t    allocator_runtime;  //8
     uint64_t    energy_last_sp;     //8
-    uint64_t    energy_total;       //8
     uint64_t    icount_last_sp;     //8
     double      estimated_icount;   //8
     double      estimated_energy;   //8
@@ -65,48 +64,85 @@ struct allocator_record_s
 struct allocator_record_s *allocator_record;
 int64_t     sp_limit;
 
+/*Summary information*/
+struct allocator_summary_s
+{
+    double      energy_total;   //8
+    double      inst_total;     //8
+    double      mostat_total[ALLOCATOR_LOG_MOI_MAX]; //128
+};
+
+struct allocator_summary_s allocator_summary;
+
 /**************Allocate memory for logging task computation times**********/
-int setup_log_memory(void)
+int setup_log_memory(long log_level)
 {
     int t;
 
-    allocator_record = 
-        (struct allocator_record_s*)malloc(sizeof(struct allocator_record_s)*sp_limit);
-    if(NULL == allocator_record)
+    if(log_level > 0)
     {
-        perror("malloc failed for the allocator_record array");
-        return -1;
+        /*Zero out the allocator summary structure*/
+        allocator_summary = (struct allocator_summary_s){0};
     }
 
-    if(mlock(allocator_record, (sizeof(struct allocator_record_s)*sp_limit)) < 0)
-    {
-        perror("mlock failed for the allocator_record array");
-        return -1;
+    if(log_level > 1)
+    {    
+        allocator_record = 
+            (struct allocator_record_s*)malloc(sizeof(struct allocator_record_s)*sp_limit);
+        if(NULL == allocator_record)
+        {
+            perror("malloc failed for the allocator_record array");
+            return -1;
+        }
+
+        if(mlock(allocator_record, (sizeof(struct allocator_record_s)*sp_limit)) < 0)
+        {
+            perror("mlock failed for the allocator_record array");
+            return -1;
+        }
+        
+        memset(allocator_record, 0, (sizeof(struct allocator_record_s)*sp_limit));
+
+        for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
+        {
+            SRT_record[t] = 
+                (struct SRT_record_s*)malloc(sizeof(struct SRT_record_s)*sp_limit);
+            if(SRT_record[t] == NULL)
+            {
+                perror("malloc failed to allocate "
+                       "space for the SRT_record array");
+                return -1;
+            }
+
+            memset(SRT_record[t], 0, sizeof(struct SRT_record_s)*sp_limit);
+
+            if(mlock(SRT_record[t], sizeof(struct SRT_record_s)*sp_limit) < 0)
+            {
+                perror("mlock failed for the SRT_record array");
+                return -1;
+            }
+        }
     }
     
-    memset(allocator_record, 0, (sizeof(struct allocator_record_s)*sp_limit));
-
-    for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
-    {
-        SRT_record[t] = 
-            (struct SRT_record_s*)malloc(sizeof(struct SRT_record_s)*sp_limit);
-        if(SRT_record[t] == NULL)
-        {
-            perror("malloc failed to allocate "
-                   "space for the SRT_record array");
-            return -1;
-        }
-
-        memset(SRT_record[t], 0, sizeof(struct SRT_record_s)*sp_limit);
-
-        if(mlock(SRT_record[t], sizeof(struct SRT_record_s)*sp_limit) < 0)
-        {
-            perror("mlock failed for the SRT_record array");
-            return -1;
-        }
-    }
-
     return 0;
+}
+
+void log_allocator_summary(void)
+{
+    int moi, mocount;
+    
+    allocator_summary.energy_total
+                        += (double)loaddata_list_header->energy_last_sp;
+    allocator_summary.inst_total
+                        += (double)loaddata_list_header->icount_last_sp;
+
+    mocount = loaddata_list_header->mo_count;
+    mocount = (mocount > ALLOCATOR_LOG_MOI_MAX)? ALLOCATOR_LOG_MOI_MAX : mocount;
+    for(moi = 0; moi < mocount; moi++)
+    {
+        allocator_summary.mostat_total[moi]
+                        += (double)loaddata_list_header->mostat_last_sp[moi];        
+    }    
 }
 
 void log_allocator_dat( long long sp_count, 
@@ -122,11 +158,9 @@ void log_allocator_dat( long long sp_count,
 
     allocator_record[sp_count].energy_last_sp
                         = loaddata_list_header->energy_last_sp;
-    allocator_record[sp_count].energy_total
-                        = loaddata_list_header->energy_total;
     allocator_record[sp_count].icount_last_sp
                         = loaddata_list_header->icount_last_sp;
-    
+        
     allocator_record[sp_count].estimated_icount = est_icount;
     allocator_record[sp_count].estimated_energy = est_energy;
     
@@ -169,108 +203,130 @@ void log_SRT_sp_dat(int task_index,
 }
 
 /************print and free memory for logging task computation times*********/
-void free_log_memory(void)
+void free_log_memory(long log_level)
 {
     struct SRT_record_s *next_record;
     long long sp_count;
     int moi, mocount;
     int t;
 
-    for(sp_count = 0; sp_count < sp_limit; sp_count++)
+    if(log_level > 0)
     {
-        printf( "\n%llu\t)%llu>, %lluns, %lluinst, [%e inst est] "
-                "%lluuJ, [%e uJ est] , %lluuJ total\n", 
-                (long long unsigned int)sp_count,
-                (long long unsigned int)allocator_record[sp_count].sp_start_time, 
-                (long long unsigned int)allocator_record[sp_count].allocator_runtime,
-                (long long unsigned int)allocator_record[sp_count].icount_last_sp,
-                                        allocator_record[sp_count].estimated_icount,
-                (long long unsigned int)allocator_record[sp_count].energy_last_sp,
-                                        allocator_record[sp_count].estimated_energy,
-                (long long unsigned int)allocator_record[sp_count].energy_total);
-        
-        mocount = allocator_record[sp_count].mocount;
-        printf("\t[%llu] { ", (long long unsigned int)mocount);
-        mocount = (mocount > ALLOCATOR_LOG_MOI_MAX)? ALLOCATOR_LOG_MOI_MAX : mocount;
-        for(moi = 0; moi < (mocount-1); moi++)
+        mocount = loaddata_list_header->mo_count;
+        printf( "%f, %f, %llu, ",
+                allocator_summary.energy_total,
+                allocator_summary.inst_total,
+                (long long unsigned int)mocount);
+        for(moi = 3; moi < mocount; moi++)
         {
-            printf( "%llu, ", 
-                    (long long unsigned int)allocator_record[sp_count].mostat[moi]);
-        }
-        if(mocount > 0)
-        {
-            printf( "%llu }\n", 
-                    (long long unsigned int)allocator_record[sp_count].mostat[moi]);
-        }
-        else
-        {
-            printf("}\n");
-        }
-        printf("\tperf\t{ ");
-        for(moi = 0; moi < (mocount-1); moi++)
-        {
-            printf( "%e, ", allocator_record[sp_count].perf_coeffs[moi]);
-        }
-        if(mocount > 0)
-        {
-            printf( "%e }\n", allocator_record[sp_count].perf_coeffs[moi]);
-        }
-        else
-        {
-            printf("}\n");
-        }
-        /*printf("\tperf_inv\t{ ");
-        for(moi = 0; moi < (mocount-1); moi++)
-        {
-            printf( "%e, ", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
-        }
-        if(mocount > 0)
-        {
-            printf( "%e }\n", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
-        }
-        else
-        {
-            printf("}\n");
-        }*/
-        printf("\tpower\t{ ");
-        for(moi = 0; moi < (mocount-1); moi++)
-        {
-            printf( "%e, ", allocator_record[sp_count].powr_coeffs[moi]);
-        }
-        if(mocount > 0)
-        {
-            printf( "%e }\n", allocator_record[sp_count].powr_coeffs[moi]);
-        }
-        else
-        {
-            printf("}\n");
-        }
-        
-        for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
-        {
-            next_record = &((SRT_record[t])[sp_count]);
-            printf("\t\t%lu, %llu), %lu, [%lu, %u], {%llu, %lli, %lli, %lli}, (%lli) \n",
-                    (unsigned long)next_record->pid,
-                    (unsigned long long)next_record->job_release_time,
-                    (unsigned long)next_record->SRT_runtime,
-                    (unsigned long)next_record->sp_till_deadline,
-                    (unsigned)next_record->SRT_qlength,
-                    (unsigned long long)next_record->u_c0,
-                    (unsigned long long)next_record->var_c0,
-                    (unsigned long long)next_record->u_cl,
-                    (unsigned long long)next_record->var_cl,
-                    (unsigned long long)next_record->SRT_budget);
+            printf("0, ");
         }
         printf("\n");
+        
+        for(moi = 0; moi < mocount; moi++)
+        {
+            printf("%f, ",  allocator_summary.mostat_total[moi]);
+        }
+        printf("\n\n");
     }
-
-    munlockall();
-
-    for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
+    
+    if(log_level > 1)
     {
-        free(SRT_record[t]);
-    }
+        for(sp_count = 0; sp_count < sp_limit; sp_count++)
+        {
+            printf( "\n%llu\t)%llu>, %lluns, %lluinst, [%e inst est] "
+                    "%lluuJ, [%e uJ est]\n", 
+                    (long long unsigned int)sp_count,
+                    (long long unsigned int)allocator_record[sp_count].sp_start_time, 
+                    (long long unsigned int)allocator_record[sp_count].allocator_runtime,
+                    (long long unsigned int)allocator_record[sp_count].icount_last_sp,
+                                            allocator_record[sp_count].estimated_icount,
+                    (long long unsigned int)allocator_record[sp_count].energy_last_sp,
+                                            allocator_record[sp_count].estimated_energy);
+            
+            mocount = allocator_record[sp_count].mocount;
+            printf("\t[%llu] { ", (long long unsigned int)mocount);
+            mocount = (mocount > ALLOCATOR_LOG_MOI_MAX)? ALLOCATOR_LOG_MOI_MAX : mocount;
+            for(moi = 0; moi < (mocount-1); moi++)
+            {
+                printf( "%llu, ", 
+                        (long long unsigned int)allocator_record[sp_count].mostat[moi]);
+            }
+            if(mocount > 0)
+            {
+                printf( "%llu }\n", 
+                        (long long unsigned int)allocator_record[sp_count].mostat[moi]);
+            }
+            else
+            {
+                printf("}\n");
+            }
+            printf("\tperf\t{ ");
+            for(moi = 0; moi < (mocount-1); moi++)
+            {
+                printf( "%e, ", allocator_record[sp_count].perf_coeffs[moi]);
+            }
+            if(mocount > 0)
+            {
+                printf( "%e }\n", allocator_record[sp_count].perf_coeffs[moi]);
+            }
+            else
+            {
+                printf("}\n");
+            }
+            /*printf("\tperf_inv\t{ ");
+            for(moi = 0; moi < (mocount-1); moi++)
+            {
+                printf( "%e, ", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
+            }
+            if(mocount > 0)
+            {
+                printf( "%e }\n", ((double)1.0)/allocator_record[sp_count].perf_coeffs[moi]);
+            }
+            else
+            {
+                printf("}\n");
+            }*/
+            printf("\tpower\t{ ");
+            for(moi = 0; moi < (mocount-1); moi++)
+            {
+                printf( "%e, ", allocator_record[sp_count].powr_coeffs[moi]);
+            }
+            if(mocount > 0)
+            {
+                printf( "%e }\n", allocator_record[sp_count].powr_coeffs[moi]);
+            }
+            else
+            {
+                printf("}\n");
+            }
+            
+            for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
+            {
+                next_record = &((SRT_record[t])[sp_count]);
+                printf("\t\t%lu, %llu), %lu, [%lu, %u], {%llu, %lli, %lli, %lli}, (%lli) \n",
+                        (unsigned long)next_record->pid,
+                        (unsigned long long)next_record->job_release_time,
+                        (unsigned long)next_record->SRT_runtime,
+                        (unsigned long)next_record->sp_till_deadline,
+                        (unsigned)next_record->SRT_qlength,
+                        (unsigned long long)next_record->u_c0,
+                        (unsigned long long)next_record->var_c0,
+                        (unsigned long long)next_record->u_cl,
+                        (unsigned long long)next_record->var_cl,
+                        (unsigned long long)next_record->SRT_budget);
+            }
+            printf("\n");
+        }
 
-    free(allocator_record);
+        munlockall();
+
+        for(t = 0; t < ALLOCATOR_RECORD_COUNT; t++)
+        {
+            free(SRT_record[t]);
+        }
+
+        free(allocator_record);
+    }
 }
 

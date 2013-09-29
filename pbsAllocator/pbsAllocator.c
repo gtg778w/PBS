@@ -36,7 +36,7 @@ write
 
 #include "pbsAllocator.h"
 
-void allocator_loop(int proc_file, unsigned char logging_enabled)
+void allocator_loop(int proc_file, long log_level)
 {
     bw_mgt_cmd_t cmd;
 
@@ -69,12 +69,17 @@ void allocator_loop(int proc_file, unsigned char logging_enabled)
 
         /*  Update the power and performance model coefficients.    */
         pbsAllocator_modeladapters_adapt(&inst_count, &energy_count);
-        if((logging_enabled != 0) && (sp_count < sp_limit))
+        if(log_level > 0)
         {
-            /*  Log energy and instruction count  */
-            log_allocator_dat(sp_count, inst_count, energy_count);
+            log_allocator_summary();
+            
+            if((log_level > 1) && (sp_count < sp_limit))
+            {
+                /*  Log energy and instruction count  */
+                log_allocator_dat(sp_count, inst_count, energy_count);
+            }
         }
-
+        
         /*  Compute the amount of CPU budget available to allocate. */
         compute_max_CPU_budget();
         
@@ -141,7 +146,7 @@ void allocator_loop(int proc_file, unsigned char logging_enabled)
             allocation_array[task_index] = budget_uint64_t;
             
             /*  Log the amount of budget allocated. */
-            if((logging_enabled != 0) && (sp_count < sp_limit))
+            if((log_level > 1) && (sp_count < sp_limit))
             {
                 log_SRT_sp_dat(t, sp_count, next, budget_uint64_t);
             }
@@ -163,7 +168,7 @@ char *options_string = \
 "\t-B:\tThe budget allocated to the scheduler over a scheduling period. (ns)\n"\
 "\t-VIC:\tUse VIC-based budget.\n"\
 "\t-s:\tthe number of scheduling periods (1)\n"\
-"\t-S:\tdo not keep or output a log\n";
+"\t-L:\tThe log level (0, 1, or 2)\n";
 
 int main(int argc, char** argv)
 {
@@ -175,11 +180,13 @@ int main(int argc, char** argv)
     uint64_t allocator_budget  = 1000000;
 
     /*variables for parsing input arguments*/
-    unsigned char   fflag=0, Sflag = 0;
+    unsigned char   fflag=0;
+    
+    long int log_level = 0;
 
     sp_limit = 1;
 
-    while((retval = getopt(argc, argv, "fP:V:B:s:S")) != -1)
+    while((retval = getopt(argc, argv, "fP:V:B:s:L:")) != -1)
     {
         switch(retval)
         {
@@ -190,7 +197,7 @@ int main(int argc, char** argv)
             case 'P':
                 errno = 0;
                 scheduling_period = strtoul(optarg, NULL, 10);
-                if(errno)
+                if(errno != 0)
                 {
                     perror("Failed to parse the P option");
                     retval = -EINVAL;
@@ -209,7 +216,7 @@ int main(int argc, char** argv)
             case 'B':
                 errno = 0;
                 allocator_budget = strtoul(optarg, NULL, 10);
-                if(errno)
+                if(errno != 0)
                 {
                     perror("Failed to parse the B option");
                     retval = -EINVAL;
@@ -228,7 +235,7 @@ int main(int argc, char** argv)
             case 's':
                 errno = 0;
                 sp_limit = strtoul(optarg, NULL, 10);
-                if(errno)
+                if(errno != 0)
                 {
                     perror("Failed to parse the s option");
                     retval = -EINVAL;
@@ -236,8 +243,15 @@ int main(int argc, char** argv)
                 }
                 break;
                 
-            case 'S':
-                Sflag = 1;
+            case 'L':
+                errno = 0;
+                log_level = strtol(optarg, NULL, 10);
+                if(errno != 0)
+                {
+                    perror("Failed to parse the L option");
+                    retval = -EINVAL;
+                    goto exit0;
+                }
                 break;
             
             case 'V':
@@ -248,6 +262,7 @@ int main(int argc, char** argv)
                     break;
                 }
                 /*else, fall through to the default condition*/
+                
             default:
                 fprintf(stderr, "Usage: %s [Options]\n%s\n", 
                                 argv[0], options_string);
@@ -285,16 +300,28 @@ int main(int argc, char** argv)
                                     (double)allocator_budget;
     }
 
+    if(log_level >= 2)
+    {
+        log_level = 2;
+    }
+    else
+    {
+        if(log_level < 0)
+        {
+            log_level = 0;
+        }
+    }
+
     /*If no bound is imposed on the number of reservation periods,
       make sure logging is disabled*/
-    if((sp_limit == 0) && (Sflag == 0))
+    if((sp_limit == 0) && (log_level == 2))
     {
         fprintf(stderr, 
             "\n\nWARNING: The number of scheduling periods is not bounded!" 
             "Logging is automatically disabled!\n\n");
-        Sflag = 1;
+        log_level = 1;
     }
-
+    
     /*Display the number of reservation periods*/
     if(sp_limit == 0)
     {
@@ -321,19 +348,12 @@ int main(int argc, char** argv)
     }
     
     /*Check if logging is enabled*/
-    if(Sflag == 0)
-    {
-        fprintf(stderr, ", logging to stdout enabled.\n");
-    }
-    else
-    {
-        fprintf(stderr, ", logging to stdout disabled.\n");
-    }
+    fprintf(stderr, ", log_level = %li", log_level);
     
     /*Check if the user will be prompted before proceeding*/
     if(fflag == 0)
     {
-        fprintf(stderr, "Waiting for prompt from user ...\n");
+        fprintf(stderr, "\n\nWaiting for prompt from user ...\n");
         if(fgetc(stdin) == (int)'q')
         {
             fprintf(stderr, "\nExiting...\n");
@@ -344,14 +364,11 @@ int main(int argc, char** argv)
     }
 
     //If logging is enabled, setup the log memory
-    if(Sflag == 0)
+    retval = setup_log_memory(log_level);
+    if(retval)
     {
-        retval = setup_log_memory();
-        if(retval)
-        {
-            fprintf(stderr, "setup_log_memory failed!\n");
-            goto exit0;
-        }
+        fprintf(stderr, "setup_log_memory failed!\n");
+        goto exit0;
     }
 
     //Setup the interface with the pbs_allocator module
@@ -372,7 +389,7 @@ int main(int argc, char** argv)
         goto exit1;
     }
 
-    allocator_loop(proc_file, (0 == Sflag));
+    allocator_loop(proc_file, log_level);
     
 exit1:
     /*Indicate to the kernel module that the allocator is closing*/
@@ -386,10 +403,8 @@ exit1:
     /*free the modeladapters*/    
     pbsAllocator_modeladapters_free(proc_file);
 
-    if(Sflag == 0)
-    {
-        free_log_memory();
-    }
+    /*free the log level*/
+    free_log_memory(log_level);
 
     printf("\n");
 exit0:

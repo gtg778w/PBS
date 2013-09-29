@@ -29,7 +29,8 @@ int allocator_close(int proc_file);
 extern int64_t  sp_limit;
 
 
-int setup_log_memory(void);
+int setup_log_memory(long log_level);
+void log_allocator_summary(void);
 void log_allocator_dat( long long sp_count, 
                         double est_icount,
                         double est_energy);
@@ -37,7 +38,7 @@ void log_SRT_sp_dat(int task_index,
                     long long sp_count,
                     SRT_loaddata_t  *SRT_loaddata_p,
                     uint64_t SRT_budget);
-void free_log_memory(void);
+void free_log_memory(long log_level);
 
 void compute_max_CPU_budget(void);
 void compute_budget(SRT_loaddata_t *loaddata, double* budget);
