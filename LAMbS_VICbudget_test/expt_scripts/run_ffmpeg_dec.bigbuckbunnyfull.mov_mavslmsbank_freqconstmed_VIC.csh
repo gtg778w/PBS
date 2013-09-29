@@ -93,7 +93,7 @@
             set SRT_logfile=${LOCALLOGDIR}"/"${rep}${SRT_logfilesuffix}
             
             #Start the allocator            
-            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
+            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task

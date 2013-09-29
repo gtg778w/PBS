@@ -90,7 +90,7 @@
             set SRT_logfile=${LOCALLOGDIR}"/"${expt_id}"_freqconstmed"${SRT_logfilesuffix}
             
             #Start the allocator            
-            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} &
+            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task

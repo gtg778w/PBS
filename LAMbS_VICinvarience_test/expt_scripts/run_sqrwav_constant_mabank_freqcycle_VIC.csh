@@ -76,7 +76,7 @@
             #Start the frequency cycling program
             ${BINDIR}/cpufreq_oscillate ${oscillate_duration} 1 0.0 1.0 &
             #Start the allocator
-            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} -VIC &
+            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} -VIC &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task

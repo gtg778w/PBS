@@ -26,11 +26,16 @@
         exit 1
     endif
     
+    #The relevant folder for CPU speed settings
+    set freqdir="/sys/devices/system/cpu/cpu0/cpufreq/"
+    #The list of available frequencies
+    set availablefreqs=`cat ${freqdir}"scaling_available_frequencies"`
+    
     #The period of the allocator task
     set Ta="10416667"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="14400"
+    set sa="28800"
     #The budget type should be "" for ns and "-VIC" for VIC.
     set BUDGET_TYPE=""
     
@@ -43,26 +48,29 @@
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="3240"
+    set J1="6480"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
     set p1="41666668"
     #The estimated mean execution time of the SRT application
     set c1="11000000"
-    #Alpha values of the workload
-    set alpha_array=(   "1.4"   )
+    #The alpha parameter
+    set alpha="2.3"
     
     @ duration_secs = ((((${Ta} / 1000) * ${sa}) / 1000) * ${repetitions}) / 1000
-    @ oscillate_duration = (((${Ta} / 1000) * ${sa}) / 1000) / 1000
     
     #Initialize the experiment ID
     #Each repetition for each value of alpha should have a unique ID
     @ expt_id = 1
     #Loop over the values of alpha
-    foreach alpha ($alpha_array)
+    foreach freq ($availablefreqs)
         
-        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqcycle/ns/${alpha}"
+        echo "Setting CPU frequency to $freq"        
+        echo "userspace" > ${freqdir}"scaling_governor"
+        echo ${freq} > ${freqdir}"scaling_setspeed"
+
+        set LOCALLOGDIR=${LOGDIR}"/"${APPNAME}"/"${CONFIGNAME}"/freqconstcycle/ns/${alpha}"
         mkdir -p ${LOCALLOGDIR}
         
         #The suffix of the log file to store the data collected by the SRT application
@@ -80,10 +88,8 @@
             #Names of LOG files
             set SRT_logfile=${LOCALLOGDIR}"/"${rep}${SRT_logfilesuffix}
             
-            #Start the frequency cycling program
-            ${BINDIR}/cpufreq_oscillate ${oscillate_duration}, 5, 0.0, 1.0 &
-            #Start the allocator
-            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
+            #Start the allocator            
+            ${BINDIR}/pbsAllocator -f -S -s ${sa} -P ${Ta} -B ${Qa} ${BUDGET_TYPE} &
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task
