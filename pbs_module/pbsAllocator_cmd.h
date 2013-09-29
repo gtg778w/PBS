@@ -61,7 +61,6 @@ typedef struct _loaddata_list_header
     u64 last_allocator_runtime; //8
 
     u64 energy_last_sp;         //8
-    u64 energy_total;           //8
     u64 icount_last_sp;         //8
 
     u16 SRT_count;              //2
@@ -71,7 +70,7 @@ typedef struct _loaddata_list_header
     u16 mo_count;               //2
     
     //62 bytes so far. Add 2 bytes of padding to make it 64 bytes.
-    u8  padding[2];             //2 bytes to make the structure 64 bytes
+    u8  padding[10];            //10 bytes to make the structure 64 bytes
     
     /*Time spent in each mode of operation.*/
     /*Tail grown array of variable size since mo_count is unknown ahead of time*/

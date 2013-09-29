@@ -47,8 +47,7 @@ int init_loaddataList(void)
     /*Set initial measurements to 0*/
     loaddata_list_header->icount_last_sp = 0;
     loaddata_list_header->energy_last_sp = 0;
-    loaddata_list_header->energy_total = 0;
-    
+
     /*Set the number of modes of operation to the appropriate value*/
     loaddata_list_header->mo_count = LAMbS_mo_struct.count;
     /*Set the time spent in each mode of operation to 0*/

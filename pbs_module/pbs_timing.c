@@ -165,10 +165,7 @@ void sched_period_tick(void)
     
     /*Update CPU usage statistics*/
     update_CPUusage_statistics();
-                            
-    /*Accumulate the total amount of energy consumed*/
-    loaddata_list_header->energy_total += loaddata_list_header->energy_last_sp;
-
+    
     //extract all tasks to be woken
     if(timing_queue_head.next == &timing_queue_head)
         return;
