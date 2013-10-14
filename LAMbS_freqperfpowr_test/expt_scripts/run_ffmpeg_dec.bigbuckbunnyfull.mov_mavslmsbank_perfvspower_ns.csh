@@ -35,7 +35,7 @@
     set Ta="10416667"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="28800"
+    set sa="29000"
     #The budget type should be "" for ns and "-VIC" for VIC.
     set BUDGET_TYPE=""
     
