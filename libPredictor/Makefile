@@ -25,9 +25,6 @@ MABank.o: MABank.c MABank.h
 MAVSLMSBank.o: MAVSLMSBank.c MAVSLMSBank.h
 	$(CC) $(CFLAGS) -g -O3 -o MAVSLMSBank.o MAVSLMSBank.c
 
-predictor_test: libPredictor.a predictor_test.c
-	$(CC) -Wall -Wmissing-prototypes -L . -g -o predictor_test predictor_test.c -lPredictor
-
 clean:
 	rm -f libPredictor.a $(LIBOBJS)
 
