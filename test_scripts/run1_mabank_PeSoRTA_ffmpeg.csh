@@ -31,5 +31,5 @@
     bin/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} > ${logfilea} &
     sleep 1
     bin/ffmpeg_pbsSRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${a1} -L 2 -R ${logfile1} &
-    bin/poll_pbs_actv
+    bin/poll_pbs_actv -I
 
