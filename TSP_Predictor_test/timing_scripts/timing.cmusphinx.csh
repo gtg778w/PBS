@@ -3,6 +3,7 @@
     #Set default values for optional input arguments
     set repetitions="1"
     set LOGDIR="timing_data/"
+    set SCRIPTDIR="timing_scripts"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     
@@ -15,13 +16,19 @@
     else if ( $#argv == 3 ) then
         set repetitions=$argv[1]
         set LOGDIR=$argv[2]
-        set PeSoRTADIR=$argv[3]
+        set SCRIPTDIR=$argv[3]
     else if ( $#argv == 4 ) then
         set repetitions=$argv[1]
         set LOGDIR=$argv[2]
-        set PeSoRTADIR=$argv[3]
-        set BINDIR=$argv[4]
-    else if ( $#argv > 4 ) then
+        set SCRIPTDIR=$argv[3]
+        set PeSoRTADIR=$argv[4]
+    else if ( $#argv == 5 ) then
+        set repetitions=$argv[1]
+        set LOGDIR=$argv[2]
+        set SCRIPTDIR=$argv[3]
+        set PeSoRTADIR=$argv[4]
+        set BINDIR=$argv[5]
+    else if ( $#argv > 5 ) then
         echo "Usage:"$argv[0]" [repetitions [log directory [PeSoRTA directory [bin dir]]]]"
         exit 1
     endif
@@ -31,6 +38,6 @@
     set configs=("arthur" "cc" "vf18")
 
     foreach config (${configs})
-        csh timing_generic.csh ${repetitions} ${config} ${application} ${LOGDIR} ${PeSoRTADIR} ${BINDIR}
+        csh ${SCRIPTDIR}/timing.generic.csh ${repetitions} ${config} ${application} ${LOGDIR} ${PeSoRTADIR} ${BINDIR}
     end
 
