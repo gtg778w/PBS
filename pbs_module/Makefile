@@ -18,5 +18,4 @@ all:
 
 clean:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
-	$(RM) Module.markers modules.order
-
+	$(RM) -r Module.markers modules.order Module.symvers .tmp_versions/

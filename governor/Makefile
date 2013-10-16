@@ -11,4 +11,5 @@ all:
 
 clean:
 	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
-	$(RM) Module.markers modules.order
+	$(RM) -r Module.markers modules.order Module.symvers .tmp_versions/
+	
