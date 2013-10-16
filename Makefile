@@ -3,6 +3,7 @@ all:
 	$(MAKE) -C pbs_module/
 	$(MAKE) -C pbsAllocator/
 	$(MAKE) -C pbsSRT_sqrwav/
+	$(MAKE) -C TSP_Predictor_test/
 	$(MAKE) -C pbsSRT_PeSoRTA/
 	$(MAKE) -C pbs_util_apps/
 
@@ -15,6 +16,7 @@ setup_expt: all
 clean:
 	$(MAKE) -C pbs_util_apps/ clean
 	$(MAKE) -C pbsSRT_PeSoRTA/ clean
+	$(MAKE) -C TSP_Predictor_test/ clean
 	$(MAKE) -C pbsSRT_sqrwav/
 	$(MAKE) -C pbsAllocator/ clean
 	$(MAKE) -C pbs_module/ clean

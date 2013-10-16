@@ -6,10 +6,13 @@ obj-m += freq_change_test.o
 
 LAMbS_governor-objs := $(SRCS:.c=.o)
 
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build
+PWD := $(shell pwd)
+
 all:
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) modules
 
 clean:
-	$(MAKE) -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 	$(RM) -r Module.markers modules.order Module.symvers .tmp_versions/
 	
