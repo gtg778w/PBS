@@ -11,7 +11,7 @@ PeSoRTA_INCDIR=$(PeSoRTADIR)/include
 pred_LIBDIR=../libPredictor
 pred_INCDIR=../libPredictor
 
-PRDTST_SRCDIR=./predictor_src
+PRDTST_SRCDIR=./prdtst_src
 TIMING_SRCDIR=./timing_src
 
 APP_BINDIR=$(BINDIR)
