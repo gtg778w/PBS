@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "pbsSRT_predictor.h"
+struct libPredictor_s;
 
 /*This is the user level header file for the PBS module for SRT tasks*/
 
@@ -21,7 +21,7 @@ typedef struct SRT_handle_s
 {
     int                 procfile;
     int                 budget_type;
-    pbsSRT_predictor_t  *predictor;
+    struct libPredictor_s   *predictor;
     uint64_t            period;
     uint64_t            reservation_period;
 
@@ -43,7 +43,7 @@ typedef struct SRT_handle_s
 
 int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime, 
                     double alpha,
-                    pbsSRT_predictor_t *predictor,
+                    struct libPredictor_s   *predictor,
                     SRT_handle *handle, 
                     int loglevel, int logCount, char *logFileName);
 

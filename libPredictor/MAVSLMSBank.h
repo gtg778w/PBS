@@ -54,14 +54,14 @@ typedef struct MAVSLMSBank_s
                               (sizeof(double)*(32 + 16 + 8 + 4 + 2)*(2)) + \
                               (sizeof(int8_t)*(32 + 16 + 8 + 4 + 2)*(2)))
 
-void* pbsSRT_alloc_MAVSLMSBank( void);
-void pbsSRT_init_MAVSLMSBank(   void    *state);
-int pbsSRT_update_MAVSLMSBank(  void    *state, int64_t exec_time,
-                                int64_t *pu_c0, int64_t *pvar_c0,
-                                int64_t *pu_cl, int64_t *pvar_cl);
-int pbsSRT_predict_MAVSLMSBank( void    *state,
-                                int64_t *pu_c0, int64_t *pvar_c0,
-                                int64_t *pu_cl, int64_t *pvar_cl);
-void pbsSRT_free_MAVSLMSBank(   void    *state);
+void*   libPredictor_alloc_MAVSLMSBank( void);
+void    libPredictor_init_MAVSLMSBank(  void    *state);
+int libPredictor_update_MAVSLMSBank(    void    *state, int64_t exec_time,
+                                        int64_t *pu_c0, int64_t *pvar_c0,
+                                        int64_t *pu_cl, int64_t *pvar_cl);
+int libPredictor_predict_MAVSLMSBank(   void    *state,
+                                        int64_t *pu_c0, int64_t *pvar_c0,
+                                        int64_t *pu_cl, int64_t *pvar_cl);
+void    libPredictor_free_MAVSLMSBank(  void    *state);
 
 #endif

@@ -41,9 +41,11 @@ typedef int32_t  s32;
 
 #include "pbsuser.h"
 
+#include "libPredictor.h"
+
 int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime, 
                     double alpha,
-                    pbsSRT_predictor_t *predictor,
+                    libPredictor_t *predictor,
                     SRT_handle *handle, 
                     int loglevel, int logCount, char *logFileName)
 {

@@ -16,19 +16,19 @@ static const double  MABank_weights[MABank_FCOUNT] = {  (1/2.0), (1/4.0), (1/8.0
                                                         (1/16.0), (1/32.0), (1/64.0),
                                                         (1/128.0)};
 
-void* pbsSRT_alloc_MABank(void)
+void* libPredictor_alloc_MABank(void)
 {
     return malloc(MABank_size());
 }
 
-void pbsSRT_init_MABank(void    *state)
+void libPredictor_init_MABank(void    *state)
 {
     memset(state, 0, MABank_size());
 }
 
-int pbsSRT_update_MABank(   void    *state, int64_t exec_time,
-                            int64_t *pu_c0, int64_t *pvar_c0,
-                            int64_t *pu_cl, int64_t *pvar_cl)
+int libPredictor_update_MABank( void    *state, int64_t exec_time,
+                                int64_t *pu_c0, int64_t *pvar_c0,
+                                int64_t *pu_cl, int64_t *pvar_cl)
 {
     MABank_t *MABank_p  = (MABank_t*)state;
     double   observed   = (double)exec_time;
@@ -164,9 +164,9 @@ int pbsSRT_update_MABank(   void    *state, int64_t exec_time,
     return ret;
 }
 
-int pbsSRT_predict_MABank(  void   *state,
-                            int64_t *pu_c0, int64_t *pvar_c0,
-                            int64_t *pu_cl, int64_t *pvar_cl)
+int libPredictor_predict_MABank(void   *state,
+                                int64_t *pu_c0, int64_t *pvar_c0,
+                                int64_t *pu_cl, int64_t *pvar_cl)
 {
     MABank_t *MABank_p  = (MABank_t*)state;
 
@@ -187,7 +187,7 @@ int pbsSRT_predict_MABank(  void   *state,
     return ret;
 }
 
-void pbsSRT_free_MABank(  void    *state)
+void libPredictor_free_MABank(  void    *state)
 {
     free(state);
 }

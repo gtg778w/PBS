@@ -22,6 +22,7 @@ gcc -O3 -o sqrwavSRT  sqrwav_SRT.c pbsuser.c
 
 #include "sqrwav.h"
 #include "pbsuser.h"
+#include "libPredictor.h"
 #include "loadgen.h"
 
 /*****************************************************************************/
@@ -84,7 +85,7 @@ int main (int argc, char * const * argv)
     char* logfilename = "log.csv";
 
     //execution-time predictor related variables
-    pbsSRT_predictor_t predictor;
+    libPredictor_t predictor;
     char *predictor_name = "template";
 
     //square-wave generator
@@ -327,7 +328,7 @@ int main (int argc, char * const * argv)
     }
 
     //setup the predictor
-    ret = pbsSRT_getPredictor(&predictor, predictor_name);
+    ret = libPredictor_getPredictor(&predictor, predictor_name);
     if(-1 == ret)
     {
         fprintf(stderr, "pbsSRT_getPredictor with argument \"%s\" failed in main",

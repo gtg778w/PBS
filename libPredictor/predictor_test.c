@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 
-#include "pbsSRT_predictor.h"
+#include "libPredictor.h"
 
 int main(int argc, char ** argv)
 {
@@ -14,7 +14,7 @@ int main(int argc, char ** argv)
     size_t line_len = 0;
     
     char *predictor_name;
-    pbsSRT_predictor_t predictor;
+    libPredictor_t predictor;
     long long int temp;
     int64_t observed;
     int64_t u_c0 = 0, std_c0 = 0, u_cl = 0, std_cl = 0;
@@ -40,10 +40,10 @@ int main(int argc, char ** argv)
         goto exit0;
     }
     
-    ret = pbsSRT_getPredictor(&predictor, predictor_name);
+    ret = libPredictor_getPredictor(&predictor, predictor_name);
     if(ret != 0)
     {
-        fprintf(stderr, "pbsSRT_getPredictor for predictor name \"%s\"!\n",
+        fprintf(stderr, "libPredictor_getPredictor for predictor name \"%s\"!\n",
                         predictor_name);
         ret = -1;
         goto exit1;
@@ -90,7 +90,7 @@ int main(int argc, char ** argv)
     }
 
 exit2:
-    pbsSRT_freePredictor((&predictor));
+    libPredictor_freePredictor((&predictor));
     if(NULL != line)
     {
         free(line);

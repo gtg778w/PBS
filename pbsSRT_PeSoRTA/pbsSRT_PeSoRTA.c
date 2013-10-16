@@ -21,6 +21,7 @@
 #include <time.h>
 
 #include "pbsuser.h"
+#include "libPredictor.h"
 #include "PeSoRTA.h"
 
 /**************************************************************************
@@ -129,7 +130,7 @@ int main (int argc, char * const * argv)
     char* logfilename = "log.csv";
 
     //execution-time predictor related variables
-    pbsSRT_predictor_t predictor;
+    libPredictor_t predictor;
     char *predictor_name = "template";
 
     //workload related variables
@@ -276,7 +277,7 @@ int main (int argc, char * const * argv)
     }
 
     /*Setup the predictor*/
-    ret = pbsSRT_getPredictor(&predictor, predictor_name);
+    ret = libPredictor_getPredictor(&predictor, predictor_name);
     if(-1 == ret)
     {
         fprintf(stderr, "main: pbsSRT_getPredictor failed with argument \"%s\"\n",
@@ -397,7 +398,7 @@ exit2:
     
 exit1:
     /*Free the predictor*/
-    pbsSRT_freePredictor((&predictor));
+    libPredictor_freePredictor((&predictor));
     
 exit0:
     if(0 != ret)

@@ -26,13 +26,13 @@ typedef struct MABank_s
 #define MABank_size()    (   sizeof(MABank_t) + \
                              (sizeof(double)*(MABank_lengths[MABank_FCOUNT-1])))
 
-void* pbsSRT_alloc_MABank(  void);
-void pbsSRT_init_MABank(void    *state);
-int pbsSRT_update_MABank(   void    *state, int64_t exec_time,
-                            int64_t *pu_c0, int64_t *pvar_c0,
-                            int64_t *pu_cl, int64_t *pvar_cl);
-int pbsSRT_predict_MABank(  void    *state,
-                            int64_t *pu_c0, int64_t *pvar_c0,
-                            int64_t *pu_cl, int64_t *pvar_cl);
-void pbsSRT_free_MABank(void    *state);
+void*   libPredictor_alloc_MABank(  void);
+void    libPredictor_init_MABank(   void    *state);
+int libPredictor_update_MABank( void    *state, int64_t exec_time,
+                                int64_t *pu_c0, int64_t *pvar_c0,
+                                int64_t *pu_cl, int64_t *pvar_cl);
+int libPredictor_predict_MABank(void    *state,
+                                int64_t *pu_c0, int64_t *pvar_c0,
+                                int64_t *pu_cl, int64_t *pvar_cl);
+void libPredictor_free_MABank(  void    *state);
 

@@ -31,7 +31,7 @@ static const double  MABank_weights[MABank_FCOUNT] = {  (0.0), (1/2.0), (1/4.0),
                                                         (1/8.0), (1/16.0), (1/32.0), 
                                                         (1/64.0), (1/128.0) };
 
-void* pbsSRT_alloc_MAVSLMSBank(void)
+void* libPredictor_alloc_MAVSLMSBank(   void)
 {
     return malloc(MAVSLMSBank_size());
 }
@@ -128,7 +128,7 @@ static void inline MABank_init(MAVSLMSBank_t *MAVSLMSBank_p)
     }
 }
 
-void pbsSRT_init_MAVSLMSBank(void    *state)
+void libPredictor_init_MAVSLMSBank( void    *state)
 {
     MAVSLMSBank_t *MAVSLMSBank_p = (MAVSLMSBank_t*)state;
     
@@ -421,9 +421,9 @@ static void inline VSLMS_predict(MAVSLMSBank_t *MAVSLMSBank_p)
 Loop through each filter
     for each filter, extract the appropriate buffers and update the coefficients
 */
-int pbsSRT_update_MAVSLMSBank(  void    *state, int64_t exec_time,
-                                int64_t *pu_c0, int64_t *pvar_c0,
-                                int64_t *pu_cl, int64_t *pvar_cl)
+int libPredictor_update_MAVSLMSBank(void    *state, int64_t exec_time,
+                                    int64_t *pu_c0, int64_t *pvar_c0,
+                                    int64_t *pu_cl, int64_t *pvar_cl)
 {
     int ret;
     
@@ -482,9 +482,9 @@ int pbsSRT_update_MAVSLMSBank(  void    *state, int64_t exec_time,
     return ret;
 }
 
-int pbsSRT_predict_MAVSLMSBank( void    *state,
-                                int64_t *pu_c0, int64_t *pvar_c0,
-                                int64_t *pu_cl, int64_t *pvar_cl)
+int libPredictor_predict_MAVSLMSBank(   void    *state,
+                                        int64_t *pu_c0, int64_t *pvar_c0,
+                                        int64_t *pu_cl, int64_t *pvar_cl)
 {
     int ret;
     
@@ -512,7 +512,7 @@ int pbsSRT_predict_MAVSLMSBank( void    *state,
     return ret;
 }
 
-void pbsSRT_free_MAVSLMSBank(   void    *state)
+void libPredictor_free_MAVSLMSBank( void    *state)
 {
     free(state);
 }
