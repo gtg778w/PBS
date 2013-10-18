@@ -26,7 +26,7 @@ libPredictor.a:
 	$(MAKE) -C $(pred_LIBDIR)
 	
 predictor_test: libPredictor.a $(PRDTST_SRCDIR)/predictor_test.c
-	$(CC) -Wall -Wmissing-prototypes -L $(pred_LIBDIR) -I $(pred_LIBDIR) -o $(BINDIR)/predictor_test $(PRDTST_SRCDIR)/predictor_test.c -lPredictor
+	$(CC) -Wall -Wmissing-prototypes -L $(pred_LIBDIR) -I $(pred_LIBDIR) -o $(BINDIR)/predictor_test $(PRDTST_SRCDIR)/predictor_test.c -lPredictor -lrt
 
 $(TIMING_SRCDIR)/workload_timing.o: $(TIMING_SRCDIR)/workload_timing.c $(PeSoRTA_INCDIR)/PeSoRTA.h
 	$(CC) $(CFLAGS) -I $(PeSoRTA_INCDIR) -o $(TIMING_SRCDIR)/workload_timing.o \
