@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <stdlib.h>
-#include "libpredictor.h"
+#include "libPredictor.h"
 
 void* libPredictor_alloc_template(void)
 {
