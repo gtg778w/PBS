@@ -17,7 +17,7 @@ clean:
 	$(MAKE) -C pbs_util_apps/ clean
 	$(MAKE) -C pbsSRT_PeSoRTA/ clean
 	$(MAKE) -C TSP_Predictor_test/ clean
-	$(MAKE) -C pbsSRT_sqrwav/
+	$(MAKE) -C pbsSRT_sqrwav/ clean
 	$(MAKE) -C pbsAllocator/ clean
 	$(MAKE) -C pbs_module/ clean
 	$(MAKE) -C governor/ clean
