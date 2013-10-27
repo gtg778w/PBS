@@ -4,7 +4,7 @@ CFLAGS=-c -Wall -Wmissing-prototypes
 AR=ar
 ARFLAGS= -rsv
 
-PREDICTORS=libPredictor_template.o MABank.o MAVSLMSBank.o
+PREDICTORS=libPredictor_template.o MABank.o MAVSLMSBank.o MA.o
 
 LIBOBJS= libPredictor.o $(PREDICTORS)
 
@@ -19,6 +19,12 @@ libPredictor.o: libPredictor.c libPredictor.h
 libPredictor_template.o: libPredictor_template.c
 	$(CC) $(CFLAGS) -o libPredictor_template.o libPredictor_template.c
 
+libPredictor_variance.o: libPredictor_variance.c libPredictor_variance.h
+	$(CC) $(CFLAGS) -o libPredictor_variance.o libPredictor_variance.c
+
+MA.o: MA.c MA.h libPredictor_variance.o
+	$(CC) $(CFLAGS) -g -O3 -o MA.o MA.c
+	
 MABank.o: MABank.c MABank.h
 	$(CC) $(CFLAGS) -g -O3 -o MABank.o MABank.c
 

@@ -40,11 +40,26 @@ const libPredictor_template_t mabank_template
         }
 };
 
+const libPredictor_template_t ma_template
+=
+{
+    .name = "ma",
+    .next = &mabank_template,
+    .predictor = 
+    {
+        .alloc  =   libPredictor_alloc_MA,
+        .init   =   libPredictor_init_MA,
+        .update =   libPredictor_update_MA,
+        .predict=   libPredictor_predict_MA,
+        .free   =   libPredictor_free_MA
+        }
+};
+
 const libPredictor_template_t template_template
 =
 {
     .name = "template",
-    .next = &mabank_template,
+    .next = &ma_template,
     .predictor = 
     {
         .alloc  =   libPredictor_alloc_template,

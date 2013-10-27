@@ -1,3 +1,6 @@
+#ifndef MABANK_INCLUDE
+#define MABANK_INCLUDE
+
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
@@ -36,3 +39,4 @@ int libPredictor_predict_MABank(void    *state,
                                 int64_t *pu_cl, int64_t *pvar_cl);
 void libPredictor_free_MABank(  void    *state);
 
+#endif

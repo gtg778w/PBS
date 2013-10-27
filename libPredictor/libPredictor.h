@@ -2,6 +2,7 @@
 #define PBSPREDICTOR_INCLUDE
 
 #include <stdint.h>
+#include "MA.h"
 #include "MABank.h"
 #include "MAVSLMSBank.h"
 
