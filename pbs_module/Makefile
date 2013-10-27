@@ -18,6 +18,6 @@ all:
 	$(MAKE) -C $(KERNELDIR) M=$(PWD) KBUILD_EXTRA_SYMBOLS=$(GOVSYMS) modules
 
 clean:
-	$(MAKE) -C $(KERNELDIR) M=$(PWD) ./ clean
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) clean
 	$(RM) -r Module.markers modules.order Module.symvers .tmp_versions/
 	
