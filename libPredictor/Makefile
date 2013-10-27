@@ -6,7 +6,7 @@ ARFLAGS= -rsv
 
 PREDICTORS=libPredictor_template.o MABank.o MAVSLMSBank.o MA.o
 
-LIBOBJS= libPredictor.o $(PREDICTORS)
+LIBOBJS= libPredictor.o libPredictor_variance.o $(PREDICTORS)
 
 all: libPredictor.a
 
@@ -16,11 +16,11 @@ libPredictor.a: $(LIBOBJS)
 libPredictor.o: libPredictor.c libPredictor.h
 	$(CC) $(CFLAGS) -o libPredictor.o libPredictor.c
 
-libPredictor_template.o: libPredictor_template.c
-	$(CC) $(CFLAGS) -o libPredictor_template.o libPredictor_template.c
-
 libPredictor_variance.o: libPredictor_variance.c libPredictor_variance.h
 	$(CC) $(CFLAGS) -o libPredictor_variance.o libPredictor_variance.c
+
+libPredictor_template.o: libPredictor_template.c
+	$(CC) $(CFLAGS) -o libPredictor_template.o libPredictor_template.c
 
 MA.o: MA.c MA.h libPredictor_variance.o
 	$(CC) $(CFLAGS) -g -O3 -o MA.o MA.c
