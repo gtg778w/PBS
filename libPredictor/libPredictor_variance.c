@@ -31,7 +31,7 @@ void libPredictor_dvariance(double new_val,
         x_buffer[0]    = prev_indep_var;
         
     /*The remaining iterations are done inside the loop*/
-    for(i = 1, n = 0.0; i < limit; i++, n+=1.0)
+    for(i = 1, n = 2.0; i < limit; i++, n+=1.0)
     {
         /*The following two blocks of code are based on the recursive relation
         presented by Knuth*/
