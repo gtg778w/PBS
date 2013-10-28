@@ -71,7 +71,7 @@
         echo
         
         #do the prediction
-        ${bin} -I ${timcsv_name} -P ${predictor} -L ${prdcsv_name}
+        ${bin} -r -I ${timcsv_name} -P ${predictor} -L ${prdcsv_name}
         
     end
 
