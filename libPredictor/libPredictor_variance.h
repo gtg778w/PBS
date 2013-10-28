@@ -21,4 +21,14 @@ void libPredictor_dvariance(double  new_val,
                             int32_t limit,      double *x_buffer,
                             double  *mean_p,    double *variance_p);
 
+/*
+    libPredictor_fvariance:
+    
+    similar to libPredictor_dvariance, except that the observations and buffer are stored 
+    as floats to save space
+*/
+void libPredictor_fvariance(float   new_val,
+                            int32_t limit,      float  *x_buffer,
+                            double  *mean_p,    double *variance_p);
+
 #endif

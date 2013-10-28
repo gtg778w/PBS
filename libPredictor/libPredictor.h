@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "MA.h"
 #include "MABank.h"
+#include "MABank2.h"
 #include "MAVSLMSBank.h"
 
 typedef void* (*libPredictor_alloc_func_t)(void);

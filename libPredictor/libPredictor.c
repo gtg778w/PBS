@@ -25,11 +25,26 @@ const libPredictor_template_t mavslmsbank_template
         }
 };
 
+const libPredictor_template_t mabank2_template
+=
+{
+    .name = "mabank2",
+    .next = &mavslmsbank_template,
+    .predictor = 
+    {
+        .alloc  =   libPredictor_alloc_MABank2,
+        .init   =   libPredictor_init_MABank2,
+        .update =   libPredictor_update_MABank2,
+        .predict=   libPredictor_predict_MABank2,
+        .free   =   libPredictor_free_MABank2 
+    }
+};
+
 const libPredictor_template_t mabank_template
 =
 {
     .name = "mabank",
-    .next = &mavslmsbank_template,
+    .next = &mabank2_template,
     .predictor = 
     {
         .alloc  =   libPredictor_alloc_MABank,
@@ -37,7 +52,7 @@ const libPredictor_template_t mabank_template
         .update =   libPredictor_update_MABank,
         .predict=   libPredictor_predict_MABank,
         .free   =   libPredictor_free_MABank 
-        }
+    }
 };
 
 const libPredictor_template_t ma_template
