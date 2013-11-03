@@ -26,16 +26,16 @@ typedef struct SRT_handle_s
     uint64_t            reservation_period;
 
     uint64_t            estimated_mean_exectime;
-    double              alpha_squared;
+    uint32_t            alpha_fp;
 
     FILE                *log_file;
     struct SRT_job_log  *log;
 
-    int64_t             *pu_c0;
-    int64_t             *pstd_c0;
-    int64_t             *pu_cl;
-    int64_t             *pstd_cl;
     int64_t             job_count;
+    int64_t             *pu_c0;
+    int64_t             *pvar_c0;
+    int64_t             *pu_cl;
+    int64_t             *pvar_cl;
     int                 log_size;
     int                 loglevel;
 

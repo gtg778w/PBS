@@ -145,7 +145,8 @@ ssize_t jb_mgt_write(   struct file *filep,
     struct SRT_summary __user *summary_p = NULL;
     
     u64 task_period;
-    u64 sp_per_tp; /*reservation periods in a task period*/
+    u64 sp_per_tp; /*reservation periods in a task period. 64 bits here to check for
+                     invalid large values*/
     
     void __user *budget_type_p;
     enum pbs_budget_type budget_type;
@@ -201,7 +202,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             }
                 
             /*Check that the task period is sufficiently small*/
-            if( (sp_per_tp & ((s64)(-1) << 32)) != 0)
+            if( (sp_per_tp & ((s64)(-1) << 16)) != 0)
             {
                 printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
                                     "command for the task period by process %d. "
@@ -232,7 +233,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             }
             
             SRT_struct->timing_struct.task_period.tv64 = task_period;
-            (SRT_struct->loaddata)->sp_per_tp = sp_per_tp;
+            (SRT_struct->loaddata)->sp_per_tp = (u16)sp_per_tp;
             /*The conditoins and passed values are valid*/
             SRT_struct->state = SRT_CONFIGURED;
             break;
@@ -258,10 +259,11 @@ ssize_t jb_mgt_write(   struct file *filep,
             /*Insert the command arguments into the loaddata structure.
             This is done to allow the allocator task access to the execution-time
             prediction performed by the SRT task.*/
-            SRT_struct->loaddata->u_c0   = cmd.args[0];
-            SRT_struct->loaddata->var_c0 = cmd.args[1];
-            SRT_struct->loaddata->u_cl   = cmd.args[2];
-            SRT_struct->loaddata->var_cl = cmd.args[3];
+            SRT_struct->loaddata->u_c0      = cmd.args[0];
+            SRT_struct->loaddata->var_c0    = cmd.args[1];
+            SRT_struct->loaddata->u_cl      = cmd.args[2];
+            SRT_struct->loaddata->var_cl    = cmd.args[3];
+            SRT_struct->loaddata->alpha_fp  = cmd.args[4];
             
             if(SRT_STARTED == SRT_struct->state)
             {                                                

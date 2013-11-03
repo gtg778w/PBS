@@ -16,10 +16,11 @@
 
 #define PBS_JBMGT_CMD_NEXTJOB   (2)
 /*
-    0) u_c1
-    1) std_c1
+    0) u_c0
+    1) var_c0
     2) u_cl
-    3) std_cl
+    3) var_cl
+    4) alpha_fp //a 32bit fixed-point number with 16 fractional bits
 */
 
 #define PBS_JBMGT_CMD_STOP      (3)
@@ -36,7 +37,7 @@
 typedef struct job_mgt_cmd_s
 {
     int             cmd;
-    s64         args[4];
+    s64         args[5];         
 } job_mgt_cmd_t;
 
 /*For each time-related varriable, a VIC-related varriable has been created*/

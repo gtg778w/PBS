@@ -52,6 +52,8 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     pid_t mypid;
     int min_priority;
 
+    uint32_t alpha_fp;
+
     struct sched_param my_sched_params;
 
     int procfile;
@@ -61,6 +63,18 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     int ret_val;
 
     mypid =  getpid();
+
+
+/***************************************************************************/
+//check the alpha value
+    alpha = alpha * (double)(((uint32_t)1) << 16);
+    if(alpha >= (double)(((uint64_t)1) << 32))
+    {
+        fprintf(stderr, "pbs_SRT_setup: alpha value is too large. Must be less"
+                        " than %f!\n", (double)((uint32_t)1 << 16));
+        goto straight_exit;
+    }
+    alpha_fp = (uint32_t)alpha;
 
 /***************************************************************************/
 //setup Linux scheduling parameters
@@ -75,7 +89,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     {
         perror("ERROR: pbs_SRT_setup");
         fprintf(stderr, "pbs_SRT_setup: Failed to set scheduling policy!\n");
-        goto streight_exit;
+        goto straight_exit;
     }
 
 /***************************************************************************/
@@ -91,7 +105,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
         {
             perror("pbs_SRT_setup: Failed to open log file: ");
             ret_val = -1;
-            goto streight_exit;
+            goto straight_exit;
         }
 
         if(loglevel >= pbsSRT_LOGLEVEL_FULL)
@@ -122,9 +136,9 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
             }
             else
             {
-                handle->pstd_c0 = &(handle->pu_c0[logCount]);
-                handle->pu_cl   = &(handle->pstd_c0[logCount]);
-                handle->pstd_cl =  &(handle->pu_cl[logCount]);
+                handle->pvar_c0 = &(handle->pu_c0[logCount]);
+                handle->pu_cl   = &(handle->pvar_c0[logCount]);
+                handle->pvar_cl =  &(handle->pu_cl[logCount]);
             }
             
             ret_val = mlock(handle->pu_c0, (logCount*4 * sizeof(int64_t)));
@@ -161,10 +175,10 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
         goto close_exit;
     }
     
-    handle->period          = period;
+    handle->period      = period;
     handle->estimated_mean_exectime 
-                            = estimated_mean_exectime;
-    handle->alpha_squared   = alpha * alpha;
+                        = estimated_mean_exectime;
+    handle->alpha_fp    = alpha_fp;
 
     cmd.cmd = PBS_JBMGT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
@@ -191,9 +205,9 @@ free2_exit:
     {
         free(handle->pu_c0);
         handle->pu_c0   = NULL;
-        handle->pstd_c0 = NULL;
+        handle->pvar_c0 = NULL;
         handle->pu_cl   = NULL;
-        handle->pstd_cl = NULL;
+        handle->pvar_cl = NULL;
     }
 free_exit:
     if(loglevel >= pbsSRT_LOGLEVEL_FULL)
@@ -207,7 +221,7 @@ lclose_exit:
         fclose(handle->log_file);
         handle->log_file = NULL;
     }
-streight_exit:
+straight_exit:
     return ret_val;
 }
 
@@ -227,6 +241,7 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     cmd.args[1] = 0;
     cmd.args[2] = handle->estimated_mean_exectime;
     cmd.args[3] = 0;
+    cmd.args[4] = handle->alpha_fp;
     
     /*If "FULL" logging is enabled, log the predicted execution time and the estimated
     variance in the prediction error*/
@@ -234,9 +249,9 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
         (handle->job_count < handle->log_size))
     {
         handle->pu_c0[0]    = cmd.args[0];
-        handle->pstd_c0[0]  = cmd.args[1];
+        handle->pvar_c0[0]  = cmd.args[1];
         handle->pu_cl[0]    = cmd.args[2];
-        handle->pstd_cl[0]  = cmd.args[3];
+        handle->pvar_cl[0]  = cmd.args[3];
     }
 
     /*Issue the NEXTJOB command*/
@@ -266,8 +281,8 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 
     job_mgt_cmd_t cmd;
 
-    int64_t u_c0, std_c0;
-    int64_t u_cl, std_cl;
+    int64_t u_c0, var_c0;
+    int64_t u_cl, var_cl;
 
     /*FIXME: Use VIC rather than runtime*/
     /*Get various data such as execution time for the job that just completed*/
@@ -294,24 +309,25 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     /*Update the predictor and predict the execution time of the next job*/
     ret = handle->predictor->update(handle->predictor->state,
                                     CPU_usage,
-                                    &u_c0, &std_c0,
-                                    &u_cl, &std_cl);
+                                    &u_c0, &var_c0,
+                                    &u_cl, &var_cl);
     if(ret == -1)
     {
         /*If the predictor is not ready to produce valid output (still warming up)
         use the budget values specified in the command-line arguments*/
         u_c0    = handle->estimated_mean_exectime;
-        std_c0  = 0;
+        var_c0  = 0;
         u_cl    = handle->estimated_mean_exectime;
-        std_cl  = 0;
+        var_cl  = 0;
     }
     
     /*Issue the PBS_JBMGT_CMD_NEXTJOB command with the updated prediction*/
     cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
     cmd.args[0] = u_c0;
-    cmd.args[1] = (int64_t)(handle->alpha_squared * (double)std_c0);
+    cmd.args[1] = var_c0;
     cmd.args[2] = u_cl;
-    cmd.args[3] = (int64_t)(handle->alpha_squared * (double)std_cl);
+    cmd.args[3] = var_cl;
+    cmd.args[4] = handle->alpha_fp;
     ret = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret != sizeof(cmd))
     {
@@ -325,9 +341,9 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         (handle->job_count < handle->log_size))
     {
         handle->pu_c0[handle->job_count] = cmd.args[0];
-        handle->pstd_c0[handle->job_count] = cmd.args[1];
+        handle->pvar_c0[handle->job_count] = cmd.args[1];
         handle->pu_cl[handle->job_count] = cmd.args[2];
-        handle->pstd_cl[handle->job_count] = cmd.args[3];
+        handle->pvar_cl[handle->job_count] = cmd.args[3];
     }
     
     ret = 0;
@@ -402,9 +418,9 @@ void pbsSRT_close(SRT_handle *handle)
                                             log_entry->last_sp_budget_allocated,
                                             log_entry->last_sp_budget_used_sofar,
                                             (unsigned long)handle->pu_c0[i],
-                                            (unsigned long)handle->pstd_c0[i],
+                                            (unsigned long)handle->pvar_c0[i],
                                             (unsigned long)handle->pu_cl[i],
-                                            (unsigned long)handle->pstd_cl[i]);
+                                            (unsigned long)handle->pvar_cl[i]);
             }
 
             free(handle->pu_c0);

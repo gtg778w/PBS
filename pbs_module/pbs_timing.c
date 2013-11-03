@@ -155,7 +155,7 @@ void sched_period_tick(void)
     struct SRT_timing_struct* SRT_timing_struct_p;
     struct SRT_struct *SRT_struct_p;
 
-    int sp_till_deadline, sp_per_tp;
+    u16 sp_till_deadline, sp_per_tp;
 
     /*Determine the number of instruction retired, energy consumed, and time spent in 
     each mode of operation over the previous reservation period*/

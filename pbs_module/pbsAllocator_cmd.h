@@ -34,22 +34,23 @@ typedef struct _SRT_loaddata
     s64 var_c0;             // 8 bytes
     s64 u_cl;               // 8 bytes
     s64 var_cl;             // 8 bytes
+    u32 alpha_fp;           // 4 bytes fixed point value containing 16 fractional bits
     u32 pid;                // 4 bytes
     u32 current_runtime;    // 4 bytes
-    u32 sp_till_deadline;   // 4 bytes
-    u32 sp_per_tp;          // 4 bytes
+    u16 sp_till_deadline;   // 2 bytes
+    u16 sp_per_tp;          // 2 bytes
 
-    unsigned short  queue_length;   // 2 bytes
+    u16 queue_length;   // 2 bytes
 
     //In a 2MB page, can have at most 2^15 elements of size 64B
     //The index of the next valid structure can be stored in a
     //short
-    unsigned short  next;   // 2 bytes
-    unsigned short  prev;   // 2 bytes
+    u16 next;   // 2 bytes
+    u16 prev;   // 2 bytes
 
-    unsigned char  _padding[2];//2 bytes
+    u16 _padding[2];//2 bytes
 
-    // 8 + 4*8 + 4*4 + 3*2 + 2*1= 64 bytes
+    // 8 + 4*8 + 3*4 + 5*2 + 2*1= 64 bytes
 } SRT_loaddata_t;
 
 typedef struct _loaddata_list_header
