@@ -1,0 +1,125 @@
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10256
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10258
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10262
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10264
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10268
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10270
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10274
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10276
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10280
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10282
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!Approximate total duration of experiment: 7:30:6.335578
+[2] 10286
+ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[2]  - Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+[1] 10288
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10292
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10294
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10298
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10300
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
+[1]  + Exit -1                /home/gtg778w/Desktop/bin//ffmpeg_pbsSRT -f -W  ...
+Approximate total duration of experiment: 7:30:6.335578
+[1] 10304
+(T, Q) = (7111111, 1000000), count = 84394, time-based budget, log_level = 0
+allocator_setup: mlock failed for the presaturation_budget_array!: Cannot allocate memory
+allocator_setup failed!
+[1]  + Done                   /home/gtg778w/Desktop/bin//pbsAllocator -f -s 84394 -P 7111111 -B 1000000 -L 0
+[1] 10306
+pbspoll_check_active: fopen failed for "/proc/sched_pbs_actv": No such file or directory
+main: pbspoll_check_active failed!
+/home/gtg778w/Desktop/bin//poll_pbs_actv: main failed!ERROR: pbs_SRT_setup: Operation not permitted
+pbs_SRT_setup: Failed to set scheduling policy!
+main: pbsSRT_setup failed!
+/home/gtg778w/Desktop/bin//ffmpeg_pbsSRT: main failed!
