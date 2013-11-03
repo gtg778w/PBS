@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="10000000"
+    set Ta="7111111"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="12907"
+    set sa="18000"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.arthur.spx"
+    set CONFIGNAME="enc.beethoven.wav.mp3"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="5378"
+    set J1="5000"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mavslmsbank"
+    set A1="mabank"
     #The task period (in ns) of the SRT application
-    set p1="20000000"
+    set p1="21333333"
     #The estimated mean execution time of the SRT application
-    set c1="55488"
+    set c1="699097"
     #Alpha values of the workload
-    set alpha_array=("0.61123" "0.65517" "0.69910" "0.75280" "0.81627" "0.88949" "0.99689" "1.19217" "3.12538" )
+    set alpha_array=("0.50139" "0.52336" "0.55265" "0.58682" "0.62587" "0.67469" "0.73328" "0.82115" "0.97737" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 1:36:48.240000"
+            echo "Approximate total duration of experiment: 1:35:59.999910"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}

@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mabank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="10416666"
+    set Ta="14222222"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="7518"
+    set sa="9075"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.sintel.mp4"
+    set CONFIGNAME="enc.arthur.wav.amr"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="1253"
+    set J1="2521"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mavslmsbank"
+    set A1="mabank"
     #The task period (in ns) of the SRT application
-    set p1="41666666"
+    set p1="42666666"
     #The estimated mean execution time of the SRT application
-    set c1="10011612"
+    set c1="1340677"
     #Alpha values of the workload
-    set alpha_array=("0.59658" "0.66493" "0.74304" "0.85044" "0.99689" "1.17264" "1.46555" "1.87563" "3.12538" )
+    set alpha_array=("0.92367" "0.94564" "0.96272" "0.98225" "2.34428" "2.64207" "2.67869" "2.71042" "2.74947" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 0:58:44.062274"
+            echo "Approximate total duration of experiment: 1:36:48.383909"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}

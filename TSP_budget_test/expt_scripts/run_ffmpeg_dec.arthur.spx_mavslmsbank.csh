@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mavslmsbank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="7111111"
+    set Ta="10000000"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="84394"
+    set sa="12907"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="enc.beethoven.wav.mp3"
+    set CONFIGNAME="dec.arthur.spx"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="23443"
+    set J1="5378"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mabank"
+    set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
-    set p1="21333333"
+    set p1="20000000"
     #The estimated mean execution time of the SRT application
-    set c1="699097"
+    set c1="55488"
     #Alpha values of the workload
-    set alpha_array=("0.50139" "0.52336" "0.55265" "0.58682" "0.62587" "0.67469" "0.73328" "0.82115" "0.97737" )
+    set alpha_array=("0.61123" "0.65517" "0.69910" "0.75280" "0.81627" "0.88949" "0.99689" "1.19217" "3.12538" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 7:30:6.335578"
+            echo "Approximate total duration of experiment: 1:36:48.240000"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}

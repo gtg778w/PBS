@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mabank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="7111111"
+    set Ta="10000000"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="84394"
+    set sa="4317"
     
     #The name of the configuration
-    set APPNAME="ffmpeg"
-    set CONFIGNAME="enc.beethoven.wav.mp3"
+    set APPNAME="sqrwav"
+    set CONFIGNAME="example"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="23443"
+    set J1="1799"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mavslmsbank"
+    set A1="mabank"
     #The task period (in ns) of the SRT application
-    set p1="21333333"
+    set p1="20000000"
     #The estimated mean execution time of the SRT application
-    set c1="699097"
+    set c1="3055338"
     #Alpha values of the workload
-    set alpha_array=("0.62587" "0.69422" "0.77233" "0.86997" "0.99689" "1.15311" "1.38744" "1.69988" "2.26617" )
+    set alpha_array=("0.81627" "0.90902" "1.01642" "1.09453" "1.18240" "1.30933" "1.42650" "1.58271" "1.79752" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 7:30:6.335578"
+            echo "Approximate total duration of experiment: 0:32:22.920000"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}

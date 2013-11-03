@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mavslmsbank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="13060000"
+    set Ta="11111111"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="11496"
+    set sa="7199"
     
     #The name of the configuration
     set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.mozart.mp3"
+    set CONFIGNAME="enc.highway.y4m.mp4"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="4790"
+    set J1="2000"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
-    set p1="26120000"
+    set p1="33333333"
     #The estimated mean execution time of the SRT application
-    set c1="77970"
+    set c1="15036753"
     #Alpha values of the workload
-    set alpha_array=("0.54288" "0.61611" "0.70398" "0.81138" "0.92855" "1.09453" "1.32886" "1.87563" "4.37513" )
+    set alpha_array=("0.86020" "0.93343" "1.03595" "1.15311" "1.27028" "1.41673" "1.59248" "1.83657" "2.50050" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 1:52:36.199200"
+            echo "Approximate total duration of experiment: 0:59:59.999964"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}

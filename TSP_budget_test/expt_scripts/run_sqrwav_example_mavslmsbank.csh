@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mavslmsbank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -34,29 +34,29 @@
     endif
     
     #The period of the allocator task
-    set Ta="14222222"
+    set Ta="10000000"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="9075"
+    set sa="4317"
     
     #The name of the configuration
-    set APPNAME="ffmpeg"
-    set CONFIGNAME="enc.arthur.wav.amr"
+    set APPNAME="sqrwav"
+    set CONFIGNAME="example"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="2521"
+    set J1="1799"
     #The predictor to be used for budget allocation by the SRT application
     set A1="mavslmsbank"
     #The task period (in ns) of the SRT application
-    set p1="42666666"
+    set p1="20000000"
     #The estimated mean execution time of the SRT application
-    set c1="1340677"
+    set c1="3055338"
     #Alpha values of the workload
-    set alpha_array=("0.23533" "0.34273" "0.44037" "0.57706" "0.78209" "0.95784" "1.28980" "2.18806" "2.81294" )
+    set alpha_array=("0.85044" "0.93831" "1.02619" "1.10429" "1.20193" "1.30933" "1.43626" "1.59248" "1.83657" )
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 1:36:48.383909"
+            echo "Approximate total duration of experiment: 0:32:22.920000"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}
