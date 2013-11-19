@@ -13,6 +13,9 @@ function [prediction_summary] = process_predictor_outputs(  prdtst_dir, ...
     workload_exectime = [];
     predictor_error = [];
     predictor_overhead  = [];
+
+    error_acor_max = [];
+    error_acor_max_lag = [];
     
     %Go through all files in the workload directory and parse the ones that are valid
     file_count = length(file_name_list);    
@@ -62,14 +65,24 @@ function [prediction_summary] = process_predictor_outputs(  prdtst_dir, ...
         predictor_error = [predictor_error; local_pred_error];
         predictor_overhead  = [predictor_overhead; overhead];
         workload_exectime = [workload_exectime; exec_times];
+        
+        %compute the autocorrelation in the prediction error
+        error_acor = autocor(local_pred_error, 100);
+        error_acor = error_acor(2:end);
+        [error_acor_max_local, error_acor_max_lag_local] = max(error_acor);
+        error_acor_max = [error_acor_max, error_acor_max_local];
+        error_acor_max_lag = [error_acor_max_lag, error_acor_max_lag_local];
     end
 
     size(predictor_error);
     
     prediction_summary.rms_error = sqrt(mean( predictor_error .* predictor_error ));
+    prediction_summary.acor_max_error = error_acor_max;
+    prediction_summary.acor_max_lag_error = error_acor_max_lag;
+    prediction_summary.mean_exectimes= mean(workload_exectime);
     prediction_summary.rms_exectimes = sqrt(mean( workload_exectime .* workload_exectime ));
-    prediction_summary.var_exectimes = std(workload_exectime);
+    prediction_summary.std_exectimes = std(workload_exectime);
     prediction_summary.mean_overhead = mean(predictor_overhead);
-    prediction_summary.p99_overhead = prctile(predictor_overhead, 99);
+    prediction_summary.p99_overhead = prctile(predictor_overhead, 99);    
 end
 
