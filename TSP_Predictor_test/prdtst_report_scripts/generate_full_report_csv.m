@@ -4,7 +4,7 @@
     report_name = '../prdtst_reports/ful_prdtst_report.csv';
     fid = fopen(report_name, 'w');
 
-    fprintf(fid, 'application.config,\t mean,\t var,\t predictor,\t overhead,\t rms error\n');
+    fprintf(fid, 'application.config,\t mean,\t var,\t predictor,\t overhead,\t rms error,\t acor error\n');
 
     timing_summary_dir = '../timing_data_summary/';
     prdtst_summary_dir = '../prdtst_data_summary';
@@ -67,9 +67,10 @@
                                                         config);
             load(timing_file_name);
             timing_summary = summary;
-            fprintf(fid, '%s.%s,\t %.3e,\t %.3e\n', application, config, ...
-                                                    timing_summary.mean, ...
-                                                    timing_summary.std);
+            fprintf(fid, '%s,\t %.3e,\t %.3e,\t %.2f\n',config, ...
+                                                        timing_summary.mean, ...
+                                                        timing_summary.std, ...
+                                                        timing_summary.max_acor(1));
                         
             predictor_filelist = readdir(subsubdir_path);
             predictor_filecount= length(predictor_filelist);
@@ -100,10 +101,11 @@
                 
                 load(predsummary_path);
                 prediction_summary = summary;
-                fprintf(fid, ',\t ,\t ,\t %s,\t %.3e,\t %.3e\n', 
+                fprintf(fid, ', , , %s,\t %.3f,\t %.2f,\t %.2f\n', 
                             prediction_summary.predictor, ...
                             prediction_summary.p99_overhead, ...
-                            prediction_summary.rms_error);
+                            prediction_summary.rms_error/timing_summary.std,
+                            prediction_summary.acor_max_error(1));
             end
         end
     end
