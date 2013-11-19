@@ -67,7 +67,7 @@ SRT_timing_struct
 Everything related to the loaddata structures
 */
 
-#include "pbsSRT_cmd.h"
+#include "SRT_cmd.h"
 /*
 Definitions that have to be shared with SRT tasks
 e.g. job_mgt_cmd_t

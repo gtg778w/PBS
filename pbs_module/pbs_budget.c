@@ -9,7 +9,7 @@
     LAMbS_VIC_get
 */
 
-static enum pbs_budget_type pbs_budget_type = PBS_BUDGET_ns;
+static enum budget_type budget_type = BUDGET_ns;
 
 static u64 CPUusage_last_sample_value;
 static u64 CPUusage_last_reservation_period;
@@ -22,11 +22,11 @@ void    init_CPUusage_statistics(void)
     now_VIC = LAMbS_VIC_get(&now);
     CPUusage_last_reservation_period = 0;
     
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         CPUusage_last_sample_value = now_VIC;
     }
-    else /*(PBS_BUDGET_ns == budget_type)*/
+    else /*(BUDGET_ns == budget_type)*/
     {
         CPUusage_last_sample_value = now;
     }
@@ -39,12 +39,12 @@ void    update_CPUusage_statistics(void)
     /*  obtain the current time and VIC */
     now_VIC = LAMbS_VIC_get(&now);
 
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         CPUusage_last_reservation_period = now_VIC - CPUusage_last_sample_value;
         CPUusage_last_sample_value = now_VIC;
     }
-    else /*(PBS_BUDGET_ns == budget_type)*/
+    else /*(BUDGET_ns == budget_type)*/
     {
         CPUusage_last_reservation_period = now - CPUusage_last_sample_value;
         CPUusage_last_sample_value = now;
@@ -56,15 +56,15 @@ void    update_CPUusage_statistics(void)
 #define PBS_BUDGET_IS_SLEEPING(budget_struct_p)    \
         (budget_struct_p->flags & PBS_BUDGET_SLEEPING)
 
-/*  Access to the pbs_budget_type variable is controlled through these set and get
+/*  Access to the budget_type variable is controlled through these set and get
     functions and to prevent it from being set to an erroneous value  */
-int pbs_budget_settype(enum pbs_budget_type budget_type)
+int pbs_budget_settype(enum budget_type budget_type)
 {
     int ret = 0;
     
-    if( (PBS_BUDGET_VIC == budget_type) || (PBS_BUDGET_ns == budget_type))
+    if( (BUDGET_VIC == budget_type) || (BUDGET_ns == budget_type))
     {
-        pbs_budget_type = budget_type;
+        budget_type = budget_type;
     }
     else
     {
@@ -74,9 +74,9 @@ int pbs_budget_settype(enum pbs_budget_type budget_type)
     return ret;
 }
 
-enum pbs_budget_type pbs_budget_gettype(void)
+enum budget_type pbs_budget_gettype(void)
 {
-    return pbs_budget_type;
+    return budget_type;
 }
 
 
@@ -131,7 +131,7 @@ void pbs_budget_jobboundary1(struct SRT_struct *ss)
     (ss->log).last_sp_budget_allocated   = (budget_struct_p->sp_budget);
     
     /*  Determine the cpu-usage in the current reservation period*/
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         current_rp_budgetusage = pbs_budget_VIC_get_rpusage(budget_struct_p, now_VIC, 0);
     }
@@ -187,7 +187,7 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
     now_VIC = LAMbS_VIC_get(&now);
 
     /*  Start the budget_enforcement_timer */
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         (SRT_struct_p->loaddata)->current_runtime = 
                                 pbs_budget_VIC_get_jbusage1(budget_struct_p,
@@ -248,7 +248,7 @@ void pbs_budget_refresh(struct SRT_struct *SRT_struct_p)
             use the allocated budget*/
             
             /* Set the allocated budget equal to the consumed budget*/
-            budget_struct_p->sp_budget =    ( PBS_BUDGET_VIC == pbs_budget_type)?
+            budget_struct_p->sp_budget =    ( BUDGET_VIC == budget_type)?
                                             budget_consumed_VIC:
                                             budget_consumed_ns;
         }
@@ -322,7 +322,7 @@ static void pbs_budget_schedin( struct preempt_notifier *notifier,
         budget_struct_p->flags &= (~PBS_BUDGET_SLEEPING);
 
         /* Start the budget_enforcement_timer */
-        if( PBS_BUDGET_VIC == pbs_budget_type)
+        if( BUDGET_VIC == budget_type)
         {
             pbs_budget_VIC_BET_start(budget_struct_p);
         }
@@ -361,7 +361,7 @@ static void pbs_budget_schedout(struct preempt_notifier *notifier,
     }
 
     /* Cancel the budget_enforcement_timer */
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         pbs_budget_VIC_BET_cancel(budget_struct_p);
     }
@@ -394,7 +394,7 @@ void pbs_budget_init(struct SRT_struct *SRT_struct_p)
 
     /*  Initialize the budget_enforcement_timer and anything else that needs to be 
         initialized, based on the type of budget being used*/
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         pbs_budget_VIC_init( &(SRT_struct_p->budget_struct));
     }
@@ -421,7 +421,7 @@ void pbs_budget_uninit(struct SRT_struct *SRT_struct_p)
     preempt_notifier_unregister(&(SRT_struct_p->budget_struct.pin_notifier));
 
     /* Cancel the budget_enforcement_timer based on the type of budget being used*/
-    if( PBS_BUDGET_VIC == pbs_budget_type)
+    if( BUDGET_VIC == budget_type)
     {
         pbs_budget_VIC_uninit( &(SRT_struct_p->budget_struct));
     }

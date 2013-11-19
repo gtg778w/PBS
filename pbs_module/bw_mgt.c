@@ -7,7 +7,7 @@ and allocator task.
 
 #include "bw_mgt.h"
 #include "jb_mgt.h"
-#include "pbsAllocator_cmd.h"
+#include "Allocator_cmd.h"
 #include "pbs_mmap.h"
 #include "LAMbS_models.h"
 #include "LAMbS_mo.h"
@@ -114,12 +114,12 @@ ssize_t bw_mgt_write(   struct file *filep,
     
     switch(cmd.cmd)
     {
-        case PBS_BWMGT_CMD_SETUP_START:
-            /*The PBS_BWMGT_CMD_SETUP command should only be 
+        case ALLOCATOR_CMD_SETUP_START:
+            /*The ALLOCATOR_CMD_SETUP command should only be 
             issued with the allocator in the ALLOCATOR_OPEN state*/
             if(ALLOCATOR_OPEN != allocator_state)
             {
-                printk(KERN_INFO "Invalid attempt to issue PBS_BWMGT_CMD_SETUP command "
+                printk(KERN_INFO "Invalid attempt to issue ALLOCATOR_CMD_SETUP command "
                                  "while the allocator (%d) is not in the "
                                  "\"ALLOCATOR_OPEN\" state.\n", current->pid);
                 ret = -EBUSY;
@@ -132,7 +132,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                 {
                     allocator_period = cmd.args[1];
                     allocator_runtime= cmd.args[2];
-                    printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command!"\
+                    printk(KERN_INFO    "Received ALLOCATOR_CMD_SETUP command!"\
                                         "Setting allocator (%i) to a period of %li, "\
                                         "and a budget of %li.\n",
                                         current->pid,
@@ -141,7 +141,7 @@ ssize_t bw_mgt_write(   struct file *filep,
                 }
                 else
                 {
-                    printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command with "\
+                    printk(KERN_INFO    "Received ALLOCATOR_CMD_SETUP command with "\
                                         "invalid value for the budget for the allocator "\
                                         "process (%i). The allocated budget must be "\
                                         "larger than the period. Received parameters:"
@@ -155,7 +155,7 @@ ssize_t bw_mgt_write(   struct file *filep,
             }
             else
             {
-                printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command with invalid "\
+                printk(KERN_INFO    "Received ALLOCATOR_CMD_SETUP command with invalid "\
                                     "value for the period for the allocator process "\
                                     "(%i). The allocated period must be larger than 0."\
                                     "Received parameters: Period (%li), Budget (%li).\n",
@@ -166,13 +166,13 @@ ssize_t bw_mgt_write(   struct file *filep,
                 goto exit0;
             }
     
-            ret = pbs_budget_settype((enum pbs_budget_type)cmd.args[0]);
+            ret = pbs_budget_settype((enum budget_type)cmd.args[0]);
             if( 0 != ret)
             {
-                printk(KERN_INFO    "Received PBS_BWMGT_CMD_SETUP command with invalid "\
+                printk(KERN_INFO    "Received ALLOCATOR_CMD_SETUP command with invalid "\
                                     "value (%li) for argument 0 (budget_type). Argument "\
                                     "0 should have a value from the enumerator "\
-                                    "pbs_budget_type. ", (long int)cmd.args[0]);
+                                    "budget_type. ", (long int)cmd.args[0]);
                 ret = -EINVAL;
                 goto exit0;
             }
@@ -188,11 +188,11 @@ ssize_t bw_mgt_write(   struct file *filep,
             }
             break;
             
-        case PBS_BWMGT_CMD_NEXTJOB:
+        case ALLOCATOR_CMD_NEXTJOB:
             //Is this the first time the NEXTJOB command has been issued?
             if(allocator_state == ALLOCATOR_START)
             {
-                printk(KERN_INFO    "PBS_BWMGT_CMD_NEXTJOB command issued for the first "
+                printk(KERN_INFO    "ALLOCATOR_CMD_NEXTJOB command issued for the first "
                                     "time by allocator(%i)", current->pid);
             
                 //from this point forward, donot allow other tasks to preempt the 
@@ -262,8 +262,8 @@ ssize_t bw_mgt_write(   struct file *filep,
 
             break;
 
-        case PBS_BWMGT_CMD_STOP:
-            printk(KERN_INFO    "PBS_BWMGT_CMD_STOP command issued by the allocator(%i)!", 
+        case ALLOCATOR_CMD_STOP:
+            printk(KERN_INFO    "ALLOCATOR_CMD_STOP command issued by the allocator(%i)!", 
                                 current->pid);
             if(ALLOCATOR_LOOP == allocator_state)
             {

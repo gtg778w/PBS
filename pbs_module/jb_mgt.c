@@ -149,7 +149,7 @@ ssize_t jb_mgt_write(   struct file *filep,
                      invalid large values*/
     
     void __user *budget_type_p;
-    enum pbs_budget_type budget_type;
+    enum budget_type budget_type;
     
     void __user *reservation_period_p;
     u64 reservation_period;
@@ -171,15 +171,15 @@ ssize_t jb_mgt_write(   struct file *filep,
     
     switch(cmd.cmd)
     {
-        case PBS_JBMGT_CMD_SETUP:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_SETUP, %lli",
+        case SRT_CMD_SETUP:
+            printk(KERN_INFO    "jb_mgt_write: SRT_CMD_SETUP, %lli",
                                 cmd.args[0]);
             
-            /*The PBS_JBMGT_CMD_SETUP command should only be 
+            /*The SRT_CMD_SETUP command should only be 
             issued in the SRT_OPEN state or SRT_CONFIGURED state*/
             if((SRT_OPEN != SRT_struct->state) && (SRT_CONFIGURED != SRT_struct->state))
             {
-                printk(KERN_INFO "Invalid attempt to issue PBS_JBMGT_CMD_SETUP command "
+                printk(KERN_INFO "Invalid attempt to issue SRT_CMD_SETUP command "
                                  "while in a state other than \"SRT_OPEN\" or "
                                  "\"SRT_CONFIGURED\" by process %d.\n", current->pid);
                 ret = -EBUSY;
@@ -192,7 +192,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             
             if( (task_period < 0) || ((task_period % scheduling_period_ns.tv64) != 0))
             {
-                printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
+                printk(KERN_INFO    "Invalid value passed to SRT_CMD_SETUP "
                                     "command for the task period by process %d. "
                                     "The task period must be a strictly positive"
                                     "multiple of the reservation period.", 
@@ -204,7 +204,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             /*Check that the task period is sufficiently small*/
             if( (sp_per_tp & ((s64)(-1) << 16)) != 0)
             {
-                printk(KERN_INFO    "Invalid value passed to PBS_JBMGT_CMD_SETUP "
+                printk(KERN_INFO    "Invalid value passed to SRT_CMD_SETUP "
                                     "command for the task period by process %d. "
                                     "The passed value is too large.", 
                                     current->pid);
@@ -216,7 +216,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             budget_type   = pbs_budget_gettype();
             if( copy_to_user(   budget_type_p, 
                                 &budget_type, 
-                                sizeof(enum pbs_budget_type)) )
+                                sizeof(enum budget_type)) )
             {
                 ret = -EFAULT;
                 goto exit0;
@@ -238,14 +238,14 @@ ssize_t jb_mgt_write(   struct file *filep,
             SRT_struct->state = SRT_CONFIGURED;
             break;
         
-        case PBS_JBMGT_CMD_START:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_START");
+        case SRT_CMD_START:
+            printk(KERN_INFO    "jb_mgt_write: SRT_CMD_START");
             
-            /*The PBS_JBMGT_CMD_START command should only be 
+            /*The SRT_CMD_START command should only be 
             issued in the SRT_START state*/
             if(SRT_CONFIGURED != SRT_struct->state)
             {
-                printk(KERN_INFO    "Attempt to issue PBS_JBMGT_CMD_START command "
+                printk(KERN_INFO    "Attempt to issue SRT_CMD_START command "
                                     "without setting up parameters by process %d.", 
                                     current->pid);
                 ret = -EINVAL;
@@ -255,7 +255,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             SRT_struct->state = SRT_STARTED;
             break;
             
-        case PBS_JBMGT_CMD_NEXTJOB:
+        case SRT_CMD_NEXTJOB:
             /*Insert the command arguments into the loaddata structure.
             This is done to allow the allocator task access to the execution-time
             prediction performed by the SRT task.*/
@@ -267,7 +267,7 @@ ssize_t jb_mgt_write(   struct file *filep,
             
             if(SRT_STARTED == SRT_struct->state)
             {                                                
-                printk(KERN_INFO    "The PBS_JBMGT_CMD_NEXTJOB command issued for the "
+                printk(KERN_INFO    "The SRT_CMD_NEXTJOB command issued for the "
                                     "first time by process %d.", current->pid);
                 preempt_disable();
                 ret = first_sleep_till_next_period(&(SRT_struct->timing_struct));
@@ -306,8 +306,8 @@ ssize_t jb_mgt_write(   struct file *filep,
                 }
                 else
                 {
-                    printk(KERN_INFO "Invalid Attempt to issue PBS_JBMGT_CMD_NEXTJOB "
-                                     "command by process %d. PBS_JBMGT_CMD_NEXTJOB "
+                    printk(KERN_INFO "Invalid Attempt to issue SRT_CMD_NEXTJOB "
+                                     "command by process %d. SRT_CMD_NEXTJOB "
                                      "command can only be issued from the "
                                      "\"SRT_STARTED\" state or SRT_LOOP state.\n", 
                                      current->pid);
@@ -317,8 +317,8 @@ ssize_t jb_mgt_write(   struct file *filep,
             }
             break;
         
-        case PBS_JBMGT_CMD_STOP:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_STOP");
+        case SRT_CMD_STOP:
+            printk(KERN_INFO    "jb_mgt_write: SRT_CMD_STOP");
             if(SRT_LOOP == SRT_struct->state)
             {
                 preempt_disable();
@@ -331,8 +331,8 @@ ssize_t jb_mgt_write(   struct file *filep,
             SRT_struct->state = SRT_CLOSED;
             break;
         
-        case PBS_JBMGT_CMD_GETSUMMARY:
-            printk(KERN_INFO    "jb_mgt_write: PBS_JBMGT_CMD_GETSUMMARY");
+        case SRT_CMD_GETSUMMARY:
+            printk(KERN_INFO    "jb_mgt_write: SRT_CMD_GETSUMMARY");
             summary_p = (struct SRT_summary __user *)cmd.args[0];
             if( copy_to_user(   summary_p, &(SRT_struct->summary), 
                                 sizeof(struct SRT_summary_s)) )

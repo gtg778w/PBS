@@ -3,7 +3,7 @@
 
 #include <linux/kernel.h>
 
-#include "pbsCommon_cmd.h"
+#include "Common_cmd.h"
 
 #include "pbs_budget_ns_helper.h"
 #include "pbs_budget_VIC_helper.h"
@@ -30,8 +30,8 @@ struct pbs_budget_struct
 #define PBS_BUDGET_THROTTLED    (0x2)
 #define PBS_BUDGET_JOBCOMPLETE  (0x4)
 
-int pbs_budget_settype(enum pbs_budget_type budget_type);
-enum pbs_budget_type pbs_budget_gettype(void);
+int pbs_budget_settype(enum budget_type budget_type);
+enum budget_type pbs_budget_gettype(void);
 
 void    init_CPUusage_statistics(void);
 void    update_CPUusage_statistics(void);

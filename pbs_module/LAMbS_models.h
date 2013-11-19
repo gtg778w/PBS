@@ -3,7 +3,7 @@
 
 #include <linux/kernel.h>
 
-#include "pbsAllocator_cmd.h"
+#include "Allocator_cmd.h"
 /*
     page size and order
 */

@@ -26,7 +26,7 @@ __free_pages
 mutex related code
 */
 
-#include "pbsAllocator_cmd.h"
+#include "Allocator_cmd.h"
 /*
 loaddata structures
 */
