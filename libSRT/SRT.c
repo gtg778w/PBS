@@ -37,17 +37,15 @@ typedef uint32_t u32;
 typedef int64_t  s64;
 typedef int32_t  s32;
 
-#include "pbsSRT_cmd.h"
+#include "SRT_cmd.h"
 
-#include "pbsuser.h"
+#include "SRT.h"
 
-#include "libPredictor.h"
-
-int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime, 
-                    double alpha,
-                    libPredictor_t *predictor,
-                    SRT_handle *handle, 
-                    int loglevel, int logCount, char *logFileName)
+int SRT_setup(  uint64_t period, uint64_t estimated_mean_exectime, 
+                double alpha,
+                SRT_Predictor_t *predictor,
+                SRT_handle *handle, 
+                int loglevel, int logCount, char *logFileName)
 {
     pid_t mypid;
     int min_priority;
@@ -98,7 +96,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     handle->loglevel = loglevel;
     handle->job_count = 0;
     
-    if(loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
+    if(loglevel >= SRT_LOGLEVEL_SUMMARY)
     {
         handle->log_file = fopen(logFileName, "w");
         if(handle->log_file == NULL)
@@ -108,7 +106,7 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
             goto straight_exit;
         }
 
-        if(loglevel >= pbsSRT_LOGLEVEL_FULL)
+        if(loglevel >= SRT_LOGLEVEL_FULL)
         {
             handle->log = (struct SRT_job_log*)malloc(logCount*sizeof(struct SRT_job_log));
             if(handle->log == NULL)
@@ -149,8 +147,8 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
                 goto free2_exit;
             }
             handle->log_size = logCount;
-        }/* if(loglevel > pbsSRT_LOGLEVEL_SUMMARY)*/
-    }/* if(loglevel > pbsSRT_LOGLEVEL_NONE)*/
+        }/* if(loglevel > SRT_LOGLEVEL_SUMMARY)*/
+    }/* if(loglevel > SRT_LOGLEVEL_NONE)*/
 
 /***************************************************************************/
 //regster with the pbs module and setup the pbs scheduling parameters
@@ -164,14 +162,14 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
     }
     procfile = ret_val;
 
-    cmd.cmd = PBS_JBMGT_CMD_SETUP;
+    cmd.cmd = SRT_CMD_SETUP;
     cmd.args[0] = period;
     cmd.args[1] = (u64)&(handle->budget_type);
     cmd.args[2] = (u64)&(handle->reservation_period);
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
-        perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_SETUP cmd failed!\n");
+        perror("pbs_SRT_setup: write of a SRT_CMD_SETUP cmd failed!\n");
         goto close_exit;
     }
     
@@ -180,11 +178,11 @@ int pbsSRT_setup(   uint64_t period, uint64_t estimated_mean_exectime,
                         = estimated_mean_exectime;
     handle->alpha_fp    = alpha_fp;
 
-    cmd.cmd = PBS_JBMGT_CMD_START;
+    cmd.cmd = SRT_CMD_START;
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
-        perror("pbs_SRT_setup: write of a PBS_JBMGT_CMD_START cmd failed!\n");
+        perror("pbs_SRT_setup: write of a SRT_CMD_START cmd failed!\n");
         goto close_exit;
     }
 
@@ -201,7 +199,7 @@ close_exit:
     close(procfile);
     handle->procfile = 0;
 free2_exit:
-    if(loglevel >= pbsSRT_LOGLEVEL_FULL)
+    if(loglevel >= SRT_LOGLEVEL_FULL)
     {
         free(handle->pu_c0);
         handle->pu_c0   = NULL;
@@ -210,13 +208,13 @@ free2_exit:
         handle->pvar_cl = NULL;
     }
 free_exit:
-    if(loglevel >= pbsSRT_LOGLEVEL_FULL)
+    if(loglevel >= SRT_LOGLEVEL_FULL)
     {
         free(handle->log);
         handle->log = NULL;
     }
 lclose_exit:
-    if(loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
+    if(loglevel >= SRT_LOGLEVEL_SUMMARY)
     {
         fclose(handle->log_file);
         handle->log_file = NULL;
@@ -225,7 +223,7 @@ straight_exit:
     return ret_val;
 }
 
-int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
+int SRT_sleepTillFirstJob(SRT_handle *handle)
 {
     int ret = 0;
     job_mgt_cmd_t cmd;
@@ -236,7 +234,7 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     
     /*Setup the NEXTJOB command with the predicted execution time
     specified in command-line arguments and 0 variance*/
-    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;    
+    cmd.cmd = SRT_CMD_NEXTJOB;    
     cmd.args[0] = handle->estimated_mean_exectime;
     cmd.args[1] = 0;
     cmd.args[2] = handle->estimated_mean_exectime;
@@ -245,7 +243,7 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     
     /*If "FULL" logging is enabled, log the predicted execution time and the estimated
     variance in the prediction error*/
-    if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+    if( (handle->loglevel >= SRT_LOGLEVEL_FULL) && 
         (handle->job_count < handle->log_size))
     {
         handle->pu_c0[0]    = cmd.args[0];
@@ -258,7 +256,7 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
     ret = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret != sizeof(cmd))
     {
-        perror("pbsSRT_waitTillFirstJob: write of a PBS_JBMGT_CMD_NEXTJOB cmd failed!\n");
+        perror("SRT_waitTillFirstJob: write of a SRT_CMD_NEXTJOB cmd failed!\n");
         ret = -1;
     }
     else
@@ -271,7 +269,7 @@ int pbsSRT_sleepTillFirstJob(SRT_handle *handle)
 
 //FIXME: Need to handle closes forced by the system,
 //like when the allocator task closes and the SRT task is forced to close
-int pbsSRT_sleepTillNextJob(SRT_handle *handle)
+int SRT_sleepTillNextJob(SRT_handle *handle)
 {
     int ret = 0;
 
@@ -286,7 +284,7 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
 
     /*FIXME: Use VIC rather than runtime*/
     /*Get various data such as execution time for the job that just completed*/
-    job_log_p = (   (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+    job_log_p = (   (handle->loglevel >= SRT_LOGLEVEL_FULL) && 
                     (handle->job_count < handle->log_size)  )?
                     &(handle->log[handle->job_count]) : &(local_job_log);
 
@@ -299,7 +297,7 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         goto exit0;
     }
     
-    CPU_usage = (PBS_BUDGET_VIC == handle->budget_type)? 
+    CPU_usage = (BUDGET_VIC == handle->budget_type)? 
                 job_log_p->runVIC2 :
                 job_log_p->runtime2;
 
@@ -321,8 +319,8 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
         var_cl  = 0;
     }
     
-    /*Issue the PBS_JBMGT_CMD_NEXTJOB command with the updated prediction*/
-    cmd.cmd = PBS_JBMGT_CMD_NEXTJOB;
+    /*Issue the SRT_CMD_NEXTJOB command with the updated prediction*/
+    cmd.cmd = SRT_CMD_NEXTJOB;
     cmd.args[0] = u_c0;
     cmd.args[1] = var_c0;
     cmd.args[2] = u_cl;
@@ -331,13 +329,13 @@ int pbsSRT_sleepTillNextJob(SRT_handle *handle)
     ret = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret != sizeof(cmd))
     {
-        perror("pbs_begin_SRT_job: write of a PBS_JBMGT_CMD_NEXTJOB cmd failed!\n");
+        perror("pbs_begin_SRT_job: write of a SRT_CMD_NEXTJOB cmd failed!\n");
         return -1;
     }
 
     /*If "FULL" logging is enabled, log the predicted execution time and the estimated
     variance in the prediction error*/
-    if( (handle->loglevel >= pbsSRT_LOGLEVEL_FULL) && 
+    if( (handle->loglevel >= SRT_LOGLEVEL_FULL) && 
         (handle->job_count < handle->log_size))
     {
         handle->pu_c0[handle->job_count] = cmd.args[0];
@@ -352,7 +350,7 @@ exit0:
     return ret;
 }
 
-void pbsSRT_close(SRT_handle *handle)
+void SRT_close(SRT_handle *handle)
 {
     int i;
     struct SRT_job_log *log_entry;
@@ -365,21 +363,21 @@ void pbsSRT_close(SRT_handle *handle)
     unsigned long miss;
 
     /*Stop adaptive budget allocation and enforcement for the task*/
-    cmd.cmd = PBS_JBMGT_CMD_STOP;
+    cmd.cmd = SRT_CMD_STOP;
     ret_val = write(handle->procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
     {
-        perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_STOP cmd failed!\n");
+        perror("pbs_SRT_close: write of a SRT_CMD_STOP cmd failed!\n");
     }
     
-    if(handle->loglevel >= pbsSRT_LOGLEVEL_SUMMARY)
+    if(handle->loglevel >= SRT_LOGLEVEL_SUMMARY)
     {
-        cmd.cmd = PBS_JBMGT_CMD_GETSUMMARY;
+        cmd.cmd = SRT_CMD_GETSUMMARY;
         cmd.args[0] = (s64)&summary;
         ret_val = write(handle->procfile, &cmd, sizeof(cmd));
         if(ret_val != sizeof(cmd))
         {
-            perror("pbs_SRT_close: write of a PBS_JBMGT_CMD_GETSUMMARY cmd failed!\n");
+            perror("pbs_SRT_close: write of a SRT_CMD_GETSUMMARY cmd failed!\n");
         }
         
         fprintf(handle->log_file,   "%i, %llu, %llu, %i, %llu, %llu, %llu, %llu, %llu, "
@@ -396,7 +394,7 @@ void pbsSRT_close(SRT_handle *handle)
                                     (unsigned long long)summary.total_misses,
                                     (unsigned long long)summary.total_CPU_budget_capacity);
 
-        if(handle->loglevel >= pbsSRT_LOGLEVEL_FULL)
+        if(handle->loglevel >= SRT_LOGLEVEL_FULL)
         {
             /*Note: when the log is read, the runtime and run VIC correspond to the 
                     current job, whereas all other statistics correspond to the previous 
