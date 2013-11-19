@@ -5,7 +5,7 @@
 memory mapping stuff
 */
 
-#include "pbsAllocator.h"
+#include "Allocator.h"
 #include "LMSVS.h"
 
 LMSVS_t *perf_modeladapter_p;

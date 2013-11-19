@@ -34,7 +34,7 @@ getopt
 write
 */
 
-#include "pbsAllocator.h"
+#include "Allocator.h"
 
 void allocator_loop(int proc_file, long log_level)
 {
@@ -58,11 +58,11 @@ void allocator_loop(int proc_file, long log_level)
     while(loop_condition)
     {
         /*  Sleep until the beginning of the next reservation period.   */
-        cmd.cmd = PBS_BWMGT_CMD_NEXTJOB;
+        cmd.cmd = ALLOCATOR_CMD_NEXTJOB;
         retval = write(proc_file, &cmd, sizeof(cmd));
         if(retval != sizeof(cmd))
         {
-            perror( "allocator_loop: Failed to write PBS_BWMGT_CMD_NEXTJOB "
+            perror( "allocator_loop: Failed to write ALLOCATOR_CMD_NEXTJOB "
                     "command.");
             break;
         }
@@ -258,7 +258,7 @@ int main(int argc, char** argv)
                 retval = strncmp("IC", optarg, 2);
                 if(0 == retval)
                 {
-                    budget_type = PBS_BUDGET_VIC;
+                    budget_type = BUDGET_VIC;
                     break;
                 }
                 /*else, fall through to the default condition*/
@@ -333,11 +333,11 @@ int main(int argc, char** argv)
     }
     
     /*Display the type of budget being used*/
-    if(PBS_BUDGET_VIC == budget_type)
+    if(BUDGET_VIC == budget_type)
     {
         fprintf(stderr, ", VIC-based budget");
     }
-    else if(PBS_BUDGET_ns == budget_type)
+    else if(BUDGET_ns == budget_type)
     {
         fprintf(stderr, ", time-based budget");
     }

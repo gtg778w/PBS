@@ -34,7 +34,7 @@ getpid
 memory mapping stuff
 */
 
-#include "pbsAllocator.h"
+#include "Allocator.h"
 
 SRT_loaddata_t          *loaddata_array;
 loaddata_list_header_t  *loaddata_list_header;
@@ -128,14 +128,14 @@ int allocator_setup(uint64_t scheduling_period,
         goto exit0;
     }
 
-    cmd.cmd = PBS_BWMGT_CMD_SETUP_START;
+    cmd.cmd = ALLOCATOR_CMD_SETUP_START;
     cmd.args[0] = budget_type;
     cmd.args[1] = scheduling_period;
     cmd.args[2] = allocator_bandwidth;
     retval = write(proc_file, &cmd, sizeof(cmd));
     if(retval != sizeof(cmd))
     {
-        perror("allocator_setup: Failed to write PBS_BWMGT_CMD_SETUP_START command.");
+        perror("allocator_setup: Failed to write ALLOCATOR_CMD_SETUP_START command.");
         goto exit0;
     }
 
@@ -150,11 +150,11 @@ int allocator_close(int proc_file)
     bw_mgt_cmd_t cmd;
     int retval;
 
-    cmd.cmd = PBS_BWMGT_CMD_STOP;
+    cmd.cmd = ALLOCATOR_CMD_STOP;
     retval = write(proc_file, &cmd, sizeof(cmd));
     if(retval != sizeof(cmd))
     {
-        perror("allocator_close: Failed to write PBS_BWMGT_CMD_STOP command.");
+        perror("allocator_close: Failed to write ALLOCATOR_CMD_STOP command.");
         goto exit0;
     }
 

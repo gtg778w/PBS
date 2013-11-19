@@ -16,7 +16,7 @@ typedef int64_t     s64;
 #include <strings.h>
 #define PAGE_SHIFT  (ffs(PAGE_SIZE)-1)
 
-#include "pbsAllocator_cmd.h"
+#include "Allocator_cmd.h"
 
 extern SRT_loaddata_t         *loaddata_array;
 extern loaddata_list_header_t *loaddata_list_header;
@@ -43,7 +43,7 @@ void free_log_memory(long log_level);
 
 void compute_max_CPU_budget(void);
 void compute_budget(SRT_loaddata_t *loaddata, double* budget);
-extern enum pbs_budget_type budget_type;
+extern enum budget_type budget_type;
 extern double               *presaturation_budget_array;
 extern double               maximum_available_CPU_time;
 extern double               maximum_available_CPU_budget;

@@ -2,17 +2,17 @@
 
 #include <math.h>
 
-#include "pbsAllocator.h"
+#include "Allocator.h"
 
-enum pbs_budget_type    budget_type = PBS_BUDGET_ns;
-double                  *presaturation_budget_array;
+enum budget_type    budget_type = BUDGET_ns;
+double              *presaturation_budget_array;
 
-double                  maximum_available_CPU_time;
-double                  maximum_available_CPU_budget;
+double              maximum_available_CPU_time;
+double              maximum_available_CPU_budget;
 
 void compute_max_CPU_budget(void)
 {
-    if(PBS_BUDGET_ns == budget_type)
+    if(BUDGET_ns == budget_type)
     {
         maximum_available_CPU_budget = maximum_available_CPU_time;
     }
