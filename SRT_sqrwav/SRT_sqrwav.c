@@ -21,7 +21,7 @@ gcc -O3 -o sqrwavSRT  sqrwav_SRT.c pbsuser.c
 #include <time.h>
 
 #include "sqrwav.h"
-#include "pbsuser.h"
+#include "SRT.h"
 #include "libPredictor.h"
 #include "loadgen.h"
 
@@ -74,7 +74,7 @@ int main (int argc, char * const * argv)
     unsigned long maxjobs = 10000;
     unsigned long j;
 
-    //pbs related variables
+    //libSRT related variables
     SRT_handle handle;
     unsigned long period = 40000, bandwidth;
     double alpha = 1.0;
@@ -85,7 +85,7 @@ int main (int argc, char * const * argv)
     char* logfilename = "log.csv";
 
     //execution-time predictor related variables
-    libPredictor_t predictor;
+    SRT_Predictor_t predictor;
     char *predictor_name = "template";
 
     //square-wave generator
@@ -248,11 +248,11 @@ int main (int argc, char * const * argv)
                     goto exit0;
                 }
                 
-                if((loglevel < pbsSRT_LOGLEVEL_MIN) || (loglevel > pbsSRT_LOGLEVEL_MAX))
+                if((loglevel < SRT_LOGLEVEL_MIN) || (loglevel > SRT_LOGLEVEL_MAX))
                 {
                     fprintf(stderr, "The log level option (-L) , must have an integer "
                                     "argument between %i and %i inclusive.\n",
-                                    pbsSRT_LOGLEVEL_MIN, pbsSRT_LOGLEVEL_MAX);
+                                    SRT_LOGLEVEL_MIN, SRT_LOGLEVEL_MAX);
                     ret = -EINVAL;
                     goto exit0;
                 }
@@ -331,14 +331,14 @@ int main (int argc, char * const * argv)
     ret = libPredictor_getPredictor(&predictor, predictor_name);
     if(-1 == ret)
     {
-        fprintf(stderr, "pbsSRT_getPredictor with argument \"%s\" failed in main",
+        fprintf(stderr, "libPredictor_getPredictor with argument \"%s\" failed in main",
                         predictor_name);
         ret = -1;
         goto exit0;
     }
 
     //setup the scheduler
-    ret = pbsSRT_setup(period, bandwidth, alpha, &predictor, &handle, 
+    ret = SRT_setup(period, bandwidth, alpha, &predictor, &handle, 
                        loglevel, maxjobs, logfilename);
     if(ret)
     {
@@ -359,10 +359,10 @@ int main (int argc, char * const * argv)
     printf("Running ... ");
 
     //Sleep until the next scheduling-period boundary
-    ret = pbsSRT_sleepTillFirstJob(&handle);
+    ret = SRT_sleepTillFirstJob(&handle);
     if(ret)
     {
-        fprintf(stderr, "main: pbsSRT_sleepTillFirstJob failed!\n");
+        fprintf(stderr, "main: SRT_sleepTillFirstJob failed!\n");
         ret = -1;
         goto exit1;
     }
@@ -374,10 +374,10 @@ int main (int argc, char * const * argv)
         dummy_state ^= (int)job(&sqrwav);
         
         //Sleep until the next task-period boundary
-        ret = pbsSRT_sleepTillNextJob(&handle);
+        ret = SRT_sleepTillNextJob(&handle);
         if(ret)
         {
-            fprintf(stderr, "main: pbsSRT_sleepTillNextJob failed!\n");
+            fprintf(stderr, "main: SRT_sleepTillNextJob failed!\n");
             ret = -1;
             goto exit1;
         }
@@ -385,7 +385,7 @@ int main (int argc, char * const * argv)
     
 exit1:
     //Notify the end of the SRT task
-    pbsSRT_close(&handle);
+    SRT_close(&handle);
     printf("\rCompleted ... %i\n", dummy_state);
 exit0:
     return 0;
