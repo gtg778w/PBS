@@ -7,7 +7,7 @@ typedef struct libPredictor_template_s
 {
     char                *name;
     const struct libPredictor_template_s *next;
-    const libPredictor_t  predictor;
+    const SRT_Predictor_t  predictor;
 } libPredictor_template_t;
 
 const libPredictor_template_t mavslmsbank_template
@@ -93,14 +93,14 @@ const libPredictor_template_t head
     .predictor = {0}
 };
 
-int libPredictor_getPredictor(libPredictor_t *ppredictor, char *name)
+int libPredictor_getPredictor(SRT_Predictor_t *ppredictor, char *name)
 {
     int ret;
     
     int found = 0;
     const libPredictor_template_t *current = &head;
 
-    *ppredictor = (libPredictor_t){0};
+    *ppredictor = (SRT_Predictor_t){0};
     
     while(NULL != current->next)
     {
