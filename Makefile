@@ -1,11 +1,11 @@
 all:
 	$(MAKE) -C governor/
 	$(MAKE) -C pbs_module/
-	$(MAKE) -C pbsAllocator/
-	$(MAKE) -C pbsSRT_sqrwav/
+	$(MAKE) -C Allocator/
+	$(MAKE) -C SRT_sqrwav/
 	$(MAKE) -C TSP_Predictor_test/
-	$(MAKE) -C pbsSRT_PeSoRTA/
-	$(MAKE) -C pbs_util_apps/
+	$(MAKE) -C SRT_PeSoRTA/
+	$(MAKE) -C util_apps/
 
 setup_expt: all
 	sh system_scripts/moderate_enable.sh
@@ -14,11 +14,10 @@ setup_expt: all
 	insmod pbs_module/pbs_module.ko
 
 clean:
-	$(MAKE) -C pbs_util_apps/ clean
-	$(MAKE) -C pbsSRT_PeSoRTA/ clean
+	$(MAKE) -C util_apps/ clean
+	$(MAKE) -C SRT_PeSoRTA/ clean
 	$(MAKE) -C TSP_Predictor_test/ clean
-	$(MAKE) -C pbsSRT_sqrwav/ clean
-	$(MAKE) -C pbsAllocator/ clean
+	$(MAKE) -C SRT_sqrwav/ clean
+	$(MAKE) -C Allocator/ clean
 	$(MAKE) -C pbs_module/ clean
 	$(MAKE) -C governor/ clean
-
