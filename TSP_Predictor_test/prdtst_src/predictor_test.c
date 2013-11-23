@@ -337,7 +337,7 @@ static int reset_realtime(void)
 
 #include "libPredictor.h"
 
-static void prediction_loop(libPredictor_t  *predictor_p,
+static void prediction_loop(SRT_Predictor_t *predictor_p,
                             unsigned long   array_length,
                             int64_t         *input_array,
                             int64_t         *prediction_array,
@@ -419,7 +419,7 @@ int main(int argc, char ** argv)
     FILE *outfilep;    
     
     char *predictor_name;
-    libPredictor_t predictor;
+    SRT_Predictor_t predictor;
     
     int64_t *input_array;
     long     input_length;

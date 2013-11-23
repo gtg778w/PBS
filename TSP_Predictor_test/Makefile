@@ -11,6 +11,8 @@ PeSoRTA_INCDIR=$(PeSoRTADIR)/include
 pred_LIBDIR=../libPredictor
 pred_INCDIR=../libPredictor
 
+SRT_INCDIR=../libSRT
+
 PRDTST_SRCDIR=./prdtst_src
 TIMING_SRCDIR=./timing_src
 
@@ -26,7 +28,7 @@ libPredictor.a:
 	$(MAKE) -C $(pred_LIBDIR)
 	
 predictor_test: libPredictor.a $(PRDTST_SRCDIR)/predictor_test.c
-	$(CC) -Wall -Wmissing-prototypes -L $(pred_LIBDIR) -I $(pred_LIBDIR) -o $(BINDIR)/predictor_test $(PRDTST_SRCDIR)/predictor_test.c -lPredictor -lrt
+	$(CC) -Wall -Wmissing-prototypes -L $(pred_LIBDIR) -I $(SRT_INCDIR) -I $(pred_LIBDIR) -o $(BINDIR)/predictor_test $(PRDTST_SRCDIR)/predictor_test.c -lPredictor -lrt
 
 $(TIMING_SRCDIR)/workload_timing.o: $(TIMING_SRCDIR)/workload_timing.c $(PeSoRTA_INCDIR)/PeSoRTA.h
 	$(CC) $(CFLAGS) -I $(PeSoRTA_INCDIR) -o $(TIMING_SRCDIR)/workload_timing.o \
