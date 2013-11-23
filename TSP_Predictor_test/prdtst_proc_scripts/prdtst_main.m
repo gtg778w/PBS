@@ -1,8 +1,11 @@
 
+    prdtst_alpha_dir = '../prdtst_alpha_dir/';
+    mkdir(prdtst_alpha_dir);
+
     prdtst_summary_dir = '../prdtst_data_summary/';
     mkdir(prdtst_summary_dir);
 
-    prdtst_dir = '../prdtst_data/'
+    prdtst_dir = '../prdtst_data/';
     rootdir_filelist = readdir(prdtst_dir);
     rootdir_filecount= length(rootdir_filelist);
     
@@ -16,23 +19,26 @@
         %check if it is a directory
         if ~ isdir(subdir_path)
             %not a directory. move onto the next file
-            'not a dir'
+            'not a dir';
             continue;
         end
         
         %make sure the directory is not . or ..
         if strcmp(subdir_name, '.') || strcmp(subdir_name, '..')
             %if it is either the . or .. directory, move onto the next file
-            subdir_name
+            subdir_name;
             continue;
         end
         
         %each valid directory is the name of an application
-        application = subdir_name
+        application = subdir_name;
         
         %make a directory to store the output
         application_summary_dir = sprintf('%s/%s', prdtst_summary_dir, application);
         mkdir(application_summary_dir);
+        
+        application_alpha_dir = sprintf('%s/%s', prdtst_alpha_dir, application);
+        mkdir(application_alpha_dir);
         
         config_filelist = readdir(subdir_path);
         config_filecount= length(config_filelist);
@@ -52,15 +58,18 @@
             %make sure the directory is not . or ..
             if strcmp(subsubdir_name, '.') || strcmp(subsubdir_name, '..')
                 %if it is either the . or .. directory, move onto the next file
-                continue
+                continue;
             end
 
             %each valid directory is the name of a configuration
-            config = subsubdir_name
+            config = subsubdir_name;
             
             %make a directory to store the output
             config_summary_dir = sprintf('%s/%s', application_summary_dir, config);
             mkdir(config_summary_dir);
+
+            config_alpha_dir = sprintf('%s/%s', application_alpha_dir, config);
+            mkdir(config_alpha_dir);
             
             predictor_filelist = readdir(subsubdir_path);
             predictor_filecount= length(predictor_filelist);
@@ -79,7 +88,7 @@
                 %make sure the directory is not . or ..
                 if strcmp(subsubsubdir_name, '.') || strcmp(subsubsubdir_name, '..')
                     %if it is either the . or .. directory, move onto the next file
-                    continue
+                    continue;
                 end
                 
                 %each valid directory is the name of a predictor
@@ -98,7 +107,22 @@
                                                             predictor);
                 
                 %save the summary structure to the output file name
-                save(outfile_name, 'summary');                
+                save(outfile_name, 'summary');
+                
+                %get the values of alpha
+                alpha_vals = get_alpha_vals(prdtst_dir, ...
+                                            application, ...
+                                            config, ...
+                                            predictor, ...
+                                            linspace(2, 20, 9));
+                                            
+                %set the output file name
+                outfile_name = sprintf('%s/%s.%s.%s.csv',   config_alpha_dir, ...
+                                                            application, ...
+                                                            config, ...
+                                                            predictor);
+                
+                csvwrite(outfile_name, alpha_vals);
             end
         end
     end
