@@ -52,7 +52,7 @@
     #The predictor to be used for budget allocation by the SRT application
     set A1="mabank"
     #The task period (in ns) of the SRT application
-    set p1="41666666"
+    set p1="41666664"
     #The estimated mean execution time of the SRT application
     set c1="10011612"
     #Alpha values of the workload
