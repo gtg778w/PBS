@@ -78,11 +78,11 @@
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}
             
             #Start the allocator            
-            ${BINDIR}/pbsAllocator -f -s ${sa} -P ${Ta} -B ${Qa} -L 0&
+            ${BINDIR}/Allocator -f -s ${sa} -P ${Ta} -B ${Qa} -L 0&
             #Wait for half a second to let the allocator run a couple of scheduling periods
             sleep 0.5
             #Run the SRT task
-            ${BINDIR}/${APPNAME}_pbsSRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${alpha} -L 2 -R ${SRT_logfile} &
+            ${BINDIR}/${APPNAME}_SRT -f -W ${W1} -D ${D1} -J ${J1} -A ${A1} -p ${p1} -c ${c1} -a ${alpha} -L 2 -R ${SRT_logfile} &
             #Wait for the allocator task to finish
             ${BINDIR}/poll_pbs_actv
         end
