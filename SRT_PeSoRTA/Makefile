@@ -8,7 +8,7 @@ SRT_INCDIR=../libSRT
 pred_LIBDIR=../libPredictor
 pred_INCDIR=../libPredictor
 
-APP_NAME=pbsSRT
+APP_NAME=SRT
 APP_LIBFLAGS1=-L $(SRT_LIBDIR) -L $(pred_LIBDIR)
 APP_LIBFLAGS2=-lSRT -lPredictor -lrt -lm
 APP_OBJS=SRT_PeSoRTA.o
