@@ -56,7 +56,7 @@
     #The estimated mean execution time of the SRT application
     set c1="1340677"
     #Alpha values of the workload
-    set alpha_array=("0.87973" "0.9017" "0.934655")
+    set alpha_array=("0.5")
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)

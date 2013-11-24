@@ -34,8 +34,7 @@
     endif
 
     csh ${SCRIPTDIR}/run_ffmpeg_enc.arthur.wav.amr_ma.csh            ${repetitions} "ma" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    csh ${SCRIPTDIR}/run_ffmpeg_enc.arthur.wav.amr_mabank.csh        ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}      
-    csh ${SCRIPTDIR}/run_ffmpeg_enc.arthur.wav.amr_mavslmsbank.csh   ${repetitions} "mavslmsbank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
+    csh ${SCRIPTDIR}/run_ffmpeg_enc.arthur.wav.amr_mabank.csh        ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
 
     csh ${SCRIPTDIR}/run_ffmpeg_dec.arthur.spx_ma.csh            ${repetitions} "ma" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}        
     csh ${SCRIPTDIR}/run_ffmpeg_dec.arthur.spx_mabank.csh        ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}  
@@ -44,11 +43,3 @@
     csh ${SCRIPTDIR}/run_ffmpeg_enc.beethoven.wav.mp3_ma.csh             ${repetitions} "ma" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
     csh ${SCRIPTDIR}/run_ffmpeg_enc.beethoven.wav.mp3_mabank.csh         ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
     
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.mozart.mp3_ma.csh           ${repetitions} "ma" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.mozart.mp3_mabank.csh       ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.mozart.mp3_mavslmsbank.csh  ${repetitions} "mavslmsbank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.sintel.mp4_ma.csh           ${repetitions} "ma" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.sintel.mp4_mabank.csh       ${repetitions} "mabank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}
-    csh ${SCRIPTDIR}/run_ffmpeg_dec.sintel.mp4_mavslmsbank.csh  ${repetitions} "mavslmsbank" ${OUTDIR} ${BINDIR} ${PeSoRTADIR}    
-
