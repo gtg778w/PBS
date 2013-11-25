@@ -3,7 +3,7 @@
     #Set default values for optional input arguments
     set repetitions="1"
     set OUTDIR="data/"
-    set SCRIPTDIR="expt_scripts_test"
+    set SCRIPTDIR="expt_scripts2"
     set PeSoRTADIR="/home/gtg778w/Desktop/expt_February2013/PeSoRTA"
     set BINDIR="/home/gtg778w/Desktop/expt_February2013/PBS/bin"
     

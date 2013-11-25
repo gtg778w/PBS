@@ -2,7 +2,7 @@
     
     #Set default values for optional input arguments
     set repetitions="1"
-    set predictor="ma"
+    set predictor="mabank"
     set OUTDIR="data/"
     set BINDIR="/home/gtg778w/Desktop/bin/"
     set PeSoRTADIR="/media/Data/Research/expt_February2013/PeSoRTA"    
@@ -37,26 +37,26 @@
     set Ta="10000000"
     #The budget assigned to the allocator task over a reservation period
     set Qa="1000000"
-    set sa="12907"
+    set sa="4317"
     
     #The name of the configuration
-    set APPNAME="ffmpeg"
-    set CONFIGNAME="dec.arthur.spx"
+    set APPNAME="sqrwav"
+    set CONFIGNAME="example"
     
     #The name of the configuration file for the PeSoRTA workload
     set W1="config/"${CONFIGNAME}".config"
     #The root directory for the PeSoRTA workload
     set D1=${PeSoRTADIR}"/"${APPNAME}
     #The maximum number of jobs to run from the PeSoRTA workload
-    set J1="5378"
+    set J1="1799"
     #The predictor to be used for budget allocation by the SRT application
     set A1=${predictor}
     #The task period (in ns) of the SRT application
     set p1="20000000"
     #The estimated mean execution time of the SRT application
-    set c1="55488"
+    set c1="3055338"
     #Alpha values of the workload
-    set alpha_array=("0.66493" "0.77233" "0.8358" "1.4031" "1.5944" "1.7858" "2.1685" "2.64694" "2.886")
+    set alpha_array=()
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)
@@ -72,7 +72,7 @@
         foreach rep (`seq 1 1 ${repetitions}`)
             
             #Display progress and estimated duration
-            echo "Approximate total duration of experiment: 1:36:48.240000"
+            echo "Approximate total duration of experiment: 0:32:22.920000"
             
             #Names of LOG files
             set SRT_logfile=${LOCALOUTDIR}"/"${rep}${SRT_logfilesuffix}
