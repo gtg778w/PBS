@@ -50,13 +50,13 @@
     #The maximum number of jobs to run from the PeSoRTA workload
     set J1="2521"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mabank"
+    set A1=${predictor}
     #The task period (in ns) of the SRT application
     set p1="42666666"
     #The estimated mean execution time of the SRT application
     set c1="1340677"
     #Alpha values of the workload
-    set alpha_array=("0.25" "0.325" "0.5" "0.625" "0.75" "0.875" "1.0" "1.125" "1.25")
+    set alpha_array=("0.001" "0.25" "1.5000" "1.7500" "2.0000" "2.2500" "2.5000")
     
     #Loop over the values of alpha
     foreach alpha ($alpha_array)

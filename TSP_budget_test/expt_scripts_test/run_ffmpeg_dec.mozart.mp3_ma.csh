@@ -50,7 +50,7 @@
     #The maximum number of jobs to run from the PeSoRTA workload
     set J1="4790"
     #The predictor to be used for budget allocation by the SRT application
-    set A1="mabank"
+    set A1=${predictor}
     #The task period (in ns) of the SRT application
     set p1="26120000"
     #The estimated mean execution time of the SRT application
