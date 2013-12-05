@@ -16,6 +16,7 @@ function [SRT_records] = process_SRT_rundir(dir_name)
     SRT_records.estimated_mean_exectime = zeros([1, dir_filecount]);
     SRT_records.job_count   = zeros([1, dir_filecount]);
     SRT_records.allocated_budget= zeros([1, dir_filecount]);
+    SRT_records.normalized_allocated_budget= zeros([1, dir_filecount]);
     SRT_records.consumed_budget_ns  = zeros([1, dir_filecount]);
     SRT_records.consumed_budget_VIC = zeros([1, dir_filecount]);
     SRT_records.total_misses    = zeros([1, dir_filecount]);
@@ -47,6 +48,7 @@ function [SRT_records] = process_SRT_rundir(dir_name)
         SRT_records.job_count(r) = raw_mat(1, 6);
         SRT_records.allocated_budget(r) = raw_mat(1, 7);
         SRT_records.consumed_budget_ns(r) = raw_mat(1, 8);
+        SRT_records.normalized_allocated_budget(r) = SRT_records.allocated_budget(r) ./ SRT_records.consumed_budget_ns(r);
         SRT_records.consumed_budget_VIC(r) = raw_mat(1, 9);
         SRT_records.total_misses(r) = raw_mat(1, 10);
         SRT_records.total_budget_capacity(r) = raw_mat(1, 11);
@@ -63,7 +65,7 @@ function [SRT_records] = process_SRT_rundir(dir_name)
         VFT = LFT .- ((budget_remaining ./ budget_allocated) * SRT_records.reservation_period(r));
         VFT_error = VFT - SRT_records.period(r);
         
-        SRT_records.RMS_VFT_error(r) = sqrt(mean(VFT_error .* VFT_error));
+        SRT_records.RMS_VFT_error(r) = sqrt(mean(VFT_error .* VFT_error))/SRT_records.period(r);
     end
 
     %SRT_records.pid = SRT_records.pid(1:r);
@@ -73,6 +75,7 @@ function [SRT_records] = process_SRT_rundir(dir_name)
     SRT_records.estimated_mean_exectime = SRT_records.estimated_mean_exectime(1:r);
     SRT_records.job_count   = SRT_records.job_count(1);
     SRT_records.allocated_budget    = SRT_records.allocated_budget(1:r);
+    SRT_records.normalized_allocated_budget = SRT_records.normalized_allocated_budget(1:r);
     SRT_records.consumed_budget_ns  = SRT_records.consumed_budget_ns(1:r);
     SRT_records.consumed_budget_VIC = SRT_records.consumed_budget_VIC(1:r);
     SRT_records.total_misses= SRT_records.total_misses(1:r);

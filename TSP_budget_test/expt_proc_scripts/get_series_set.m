@@ -9,6 +9,7 @@ function [series_set] = get_series_set(workload_dir)
     miss_rates = cell(dir_filecount, 1);
     mean_miss_rates = cell(dir_filecount, 1);
     mean_allocated_budget = cell(dir_filecount, 1);
+    normalized_allocated_budget = cell(dir_filecount, 1);
     RMS_VFT_error = cell(dir_filecount, 1);
     allocated_budget = cell(dir_filecount, 1);
     budget_utilization = cell(dir_filecount, 1);
@@ -48,6 +49,7 @@ function [series_set] = get_series_set(workload_dir)
         miss_rates{s} = [];
         RMS_VFT_error{s} = [];
         allocated_budget{s} = [];
+        normalized_allocated_budget{s} = [];
         budget_utilization{s} = [];
         
         a = 0;
@@ -83,6 +85,8 @@ function [series_set] = get_series_set(workload_dir)
             
             local_allocated_budget = SRT_records.allocated_budget/SRT_records.job_count;
             allocated_budget{s} = [allocated_budget{s}, SRT_records.allocated_budget/SRT_records.job_count];
+            normalized_allocated_budget{s} = [normalized_allocated_budget{s}, SRT_records.normalized_allocated_budget];
+            
             mean_allocated_budget{s}(a) = mean(local_allocated_budget);
             
             RMS_VFT_error{s}    = [RMS_VFT_error{s}, SRT_records.RMS_VFT_error];
@@ -100,6 +104,7 @@ function [series_set] = get_series_set(workload_dir)
     mean_allocated_budget = mean_allocated_budget(1:s);
     RMS_VFT_error   = RMS_VFT_error(1:s);
     allocated_budget= allocated_budget(1:s);
+    normalized_allocated_budget=normalized_allocated_budget(1:s);
     budget_utilization  = budget_utilization(1:s);
     series_set.series_names = series_names;
     series_set.alphas       = alphas;
@@ -108,6 +113,7 @@ function [series_set] = get_series_set(workload_dir)
     series_set.mean_allocated_budget = mean_allocated_budget;
     series_set.RMS_VFT_error= RMS_VFT_error;
     series_set.allocated_budget = allocated_budget;
+    series_set.normalized_allocated_budget = normalized_allocated_budget;
     series_set.budget_utilization   = budget_utilization;
 end
 
