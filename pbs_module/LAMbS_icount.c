@@ -19,7 +19,7 @@ int LAMbS_icount_init()
      * we can grab the current instruction count at the beginning of a res
      * period */
     icount_attr.disabled = 0;
-    icount_attr.exclude_kernel = 0;
+    icount_attr.exclude_kernel = 1;
     icount_attr.exclude_user = 0; /*possibly unnecessary, but can't hurt */
     icount_attr.exclude_hv = 1; /* for running in VMs */
     /* function(perf_event_attr, int cpu, task (process?), overflow handler, context) */
