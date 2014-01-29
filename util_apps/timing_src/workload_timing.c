@@ -50,8 +50,8 @@ static __inline__ uint64_t getns(void)
 #include "PeSoRTA.h"
 
 char *usage_string 
-	= "[-j <maxjobs>] [-r] [ -R <workload root directory>] [-C <config file>] [-L <output file>]";
-char *optstring = "j:rR:C:L:";
+	= "[-j <maxjobs>] [-r [-p <real-time priority>]] [ -R <workload root directory>] [-C <config file>] [-L <output file>]";
+char *optstring = "j:rp:R:C:L:";
 
 int main (int argc, char * const * argv)
 {
@@ -61,6 +61,8 @@ int main (int argc, char * const * argv)
 	unsigned char jflag = 0;
 	long maxjobs = 0;
     unsigned char rflag = 0;
+    unsigned char pflag = 0;
+    double desired_priority = 1.0;
     
     char *workload_root_dir = "./";
     char *config_file = "config";
@@ -77,7 +79,9 @@ int main (int argc, char * const * argv)
     
 	/*variables for the scheduler*/
     pid_t my_pid;
-    int max_priority;
+    double max_priority;
+    double min_priority;
+    int set_priority;
     struct sched_param sched_param;
 
     /*timing log*/
@@ -108,6 +112,32 @@ int main (int argc, char * const * argv)
 
             case 'r':
                 rflag = 1;
+                break;
+            
+            case 'p':
+                pflag = 1;
+                errno = 0;
+                desired_priority = strtod(optarg, NULL);
+                if( (errno == 0))
+                {
+                    if( (desired_priority >= 0.0) && 
+                        (desired_priority <= 1.0) )
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        fprintf(stderr, "Desired priority must be between "
+                                        "0.0 (minimum priority) and 1.0 "
+                                        "(maximum priority).\n");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    perror("Failed to parse the p option");
+                    exit(EXIT_FAILURE);
+                }
                 break;
 
             case 'R':
@@ -184,7 +214,8 @@ int main (int argc, char * const * argv)
         ret = -1;
         goto exit0;
     }
-
+    printf("\t\tWorkload root directory: %s\n", workload_root_dir);
+    
     /*Initialize the workload*/
     ret = workload_init(config_file, &workload_state, &possiblejobs);
     if(ret < 0)
@@ -192,7 +223,8 @@ int main (int argc, char * const * argv)
         fprintf(stderr, "ERROR: (%s) main) workload_init failed\n", workload_name());
         goto exit0;
     }
-    
+    printf("\t\tWorkload config file: %s\n", config_file);
+        
     /*Check if the workload returned a valid possiblejobs*/
     if(possiblejobs < 0)
     {
@@ -205,6 +237,7 @@ int main (int argc, char * const * argv)
     {
         maxjobs = possiblejobs;
     }
+    printf("\t\tNumber of jobs: %li\n", possiblejobs);
 
 	/*Allocate space for the timing log_mem*/
     log_mem = (uint64_t*)malloc(maxjobs * sizeof(uint64_t));
@@ -226,20 +259,39 @@ int main (int argc, char * const * argv)
 
         my_pid = getpid();
         
-        max_priority = sched_get_priority_max(SCHED_FIFO);
-        if(max_priority == -1)        
+        max_priority = (double)sched_get_priority_max(SCHED_FIFO);
+        if(max_priority == -1.0)        
         {
             perror("ERROR: sched_get_priority_max failed in main");
             goto exit3;
         }
 
-        sched_param.sched_priority = max_priority;
+        min_priority = (double)sched_get_priority_min(SCHED_FIFO);
+        if(min_priority == -1.0)        
+        {
+            perror("ERROR: sched_get_priority_min failed in main");
+            goto exit3;
+        }
+
+        set_priority = (int)(   (desired_priority * max_priority)  +
+                                ((1.0 - desired_priority) * min_priority));
+
+        sched_param.sched_priority = set_priority;
         ret = sched_setscheduler(my_pid, SCHED_FIFO, &sched_param);
         if(ret == -1)
         {
             fprintf(stderr, "ERROR: failed to set real-time priority!\n");
             perror("ERROR: sched_setsceduler failed in main");
             goto exit3;
+        }
+        printf("\t\tReal-time priority: %i\n", set_priority);
+        fflush(stdout);
+    }
+    else
+    {
+        if(pflag == 1)
+        {
+            fprintf(stderr, "WARNING: rflag is not set. pflag is ignored!\n");
         }
     }
 
