@@ -134,7 +134,7 @@ u64 LAMbS_VIC_get(u64* timestamp_p)
     
     return last_global_VIC;
 }
-EXPORT_SYMBOL(LAMbS_VIC_get);
+EXPORT_SYMBOL_GPL(LAMbS_VIC_get);
 
 void LAMbS_VIC_uninit(void)
 {

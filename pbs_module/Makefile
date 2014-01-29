@@ -1,6 +1,6 @@
 
 GOVERNOR_DIR = ../governor
-EXTRA_CFLAGS=-I$(src)/$(GOVERNOR_DIR) -DVIC_Budget=$(VIC_BUDGET)
+EXTRA_CFLAGS=-I$(src)/$(GOVERNOR_DIR)
 
 pbs_module-objs = module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o \
                   pbs_active.o LAMbS.o \
