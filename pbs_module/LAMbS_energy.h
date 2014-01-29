@@ -3,7 +3,8 @@
 
 #include <linux/kernel.h>
 
-#define MSR_PKG_ENERGY_STATUS 0x611
+#define MSR_PKG_ENERGY_STATUS 0x00000611
+#define MSR_RAPL_POWER_UNIT   0x00000606
 
 typedef struct LAMbS_energy_s
 {
