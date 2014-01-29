@@ -1,0 +1,44 @@
+
+    http://lxr.linux.no/#linux+v3.12.6/arch/x86/kernel/cpu/perf_event_intel.c#L27
+    http://lxr.linux.no/#linux+v3.12.6/include/linux/fs.h#L802
+    http://lxr.linux.no/#linux+v3.12.6/fs/proc/internal.h#L32
+    http://lxr.linux.no/#linux+v3.12.6/include/linux/perf_event.h#L295
+    http://lxr.linux.no/#linux+v3.12.6/kernel/events/core.c#L7181
+    http://lxr.linux.no/#linux+v3.12.6/kernel/events/core.c#L6591
+    http://lxr.linux.no/#linux+v3.12.6/include/linux/perf_event.h#L269
+    
+    when a task opens a file:
+        - want to associate a (perf event) or ktime_t-related object with the task for the specific file
+    
+    when the task calls read:
+        - should return the value of the (perf event) or ktime_t-related object for the task depending on the file that was openned
+        
+    when the task calls close:
+        - should release all allocated resources
+        
+    to read the object:
+        - need access to the perf-event object or timer object
+        - need to know the previous value read to handle overflow
+        
+    can associate private data with each proc file
+        - can consist of a set of init, read, release function pointers
+        
+    can associate private data with each file handle
+        - need the context mentioned under "to read the object"
+        - need the function pointers to read and release
+        
+    MOCsample_t*    (*MOCsample_init_t)(task_struct *execution_context);
+    u64             (*MOCsample_read_t)(MOCsample_t* );
+    void            (*MOCsample_free_t)(MOCsample_t* );
+    
+    typedef struct MOCsample_s
+    {
+        MOCsample_init_t    init;
+        MOCsample_read_t    read;
+        MOCsample_free_t    free;
+        void*               state
+        u64                 last_read;
+    } MOCsample_t;
+    
+    
+    

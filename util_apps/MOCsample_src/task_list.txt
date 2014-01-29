@@ -1,0 +1,32 @@
+
+x Kernel module:
+
+    x - Implement a single-core monotonic source
+    
+    x Setup the preempt-notifier
+    
+        x init:
+        - set last sample
+        - set running total to 0
+        
+        x sched in:
+        - set last sample
+        - running total is unaffected
+        
+        x sched out:
+        - compute difference from last sample
+        - update running total
+        - last sample is now meaningless
+        
+        x read:
+        - compute difference from last sample
+        - update running total
+        - set last sample
+    
+    x - Implement a ktime based source
+
+x MOCsample + PeSORTA:
+    - design a command-line interface
+    - implement the interface
+    - write a Makefile
+    
