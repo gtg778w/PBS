@@ -167,16 +167,13 @@ int __init MOCsample_init(void)
     }
     MOCsample_nsec_file->proc_fops = &MOCsample_nsec_fops;
 
-    if(0 == MOCsample_VIC_check())
+    MOCsample_VIC_file = create_proc_entry(MOCsample_VIC_file_name, 0000, NULL);
+    if(MOCsample_VIC_file == NULL)
     {
-        MOCsample_VIC_file = create_proc_entry(MOCsample_VIC_file_name, 0000, NULL);
-        if(MOCsample_VIC_file == NULL)
-        {
-            ret = -ENOMEM;
-            goto error4;
-        }
-        MOCsample_VIC_file->proc_fops = &MOCsample_VIC_fops;
+        ret = -ENOMEM;
+        goto error4;
     }
+    MOCsample_VIC_file->proc_fops = &MOCsample_VIC_fops;
     
     /*Once all files are setup, enable the permissions*/
     MOCsample_inst_file->mode = 0444;
@@ -187,7 +184,7 @@ int __init MOCsample_init(void)
     return 0;
 
 error4:
-    remove_proc_entry(MOCsample_nsec_file_name, NULL);    
+    remove_proc_entry(MOCsample_nsec_file_name, NULL);
 error3:
     remove_proc_entry(MOCsample_cycl_file_name, NULL);
 error2:

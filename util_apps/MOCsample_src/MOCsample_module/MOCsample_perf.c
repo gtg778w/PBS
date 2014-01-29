@@ -13,10 +13,10 @@ int MOCsample_inst_init(struct MOCsample_s* MOCsample_p)
     perf_attr.size = sizeof(struct perf_event_attr);
     perf_attr.config = PERF_COUNT_HW_INSTRUCTIONS;
     perf_attr.disabled = 0;
-    perf_attr.exclude_kernel = 0;
+    perf_attr.exclude_kernel = 1;
     perf_attr.exclude_user = 0; /*possibly unnecessary, but can't hurt */
-    perf_attr.exclude_hv = 0; /* for running in VMs */
-    perf_event = perf_event_create_kernel_counter(&perf_attr, 0, NULL, NULL, NULL);
+    perf_attr.exclude_hv = 1; /* for running in VMs */
+    perf_event = perf_event_create_kernel_counter(&perf_attr, -1, current, NULL, NULL);
     if(IS_ERR(perf_event))
     {
         printk(KERN_INFO "MOCsample_module: perf_event_create_kernel_counter failed!");

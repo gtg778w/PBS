@@ -2,20 +2,13 @@
 #include <linux/ktime.h>
 #include <linux/hrtimer.h>
 
-u64 LAMbS_VIC_get(u64* timestamp_p) __attribute__ ((weak));
-
-int MOCsample_VIC_check(void)
+/*__attribute__ ((weak)) u64 LAMbS_VIC_get(u64* timestamp_p)
 {
-    int ret = 0;
-    
-    if(NULL == LAMbS_VIC_get)
-    {
-        ret = -EBUSY;
-    }
-    
-    return -1;
-}
-    
+    return 0;
+}*/
+
+u64 LAMbS_VIC_get(u64* timestamp_p);
+
 int MOCsample_VIC_init(struct MOCsample_s* MOCsample_p)
 {
     return 0;

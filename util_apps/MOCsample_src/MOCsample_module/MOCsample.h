@@ -33,5 +33,4 @@
     extern const MOCsample_t MOCsample_nsec_template;
     extern const MOCsample_t MOCsample_VIC_template;
     
-    int MOCsample_VIC_check(void);
 #endif
