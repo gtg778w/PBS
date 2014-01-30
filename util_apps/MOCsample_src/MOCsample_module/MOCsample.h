@@ -29,6 +29,7 @@
     void MOCsample_free(MOCsample_t *MOCsample_p);    
 
     extern const MOCsample_t MOCsample_inst_template;
+    extern const MOCsample_t MOCsample_userinst_template;
     extern const MOCsample_t MOCsample_cycl_template;
     extern const MOCsample_t MOCsample_nsec_template;
     extern const MOCsample_t MOCsample_VIC_template;

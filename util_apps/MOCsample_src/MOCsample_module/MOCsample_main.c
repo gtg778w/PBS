@@ -83,6 +83,7 @@ Function headers and structure deffinitions for the sched_alloc_active file.
 ***********************************************************************/
 
 int MOCsample_inst_open(struct inode *inode, struct file *file);
+int MOCsample_userinst_open(struct inode *inode, struct file *file);
 int MOCsample_cycl_open(struct inode *inode, struct file *file);
 int MOCsample_nsec_open(struct inode *inode, struct file *file);
 int MOCsample_VIC_open(struct inode *inode, struct file *file);
@@ -94,6 +95,14 @@ struct file_operations  MOCsample_inst_fops =
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
     .open   =   MOCsample_inst_open,
+    .release=   MOCsample_release
+};
+
+struct file_operations  MOCsample_userinst_fops = 
+{
+    .owner  =   THIS_MODULE,
+    .read   =   MOCsample_read,
+    .open   =   MOCsample_userinst_open,
     .release=   MOCsample_release
 };
 
@@ -124,6 +133,8 @@ struct file_operations  MOCsample_VIC_fops =
 /*The procfs file that is accessed by the bandwidth allocation process*/
 char*                   MOCsample_inst_file_name = "MOCsample_inst";
 struct proc_dir_entry*  MOCsample_inst_file;
+char*                   MOCsample_userinst_file_name = "MOCsample_userinst";
+struct proc_dir_entry*  MOCsample_userinst_file;
 char*                   MOCsample_cycl_file_name = "MOCsample_cycl";
 struct proc_dir_entry*  MOCsample_cycl_file;
 char*                   MOCsample_nsec_file_name = "MOCsample_nsec";
@@ -150,12 +161,20 @@ int __init MOCsample_init(void)
         goto error1;
     }
     MOCsample_inst_file->proc_fops = &MOCsample_inst_fops;
-    
+
+    MOCsample_userinst_file = create_proc_entry(MOCsample_userinst_file_name, 0000, NULL);
+    if(MOCsample_userinst_file == NULL)
+    {
+        ret = -ENOMEM;
+        goto error2;
+    }
+    MOCsample_userinst_file->proc_fops = &MOCsample_userinst_fops;
+        
     MOCsample_cycl_file = create_proc_entry(MOCsample_cycl_file_name, 0000, NULL);
     if(MOCsample_cycl_file == NULL)
     {
         ret = -ENOMEM;
-        goto error2;
+        goto error3;
     }
     MOCsample_cycl_file->proc_fops = &MOCsample_cycl_fops;
     
@@ -163,7 +182,7 @@ int __init MOCsample_init(void)
     if(MOCsample_nsec_file == NULL)
     {
         ret = -ENOMEM;
-        goto error3;
+        goto error4;
     }
     MOCsample_nsec_file->proc_fops = &MOCsample_nsec_fops;
 
@@ -171,22 +190,25 @@ int __init MOCsample_init(void)
     if(MOCsample_VIC_file == NULL)
     {
         ret = -ENOMEM;
-        goto error4;
+        goto error5;
     }
     MOCsample_VIC_file->proc_fops = &MOCsample_VIC_fops;
     
     /*Once all files are setup, enable the permissions*/
     MOCsample_inst_file->mode = 0444;
+    MOCsample_userinst_file->mode = 0444;
     MOCsample_cycl_file->mode = 0444;
     MOCsample_nsec_file->mode = 0444;
     MOCsample_VIC_file->mode = 0444;
     
     return 0;
 
-error4:
+error5:
     remove_proc_entry(MOCsample_nsec_file_name, NULL);
-error3:
+error4:
     remove_proc_entry(MOCsample_cycl_file_name, NULL);
+error3:
+    remove_proc_entry(MOCsample_userinst_file_name, NULL);
 error2:
     remove_proc_entry(MOCsample_inst_file_name, NULL);
 error1:
@@ -200,6 +222,7 @@ void MOCsample_uninit(void)
     remove_proc_entry(MOCsample_VIC_file_name, NULL);
     remove_proc_entry(MOCsample_nsec_file_name, NULL);
     remove_proc_entry(MOCsample_cycl_file_name, NULL);
+    remove_proc_entry(MOCsample_userinst_file_name, NULL);
     remove_proc_entry(MOCsample_inst_file_name, NULL);
     
     MOCsample_alloc_uninit();
@@ -215,6 +238,32 @@ int MOCsample_inst_open(struct inode *inode, struct file *file)
     u64 first_sample;
     
     ret = MOCsample_alloc( &MOCsample_inst_template,
+                           &(MOCsample_p));
+    if(0 != ret)
+    {
+        goto error0;
+    }
+
+    preempt_notifier_init(  &(MOCsample_p->preempt_notifier),
+                            &MOCsample_pin_ops);
+    preempt_notifier_register(  &(MOCsample_p->preempt_notifier));
+
+    first_sample = MOCsample_p->read(MOCsample_p);
+    MOCsample_p->last_sample    = first_sample;
+    MOCsample_p->running_total  = 0;
+
+    file->private_data = MOCsample_p;
+error0:
+    return ret;
+}
+
+int MOCsample_userinst_open(struct inode *inode, struct file *file)
+{
+    int ret = 0;
+    MOCsample_t *MOCsample_p; 
+    u64 first_sample;
+    
+    ret = MOCsample_alloc( &MOCsample_userinst_template,
                            &(MOCsample_p));
     if(0 != ret)
     {
