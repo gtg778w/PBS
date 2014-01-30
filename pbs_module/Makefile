@@ -1,5 +1,5 @@
 
-GOVERNOR_DIR = ../governor
+GOVERNOR_DIR = ../LAMbS_governor
 EXTRA_CFLAGS=-I$(src)/$(GOVERNOR_DIR)
 
 pbs_module-objs = module_main.o bw_mgt.o jb_mgt.o pbs_timing.o pbs_mmap.o \
