@@ -19,7 +19,7 @@ start the allocator to run indefinitely
 for each CPU frequency
     change to the given frequency
     start the background task
-for each application (cpu bound and memory bound)
+for each configuration (cpu bound and memory bound)
     for each CPU frequency
         for each MOC
             start the timing application
