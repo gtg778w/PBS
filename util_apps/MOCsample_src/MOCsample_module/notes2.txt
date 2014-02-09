@@ -1,0 +1,38 @@
+
+    - write start command to module
+        - command contains:
+            - period
+            - count
+        - allocate memory buffer for count samples and time stamps
+        - setup time-based sampling structure
+        - structure contains 
+            - the period
+            - the count
+            - samples obtained so far
+            - pointer to the memory buffer
+            - the MOC structure
+            - the hrtimer
+        - sample the first sample and time stamp
+        - setup timer with above period
+        
+    - on timer callback
+        - access the time-based sampling structure
+        - read the next sample
+        - get the current time
+        - store the sample and time in the buffer
+        - check if the limit is reached:
+            - stop the timer
+        - else
+            - advance the couter in the buffer
+            - advance the timer by the sampling period
+            - restart the timer
+    
+    - write command to get the samples
+        - command arguments
+            - size of buffer array
+            - number of valid elements
+            - pointer to buffer
+        - copy the arguments from the user
+        - update the argument with the number of valid samples
+        - copy the samples to the user-space buffer
+        - copu the updated argument back into user space
