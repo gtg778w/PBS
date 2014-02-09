@@ -34,4 +34,4 @@
         - copy the arguments from the user
         - update the argument with the number of valid samples
         - copy the samples to the user-space buffer
-        - copu the updated argument back into user space
+        - copy the updated argument back into user space
