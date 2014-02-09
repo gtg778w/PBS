@@ -51,4 +51,6 @@
     extern const MOCsample_t MOCsample_nsec_template;
     extern const MOCsample_t MOCsample_VIC_template;
     
+    ssize_t MOCsample_timer_write(MOCsample_t *MOCsample_p, const char __user *src, size_t count);
+    
 #endif

@@ -88,12 +88,14 @@ int MOCsample_cycl_open(struct inode *inode, struct file *file);
 int MOCsample_nsec_open(struct inode *inode, struct file *file);
 int MOCsample_VIC_open(struct inode *inode, struct file *file);
 ssize_t MOCsample_read(struct file* file, char __user *dst, size_t count, loff_t *offset);
+ssize_t MOCsample_write(struct file *file, const char __user *src, size_t count, loff_t *offset);
 int MOCsample_release(struct inode *inode, struct file *filp);
 
 struct file_operations  MOCsample_inst_fops = 
 {
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
+    .write  =   MOCsample_write,
     .open   =   MOCsample_inst_open,
     .release=   MOCsample_release
 };
@@ -102,6 +104,7 @@ struct file_operations  MOCsample_userinst_fops =
 {
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
+    .write  =   MOCsample_write,
     .open   =   MOCsample_userinst_open,
     .release=   MOCsample_release
 };
@@ -110,6 +113,7 @@ struct file_operations  MOCsample_cycl_fops =
 {
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
+    .write  =   MOCsample_write,
     .open   =   MOCsample_cycl_open,
     .release=   MOCsample_release
 };
@@ -118,6 +122,7 @@ struct file_operations  MOCsample_nsec_fops =
 {
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
+    .write  =   MOCsample_write,
     .open   =   MOCsample_nsec_open,
     .release=   MOCsample_release
 };
@@ -126,6 +131,7 @@ struct file_operations  MOCsample_VIC_fops =
 {
     .owner  =   THIS_MODULE,
     .read   =   MOCsample_read,
+    .write  =   MOCsample_write,
     .open   =   MOCsample_VIC_open,
     .release=   MOCsample_release
 };
@@ -195,11 +201,11 @@ int __init MOCsample_init(void)
     MOCsample_VIC_file->proc_fops = &MOCsample_VIC_fops;
     
     /*Once all files are setup, enable the permissions*/
-    MOCsample_inst_file->mode = 0444;
-    MOCsample_userinst_file->mode = 0444;
-    MOCsample_cycl_file->mode = 0444;
-    MOCsample_nsec_file->mode = 0444;
-    MOCsample_VIC_file->mode = 0444;
+    MOCsample_inst_file->mode = 0666;
+    MOCsample_userinst_file->mode = 0666;
+    MOCsample_cycl_file->mode = 0666;
+    MOCsample_nsec_file->mode = 0666;
+    MOCsample_VIC_file->mode = 0666;
     
     return 0;
 
@@ -433,5 +439,21 @@ ssize_t MOCsample_read(struct file* file, char __user *dst, size_t count, loff_t
     }
 
     return count;
+}
+
+ssize_t MOCsample_write(struct file *file, const char __user *src, size_t count, loff_t *offset)
+{    
+    ssize_t ret;
+    MOCsample_t *MOCsample_p;
+
+    MOCsample_p = (MOCsample_t *)file->private_data;
+
+    ret = MOCsample_timer_write(MOCsample_p, src, count);
+    if( ret < 0)
+    {
+        printk(KERN_INFO "MOCsample_write: MOCsample_timer_write failed\n");        
+    }
+    
+    return ret;
 }
 

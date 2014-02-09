@@ -1,7 +1,7 @@
 
 PBS_DIR = ../../../pbs_module
 
-MOCsample_module-objs = MOCsample_main.o MOCsample_alloc.o MOCsample_perf.o MOCsample_nsec.o MOCsample_VIC.o
+MOCsample_module-objs = MOCsample_main.o MOCsample_alloc.o MOCsample_perf.o MOCsample_nsec.o MOCsample_VIC.o MOCsample_timer.o
 
 KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 VICSYMS=`pwd`/$(PBS_DIR)/Module.symvers

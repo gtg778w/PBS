@@ -1,6 +1,8 @@
 #ifndef MOCsample_TIMER_COMMAND_INCLUDE
 #define MOCsample_TIMER_COMMAND_INCLUDE
 
+    #include <linux/kernel.h>
+
     typedef struct MOCsample_timer_command_s
     {
         int command;
