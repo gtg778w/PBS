@@ -90,6 +90,8 @@ int MOCsample_alloc(    const MOCsample_t *template,
                 goto error1;
             }
 
+            new_MOCsample_p->timer = (struct MOCsample_timer_s){{0}};
+
             /*Increment the slab cache counter*/
             atomic_inc(&MOCsample_alloc_count);
         }

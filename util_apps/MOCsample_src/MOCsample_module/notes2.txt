@@ -5,12 +5,11 @@
             - count
         - allocate memory buffer for count samples and time stamps
         - setup time-based sampling structure
-        - structure contains 
+        - structure is contained in the MOC structure
             - the period
             - the count
             - samples obtained so far
             - pointer to the memory buffer
-            - the MOC structure
             - the hrtimer
         - sample the first sample and time stamp
         - setup timer with above period

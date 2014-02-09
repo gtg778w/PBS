@@ -3,6 +3,22 @@
     
     #include <linux/kernel.h>
     #include <linux/sched.h>
+    #include <linux/hrtimer.h>
+    
+    typedef struct MOCsample_timed_sample_s
+    {
+        ktime_t time_stamp;
+        u64     MOCsample;
+    } MOCsample_timed_sample_t;
+    
+    typedef struct MOCsample_timer_s
+    {
+        ktime_t         sample_period;
+        u64             sampled_count;
+        u64             buffer_length;
+        MOCsample_timed_sample_t    *samples_buffer;
+        struct hrtimer  timer;
+    } MOCsample_timer_t;
     
     struct MOCsample_s;
     
@@ -19,6 +35,7 @@
         void*               state;
         u64                 last_sample;
         u64                 running_total;
+        MOCsample_timer_t   timer;
     } MOCsample_t;
     
     /**/
