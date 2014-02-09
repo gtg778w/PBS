@@ -31,7 +31,7 @@
     endif
 
     source ${SCRIPTDIR}/cpufreq_inc.csh
-    set availablefreqs=$availablefreqs[1]
+    set availablefreqs=$availablefreqs[2]
     
     set APPNAME="membound"
     set CONFIGNAME_ARRAY=("cacheline" "L1cache" "L2cache" "L3cache" "thrash")
