@@ -3,6 +3,12 @@
 
     #include <linux/kernel.h>
 
+    typedef struct MOCsample_timed_sample_s
+    {
+        u64     time_stamp;
+        u64     MOCsample;
+    } MOCsample_timed_sample_t;
+
     typedef struct MOCsample_timer_command_s
     {
         int command;

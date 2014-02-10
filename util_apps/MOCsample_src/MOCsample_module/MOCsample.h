@@ -3,13 +3,8 @@
     
     #include <linux/kernel.h>
     #include <linux/sched.h>
-    #include <linux/hrtimer.h>
-    
-    typedef struct MOCsample_timed_sample_s
-    {
-        ktime_t time_stamp;
-        u64     MOCsample;
-    } MOCsample_timed_sample_t;
+    #include <linux/hrtimer.h>    
+    #include "MOCsample_timer_command.h"
     
     typedef struct MOCsample_timer_s
     {
