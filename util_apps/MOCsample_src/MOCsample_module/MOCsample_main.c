@@ -46,7 +46,7 @@ Function headers and structure deffinitions for the sched_alloc_active file.
 ***********************************************************************/
 void MOCsample_sched_in(struct preempt_notifier *notifier, int cpu);
 void MOCsample_sched_out(struct preempt_notifier *notifier, struct task_struct *next);
-        
+      
 struct preempt_ops MOCsample_pin_ops =  {
                                             .sched_in   = MOCsample_sched_in,
                                             .sched_out  = MOCsample_sched_out,
@@ -90,6 +90,7 @@ int MOCsample_VIC_open(struct inode *inode, struct file *file);
 ssize_t MOCsample_read(struct file* file, char __user *dst, size_t count, loff_t *offset);
 ssize_t MOCsample_write(struct file *file, const char __user *src, size_t count, loff_t *offset);
 int MOCsample_release(struct inode *inode, struct file *filp);
+int MOCsample_flush(struct file *file, fl_owner_t id);
 
 struct file_operations  MOCsample_inst_fops = 
 {
@@ -97,7 +98,8 @@ struct file_operations  MOCsample_inst_fops =
     .read   =   MOCsample_read,
     .write  =   MOCsample_write,
     .open   =   MOCsample_inst_open,
-    .release=   MOCsample_release
+    .release=   MOCsample_release,
+    .flush  =   MOCsample_flush
 };
 
 struct file_operations  MOCsample_userinst_fops = 
@@ -106,7 +108,8 @@ struct file_operations  MOCsample_userinst_fops =
     .read   =   MOCsample_read,
     .write  =   MOCsample_write,
     .open   =   MOCsample_userinst_open,
-    .release=   MOCsample_release
+    .release=   MOCsample_release,
+    .flush  =   MOCsample_flush
 };
 
 struct file_operations  MOCsample_cycl_fops = 
@@ -115,7 +118,8 @@ struct file_operations  MOCsample_cycl_fops =
     .read   =   MOCsample_read,
     .write  =   MOCsample_write,
     .open   =   MOCsample_cycl_open,
-    .release=   MOCsample_release
+    .release=   MOCsample_release,
+    .flush  =   MOCsample_flush
 };
 
 struct file_operations  MOCsample_nsec_fops = 
@@ -124,7 +128,8 @@ struct file_operations  MOCsample_nsec_fops =
     .read   =   MOCsample_read,
     .write  =   MOCsample_write,
     .open   =   MOCsample_nsec_open,
-    .release=   MOCsample_release
+    .release=   MOCsample_release,
+    .flush  =   MOCsample_flush
 };
 
 struct file_operations  MOCsample_VIC_fops = 
@@ -133,7 +138,8 @@ struct file_operations  MOCsample_VIC_fops =
     .read   =   MOCsample_read,
     .write  =   MOCsample_write,
     .open   =   MOCsample_VIC_open,
-    .release=   MOCsample_release
+    .release=   MOCsample_release,
+    .flush  =   MOCsample_flush
 };
 
 /*The procfs file that is accessed by the bandwidth allocation process*/
@@ -158,6 +164,9 @@ int __init MOCsample_init(void)
     {
         goto error0;
     }
+
+    /*Callibrate the timer threshold*/
+    MOCsample_timer_threshold_init();
 
     /*Setup the files in the procfs interface*/
     MOCsample_inst_file = create_proc_entry(MOCsample_inst_file_name, 0000, NULL);
@@ -378,6 +387,11 @@ int MOCsample_release(struct inode *inode, struct file *file)
     preempt_notifier_unregister(&(MOCsample_p->preempt_notifier));
     
     MOCsample_free(MOCsample_p);
+    return 0;
+}
+
+int MOCsample_flush(struct file *file, fl_owner_t id)
+{
     return 0;
 }
 

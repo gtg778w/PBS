@@ -90,7 +90,8 @@ int MOCsample_alloc(    const MOCsample_t *template,
                 goto error1;
             }
 
-            new_MOCsample_p->timer = (struct MOCsample_timer_s){{0}};
+            /*Initialize the timer mechanism*/
+            MOCsample_timer_init(new_MOCsample_p);
 
             /*Increment the slab cache counter*/
             atomic_inc(&MOCsample_alloc_count);
@@ -116,6 +117,9 @@ error0:
 void MOCsample_free(MOCsample_t *MOCsample_p)
 {    
     preempt_disable();
+
+        /*Cancel the timer and free any allocated log memory*/
+        MOCsample_timer_free(MOCsample_p);
  
         /*Uninit the MOCsample_t object*/
         MOCsample_p->free(MOCsample_p);

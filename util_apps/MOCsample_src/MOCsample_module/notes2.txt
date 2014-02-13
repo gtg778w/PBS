@@ -4,6 +4,25 @@
             - period
             - count
         - allocate memory buffer for count samples and time stamps
+
+            log_size   = sample_count * sizeof(timed_sample);
+            page_count = (log_size + page_size - 1)/page_size;
+            rounded_page_count = __roundup_pow_of_two(page_count);
+            page_order = get_order(rounded_page_count);
+            log        = (timed_sample*)__get_free_pages(GFP_KERNEL, page_order);
+            if(NULL == log)
+            {
+                return -ENOMEM;
+            }
+            
+        - allocated pages should be freed at some point
+        
+            log_size   = sample_count * sizeof(timed_sample);
+            page_count = (log_size + page_size - 1)/page_size;
+            rounded_page_count = __roundup_pow_of_two(page_count);
+            page_order = get_order(rounded_page_count);
+            free_pages(log, page_order);
+            
         - setup time-based sampling structure
         - structure is contained in the MOC structure
             - the period
@@ -35,3 +54,4 @@
         - update the argument with the number of valid samples
         - copy the samples to the user-space buffer
         - copy the updated argument back into user space
+        

@@ -397,6 +397,16 @@ int main (int argc, char * const * argv)
         fprintf(stderr, "main: MOCsample_timer_stop failed\n");
         goto exit3;
     }
+    else
+    {
+        /*If the number of samples collected by the kernel module was more than
+        the available buffer length, then the samples read from the the kernel
+        module are limited to the buffer length*/
+        if(samples > log_mem_len)
+        {
+            samples = log_mem_len;
+        }
+    }
     
     /*Cheange back to the original working directory*/
     ret = chdir(cwd_name);
@@ -419,18 +429,21 @@ int main (int argc, char * const * argv)
     }
     
     /*write the log_mem out to file*/
-    for(s_i = 0; s_i < s_i; s_i++)
+    for(s_i = 0; s_i < samples; s_i++)
     {
         ret = fprintf(logfile_h,    "%lu, %lu\n", 
-                                    log_mem[jobi].time_stamp, 
-                                    log_mem[jobi].MOCsample);
+                                    log_mem[s_i].time_stamp, 
+                                    log_mem[s_i].MOCsample);
         if(ret < 0)
         {
-            fprintf(stderr, "main: Failed to write log index %li to log file!\n", jobi);
+            fprintf(stderr, "main: Failed to write log index %li to log file!\n", s_i);
             perror("main: fprintf failed");
             goto exit4;
         }
     }
+
+    /*Everything is good. No errors so far*/
+    ret = 0;
 
     /*undo everything*/
 exit4:
@@ -452,8 +465,11 @@ exit0:
         free(cwd_name_buffer);
     }
 
-    fprintf(stderr, "%s: main failed\n", argv[0]);
+    if(0 != ret)
+    {
+        fprintf(stderr, "%s: main failed\n", argv[0]);
+    }
 
-	return 0;
+	return ret;
 }
 
