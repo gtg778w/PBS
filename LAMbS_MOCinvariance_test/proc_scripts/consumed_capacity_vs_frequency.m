@@ -33,7 +33,7 @@
 
     %Get information on screen size and stuff
     screen_size = get(0, 'ScreenSize');
-    xsize = (screen_size(3)*0.5);
+    xsize = screen_size(3)*0.5;
     ysize = screen_size(3)*0.20;
     print_Soption = sprintf('-S%i,%i', xsize, ysize);
     
