@@ -323,6 +323,7 @@ int main (int argc, char * const * argv)
     printf("\tscheduling period:\t\t%luus\n", period);
     printf("\testimated mean execution time:\t%lu\n", estimated_mean_exectime);
     printf("\talpha:\t\t\t%f\n", alpha);
+    printf("\tbudget_type: \t\t%s\n", (handle.budget_type == 0)? "VIC" : "time");
     printf("\tpredictor name:\t\t%s\n", predictor_name);
 
     printf("\nLogging Parameters:\n");
