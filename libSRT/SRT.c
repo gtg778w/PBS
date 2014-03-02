@@ -56,6 +56,7 @@ int SRT_setup(  uint64_t period, uint64_t estimated_mean_exectime,
 
     int procfile;
 
+    enum budget_type local_budget_type;
     job_mgt_cmd_t cmd;
 
     int ret_val;
@@ -164,7 +165,7 @@ int SRT_setup(  uint64_t period, uint64_t estimated_mean_exectime,
 
     cmd.cmd = SRT_CMD_SETUP;
     cmd.args[0] = period;
-    cmd.args[1] = (u64)&(handle->budget_type);
+    cmd.args[1] = (u64)&local_budget_type;
     cmd.args[2] = (u64)&(handle->reservation_period);
     ret_val = write(procfile, &cmd, sizeof(cmd));
     if(ret_val != sizeof(cmd))
@@ -173,6 +174,7 @@ int SRT_setup(  uint64_t period, uint64_t estimated_mean_exectime,
         goto close_exit;
     }
     
+    handle->budget_type = local_budget_type;
     handle->period      = period;
     handle->estimated_mean_exectime 
                         = estimated_mean_exectime;

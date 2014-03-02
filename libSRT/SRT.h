@@ -37,8 +37,6 @@ enum {  SRT_LOGLEVEL_NONE,
 #define SRT_LOGLEVEL_MIN (SRT_LOGLEVEL_NONE)
 #define SRT_LOGLEVEL_MAX (SRT_LOGLEVEL_FULL)
 
-enum SRT_budget_type;
-
 typedef struct SRT_handle_s
 {
     int                 procfile;
