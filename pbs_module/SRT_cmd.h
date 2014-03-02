@@ -6,8 +6,8 @@
 #define SRT_CMD_SETUP     (0)
 /*
     0) period (us)
-    1) &budget_type (output varriable)
-    2) &reservation_period (output varriable)
+    1) &budget_type (output varriable, enum type)
+    2) &reservation_period (output varriable, u64 type)
 */
 
 #define SRT_CMD_START     (1)

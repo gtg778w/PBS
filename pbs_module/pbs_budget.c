@@ -58,13 +58,13 @@ void    update_CPUusage_statistics(void)
 
 /*  Access to the budget_type variable is controlled through these set and get
     functions and to prevent it from being set to an erroneous value  */
-int pbs_budget_settype(enum budget_type budget_type)
+int pbs_budget_settype(enum budget_type budget_type_arg)
 {
     int ret = 0;
     
-    if( (BUDGET_VIC == budget_type) || (BUDGET_ns == budget_type))
+    if( (BUDGET_VIC == budget_type_arg) || (BUDGET_ns == budget_type_arg))
     {
-        budget_type = budget_type;
+        budget_type = budget_type_arg;
     }
     else
     {
