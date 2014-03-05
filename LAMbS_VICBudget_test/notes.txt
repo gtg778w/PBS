@@ -1,0 +1,42 @@
+
+List of Experiments
+-------------------
+
+    1) invariance of VIC
+    3) performance of the VIC-based budget mechanism
+        - response to successive step-changes in execution time resulting from changes in CPU frequency for the membound workload in the most memory-bound configuration
+            - 200 jobs
+            - 2 reservation period per task period
+            - 10ms reservation periods
+            - 6ms execution times at highest frequency
+            - switch the CPU frequency every second (50 jobs)
+            - use the hybrid predictor
+            - run the allocator for 800 reservation periods
+            - run the cpu frequency oscillator for 6 seconds
+            - plot execution time
+            - plot VFT error
+            - plot VIC
+            - plot VFT error
+        - performance of time-based budget and VIC-based budget measured in terms of miss-rate vs bandwidth.
+            - at a constant high frequency (0.9)
+                30 runs with VIC
+                30 runs with ns
+            - at a constant low frequency (0.0)
+                30 runs with VIC
+                30 runs with ns
+            - with the frequency oscillating rapidly (0.65)
+                30 runs with VIC
+                30 runs with ns
+
+        - allow for 5 minutes per run
+        - (6 * 30 * 5)
+            
+Notes on How Bandwidth Should Change with CPU Frequency
+-------------------------------------------------------
+
+    Consider the case of perfect execution-time prediction.
+    
+        As the CPU frequency decreases, execution-time increases, reservation-period lengths remain the same, the bandwidth necessary is going to increase.
+        
+        As the CPU frequency decreases, the VIC remains the same, the VIC capacity of the reservation-period decreases, the bandwidth should increase.
+
